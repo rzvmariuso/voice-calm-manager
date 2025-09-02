@@ -150,19 +150,19 @@ Falls ein Termin während des Gesprächs bestätigt wurde, erstellen Sie eine Bu
 
 WICHTIG: Analysieren Sie das komplette Gespräch um herauszufinden:
 1. Hat der Patient einen Termin gewünscht?
-2. Wurden alle erforderlichen Daten aufgenommen (Name, Telefon, Termin, Service)?
-3. Hat der Patient den Termin bestätigt?
-4. Wurde der Termin vom AI-Assistenten als "gebucht" bestätigt?
+2. Hat der AI-Assistent "erfolgreich gebucht" oder ähnliches gesagt?
+3. Wurden Name, Telefon und Terminwunsch erwähnt?
 
-Für erfolgreiche Terminbuchungen (JSON-Format):
+Falls der AI-Assistent eine Buchung bestätigt hat ("erfolgreich gebucht", "Termin ist gebucht"), dann erstellen Sie eine Buchung:
+
 {
   "response": "Termin wurde erfolgreich aus dem Gespräch extrahiert und gebucht",
   "booking": {
-    "patient_name": "Vor- und Nachname aus Gespräch",
+    "patient_name": "Name aus Gespräch (auch nur Vorname OK)",
     "patient_phone": "Telefonnummer aus Gespräch (bereinigt)", 
-    "service": "Art der Behandlung aus Gespräch",
-    "preferred_date": "YYYY-MM-DD (morgen = ${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]})",
-    "preferred_time": "HH:MM (15:00, 13:00, etc.)",
+    "service": "Art der Behandlung aus Gespräch oder 'Allgemeine Behandlung'",
+    "preferred_date": "YYYY-MM-DD (berechnet aus Angaben wie 'morgen'=${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}, 'nächste Mittwoch'=nächster Mittwoch)",
+    "preferred_time": "HH:MM (aus Zeitangaben wie '13 Uhr 30' → '13:30')",
     "confirmed": true
   }
 }
