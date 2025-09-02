@@ -99,11 +99,12 @@ const weekDays = [
 export function RecurringAppointments() {
   const { practice } = usePractice();
   const { toast } = useToast();
-  const [recurringAppointments, setRecurringAppointments] = useState<RecurringAppointment[]>([]);
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [newPatientDialogOpen, setNewPatientDialogOpen] = useState(false);
+const [recurringAppointments, setRecurringAppointments] = useState<RecurringAppointment[]>([]);
+const [patients, setPatients] = useState<Patient[]>([]);
+const [loading, setLoading] = useState(true);
+const [dialogOpen, setDialogOpen] = useState(false);
+const [newPatientDialogOpen, setNewPatientDialogOpen] = useState(false);
+const [appointmentCounts, setAppointmentCounts] = useState<Record<string, number>>({});
   
   const [formData, setFormData] = useState({
     patient_id: "",
@@ -139,35 +140,51 @@ export function RecurringAppointments() {
     try {
       setLoading(true);
 
-      // Load patients first (this is critical for the form)
-      const { data: patientsData, error: patientsError } = await supabase
-        .from('patients')
-        .select('id, first_name, last_name')
-        .eq('practice_id', practice.id)
-        .order('last_name', { ascending: true });
+// Load patients first (this is critical for the form)
+const { data: patientsData, error: patientsError } = await supabase
+  .from('patients')
+  .select('id, first_name, last_name')
+  .eq('practice_id', practice.id)
+  .order('last_name', { ascending: true });
 
-      if (patientsError) throw patientsError;
+if (patientsError) throw patientsError;
 
-      // Load recurring appointments with a simpler query first, then enrich with patient data
-      const { data: recurringData, error: recurringError } = await supabase
-        .from('recurring_appointments')
-        .select('*')
-        .eq('practice_id', practice.id)
-        .order('created_at', { ascending: false });
+// Load appointment counts per patient
+const { data: appts, error: apptErr } = await supabase
+  .from('appointments')
+  .select('patient_id')
+  .eq('practice_id', practice.id);
 
-      if (recurringError) throw recurringError;
+if (!apptErr && appts) {
+  const counts: Record<string, number> = {};
+  appts.forEach((a: any) => {
+    if (a.patient_id) {
+      counts[a.patient_id] = (counts[a.patient_id] || 0) + 1;
+    }
+  });
+  setAppointmentCounts(counts);
+}
 
-      // Enrich recurring appointments with patient data
-      const appointmentsWithPatients = (recurringData || []).map(item => {
-        const patient = patientsData?.find(p => p.id === item.patient_id);
-        return {
-          ...item,
-          patient: patient || undefined
-        };
-      });
+// Load recurring appointments with a simpler query first, then enrich with patient data
+const { data: recurringData, error: recurringError } = await supabase
+  .from('recurring_appointments')
+  .select('*')
+  .eq('practice_id', practice.id)
+  .order('created_at', { ascending: false });
 
-      setRecurringAppointments(appointmentsWithPatients as RecurringAppointment[]);
-      setPatients(patientsData || []);
+if (recurringError) throw recurringError;
+
+// Enrich recurring appointments with patient data
+const appointmentsWithPatients = (recurringData || []).map(item => {
+  const patient = patientsData?.find(p => p.id === item.patient_id);
+  return {
+    ...item,
+    patient: patient || undefined
+  };
+});
+
+setRecurringAppointments(appointmentsWithPatients as RecurringAppointment[]);
+setPatients(patientsData || []);
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -433,14 +450,17 @@ export function RecurringAppointments() {
                     <SelectValue placeholder="Patient auswählen..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {patients.map((patient) => (
-                      <SelectItem key={patient.id} value={patient.id}>
-                        <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4" />
-                          {patient.first_name} {patient.last_name}
-                        </div>
-                      </SelectItem>
-                    ))}
+{Array.from(new Map(patients.map(p => [`${p.first_name} ${p.last_name}`.toLowerCase(), p])).values()).map((patient) => (
+  <SelectItem key={patient.id} value={patient.id}>
+    <div className="flex items-center gap-2">
+      <Users className="w-4 h-4" />
+      {patient.first_name} {patient.last_name}
+      {appointmentCounts[patient.id] ? (
+        <span className="text-muted-foreground text-xs">({appointmentCounts[patient.id]} Termine)</span>
+      ) : null}
+    </div>
+  </SelectItem>
+))}
                   </SelectContent>
                 </Select>
               </div>

@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { supabase } from "@/integrations/supabase/client";
 import { usePractice } from "@/hooks/usePractice";
 import { useToast } from "@/hooks/use-toast";
+import { PatientDialog } from "@/components/patients/PatientDialog";
 
 interface Patient {
   id: string;
@@ -31,43 +32,74 @@ const Patients = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const { practice } = usePractice();
-  const { toast } = useToast();
+const { practice } = usePractice();
+const { toast } = useToast();
 
-  useEffect(() => {
-    if (practice) {
-      fetchPatients();
-    }
-  }, [practice]);
+const [dialogOpen, setDialogOpen] = useState(false);
+const [isEditing, setIsEditing] = useState(false);
+const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+const [appointmentCounts, setAppointmentCounts] = useState<Record<string, number>>({});
 
-  const fetchPatients = async () => {
-    if (!practice) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('patients')
-        .select('*')
-        .eq('practice_id', practice.id)
-        .order('created_at', { ascending: false });
+useEffect(() => {
+  if (practice) {
+    fetchPatients();
+  }
+}, [practice]);
 
-      if (error) throw error;
-      setPatients(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Fehler",
-        description: "Patienten konnten nicht geladen werden.",
-        variant: "destructive",
+const fetchPatients = async () => {
+  if (!practice) return;
+  
+  try {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('patients')
+      .select('*')
+      .eq('practice_id', practice.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    setPatients(data || []);
+
+    // Lade Terminanzahl pro Patient
+    const { data: appts, error: apptErr } = await supabase
+      .from('appointments')
+      .select('patient_id')
+      .eq('practice_id', practice.id);
+
+    if (!apptErr && appts) {
+      const counts: Record<string, number> = {};
+      appts.forEach((a: any) => {
+        if (a.patient_id) {
+          counts[a.patient_id] = (counts[a.patient_id] || 0) + 1;
+        }
       });
-    } finally {
-      setLoading(false);
+      setAppointmentCounts(counts);
     }
-  };
+  } catch (error: any) {
+    toast({
+      title: "Fehler",
+      description: "Patienten konnten nicht geladen werden.",
+      variant: "destructive",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const filteredPatients = patients.filter(patient =>
-    `${patient.first_name} ${patient.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (patient.email && patient.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (patient.phone && patient.phone.includes(searchTerm))
-  );
+const uniqueByName = (() => {
+  const map = new Map<string, Patient>();
+  for (const p of patients) {
+    const key = `${p.first_name} ${p.last_name}`.toLowerCase();
+    if (!map.has(key)) map.set(key, p);
+  }
+  return Array.from(map.values());
+})();
+
+const filteredPatients = uniqueByName.filter(patient =>
+  `${patient.first_name} ${patient.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  (patient.email && patient.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+  (patient.phone && patient.phone.includes(searchTerm))
+);
 
   const handleDeletePatient = async (patientId: string) => {
     try {
@@ -143,10 +175,10 @@ const Patients = () => {
                 </p>
               </div>
             </div>
-            <Button className="button-gradient hover:scale-105 transition-transform duration-200">
-              <Plus className="w-4 h-4 mr-2" />
-              Neuer Patient
-            </Button>
+<Button className="button-gradient hover:scale-105 transition-transform duration-200" onClick={() => { setIsEditing(false); setSelectedPatient(null); setDialogOpen(true); }}>
+  <Plus className="w-4 h-4 mr-2" />
+  Neuer Patient
+</Button>
           </div>
 
           {/* Statistics */}
@@ -207,10 +239,10 @@ const Patients = () => {
                     ? "Versuchen Sie eine andere Suchanfrage oder fügen Sie einen neuen Patienten hinzu." 
                     : "Fügen Sie Ihren ersten Patienten hinzu, um loszulegen."
                 }
-                action={{
-                  label: "Neuer Patient",
-                  onClick: () => console.log("Add patient") // Placeholder
-                }}
+action={{
+  label: "Neuer Patient",
+  onClick: () => { setIsEditing(false); setSelectedPatient(null); setDialogOpen(true); }
+}}
               />
             ) : (
               filteredPatients.map((patient, index) => (
@@ -221,7 +253,7 @@ const Patients = () => {
                 >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 flex-1">
+                      <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => { setIsEditing(true); setSelectedPatient(patient); setDialogOpen(true); }}>
                         <Avatar className="w-12 h-12 hover:scale-110 transition-transform duration-200">
                           <AvatarFallback className="bg-gradient-primary text-white">
                             {patient.first_name[0]}{patient.last_name[0]}
@@ -229,12 +261,15 @@ const Patients = () => {
                         </Avatar>
                         
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-foreground hover:text-primary transition-colors duration-200">
-                              {patient.first_name} {patient.last_name}
-                            </h3>
-                            {getConsentStatus(patient.consent_date)}
-                          </div>
+<div className="flex items-center gap-2 mb-1">
+  <h3 className="font-semibold text-foreground hover:text-primary transition-colors duration-200">
+    {patient.first_name} {patient.last_name}
+  </h3>
+  {getConsentStatus(patient.consent_date)}
+  {appointmentCounts[patient.id] ? (
+    <Badge variant="outline" className="text-xs">{appointmentCounts[patient.id]} Termine</Badge>
+  ) : null}
+</div>
                           
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             {patient.email && (
@@ -264,10 +299,13 @@ const Patients = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="animate-scale-in">
-                          <DropdownMenuItem className="hover:bg-accent transition-colors duration-200">
-                            <Edit2 className="w-4 h-4 mr-2" />
-                            Bearbeiten
-                          </DropdownMenuItem>
+<DropdownMenuItem 
+  onClick={() => { setIsEditing(true); setSelectedPatient(patient); setDialogOpen(true); }}
+  className="hover:bg-accent transition-colors duration-200"
+>
+  <Edit2 className="w-4 h-4 mr-2" />
+  Bearbeiten
+</DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={() => handleDeletePatient(patient.id)}
                             className="text-destructive hover:bg-destructive/10 transition-colors duration-200"
@@ -283,9 +321,16 @@ const Patients = () => {
               ))
             )}
           </div>
-        </main>
-      </div>
-    </SidebarProvider>
+</main>
+  <PatientDialog 
+    open={dialogOpen}
+    onOpenChange={setDialogOpen}
+    patient={selectedPatient || undefined}
+    isEditing={isEditing}
+    onSuccess={() => { fetchPatients(); }}
+  />
+</div>
+</SidebarProvider>
   );
 };
 

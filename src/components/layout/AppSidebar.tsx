@@ -54,11 +54,7 @@ const items = [
     url: "/automation",
     icon: Zap,
   },
-  {
-    title: "Telefonie",
-    url: "/phone",
-    icon: Phone,
-  },
+// Telefonie entfernt auf Wunsch
   {
     title: "Billing & Abos",
     url: "/billing",

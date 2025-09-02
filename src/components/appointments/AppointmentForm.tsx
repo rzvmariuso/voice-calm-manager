@@ -73,9 +73,10 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
   const { toast } = useToast();
   const { triggerWebhook } = useAppointmentWebhook();
   
-  const [loading, setLoading] = useState(false);
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [patientMode, setPatientMode] = useState<'existing' | 'new'>('existing');
+const [loading, setLoading] = useState(false);
+const [patients, setPatients] = useState<Patient[]>([]);
+const [appointmentCounts, setAppointmentCounts] = useState<Record<string, number>>({});
+const [patientMode, setPatientMode] = useState<'existing' | 'new'>('existing');
   
   const [formData, setFormData] = useState({
     patient_id: appointment?.patient_id || appointment?.patient?.id || "",
@@ -179,25 +180,41 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
       return null;
     }
   };
-  const loadPatients = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('patients')
-        .select('id, first_name, last_name, email, phone')
-        .eq('practice_id', practice?.id)
-        .order('last_name', { ascending: true });
+const loadPatients = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('patients')
+      .select('id, first_name, last_name, email, phone')
+      .eq('practice_id', practice?.id)
+      .order('last_name', { ascending: true });
 
-      if (error) throw error;
-      setPatients(data || []);
-    } catch (error) {
-      console.error('Error loading patients:', error);
-      toast({
-        title: "Fehler",
-        description: "Patienten konnten nicht geladen werden",
-        variant: "destructive",
+    if (error) throw error;
+    setPatients(data || []);
+
+    // Load appointment counts per patient
+    const { data: appts, error: apptErr } = await supabase
+      .from('appointments')
+      .select('patient_id')
+      .eq('practice_id', practice?.id);
+
+    if (!apptErr && appts) {
+      const counts: Record<string, number> = {};
+      appts.forEach((a: any) => {
+        if (a.patient_id) {
+          counts[a.patient_id] = (counts[a.patient_id] || 0) + 1;
+        }
       });
+      setAppointmentCounts(counts);
     }
-  };
+  } catch (error) {
+    console.error('Error loading patients:', error);
+    toast({
+      title: "Fehler",
+      description: "Patienten konnten nicht geladen werden",
+      variant: "destructive",
+    });
+  }
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -381,21 +398,24 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
                         <SelectValue placeholder="Patient auswählen..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {patients.length > 0 ? patients.map((patient) => (
-                          <SelectItem key={patient.id} value={patient.id}>
-                            <div className="flex items-center gap-2">
-                              <User className="w-4 h-4" />
-                              {patient.first_name} {patient.last_name}
-                              {patient.email && (
-                                <span className="text-muted-foreground text-sm">({patient.email})</span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        )) : (
-                          <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                            Keine Patienten gefunden
-                          </div>
-                        )}
+{patients.length > 0 ? Array.from(new Map(patients.map(p => [`${p.first_name} ${p.last_name}`.toLowerCase(), p])).values()).map((patient) => (
+  <SelectItem key={patient.id} value={patient.id}>
+    <div className="flex items-center gap-2">
+      <User className="w-4 h-4" />
+      {patient.first_name} {patient.last_name}
+      {patient.email && (
+        <span className="text-muted-foreground text-sm">({patient.email})</span>
+      )}
+      {appointmentCounts[patient.id] ? (
+        <span className="text-muted-foreground text-xs">({appointmentCounts[patient.id]} Termine)</span>
+      ) : null}
+    </div>
+  </SelectItem>
+)) : (
+  <div className="px-2 py-1.5 text-sm text-muted-foreground">
+    Keine Patienten gefunden
+  </div>
+)}
                       </SelectContent>
                     </Select>
                     {patients.length === 0 && (
