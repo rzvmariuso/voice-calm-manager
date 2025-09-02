@@ -1,0 +1,236 @@
+{
+  "meta": {
+    "instanceId": "n8n-workflow"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "⏰ Alle 15 Minuten prüfen",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  a.id,\n  a.appointment_date,\n  a.appointment_time,\n  a.service,\n  a.sms_reminder_sent,\n  p.first_name,\n  p.last_name,\n  p.phone,\n  pr.name as practice_name\nFROM appointments a\nJOIN patients p ON a.patient_id = p.id\nJOIN practices pr ON a.practice_id = pr.id\nWHERE \n  a.appointment_date = CURRENT_DATE\n  AND a.appointment_time BETWEEN NOW()::time AND (NOW() + INTERVAL '75 minutes')::time\n  AND a.sms_reminder_sent = false\n  AND p.phone IS NOT NULL\n  AND a.status != 'cancelled'",
+        "additionalFields": {}
+      },
+      "id": "db-query",
+      "name": "📋 Termine in nächster Stunde abfragen",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "Praxis Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt",
+                "rightType": "number"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "has-appointments",
+      "name": "✅ Termine gefunden?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "accountSid": "={{ $env.TWILIO_ACCOUNT_SID }}",
+        "authType": "authToken",
+        "authToken": "={{ $env.TWILIO_AUTH_TOKEN }}",
+        "resource": "message",
+        "operation": "send",
+        "from": "={{ $env.TWILIO_PHONE_NUMBER }}",
+        "to": "={{ $json.phone }}",
+        "body": "🏥 Erinnerung: Ihr Termin ({{ $json.service }}) bei {{ $json.practice_name }} ist heute um {{ $json.appointment_time }}. Wir freuen uns auf Sie!"
+      },
+      "id": "send-sms",
+      "name": "📱 SMS Erinnerung senden",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 2,
+      "position": [
+        900,
+        240
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "twilio-credentials",
+          "name": "Twilio SMS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE appointments SET sms_reminder_sent = true WHERE id = '{{ $json.id }}'",
+        "additionalFields": {}
+      },
+      "id": "mark-sent",
+      "name": "✅ Als gesendet markieren",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1120,
+        240
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "Praxis Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO ai_call_logs (practice_id, transcript, outcome, created_at) VALUES ('{{ $json.practice_id }}', 'SMS Reminder sent to {{ $json.first_name }} {{ $json.last_name }}', 'SMS sent successfully', NOW())",
+        "additionalFields": {}
+      },
+      "id": "log-activity",
+      "name": "📊 Aktivität protokollieren",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1120,
+        360
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "Praxis Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Keine Termine gefunden - Ende des Workflows\nconsole.log('Keine SMS-Erinnerungen zu versenden');\nreturn [];"
+      },
+      "id": "no-appointments",
+      "name": "❌ Keine Termine - Ende",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "⏰ Alle 15 Minuten prüfen": {
+      "main": [
+        [
+          {
+            "node": "📋 Termine in nächster Stunde abfragen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Termine in nächster Stunde abfragen": {
+      "main": [
+        [
+          {
+            "node": "✅ Termine gefunden?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✅ Termine gefunden?": {
+      "main": [
+        [
+          {
+            "node": "📱 SMS Erinnerung senden",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "❌ Keine Termine - Ende",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📱 SMS Erinnerung senden": {
+      "main": [
+        [
+          {
+            "node": "✅ Als gesendet markieren",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📊 Aktivität protokollieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-01-02T10:00:00.000Z",
+      "updatedAt": "2025-01-02T10:00:00.000Z",
+      "id": "sms-reminder",
+      "name": "SMS Erinnerung"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-02T10:00:00.000Z",
+  "versionId": "1"
+}

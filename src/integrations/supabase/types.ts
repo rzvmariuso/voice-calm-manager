@@ -74,6 +74,7 @@ export type Database = {
           patient_id: string
           practice_id: string
           service: string
+          sms_reminder_sent: boolean | null
           status: string
           updated_at: string
         }
@@ -88,6 +89,7 @@ export type Database = {
           patient_id: string
           practice_id: string
           service: string
+          sms_reminder_sent?: boolean | null
           status?: string
           updated_at?: string
         }
@@ -102,6 +104,7 @@ export type Database = {
           patient_id?: string
           practice_id?: string
           service?: string
+          sms_reminder_sent?: boolean | null
           status?: string
           updated_at?: string
         }
