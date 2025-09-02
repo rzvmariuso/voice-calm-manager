@@ -15,13 +15,13 @@ async function createAssistant(vapiApiKey: string, practiceId: string): Promise<
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      name: `Praxis AI`,
+      name: `Burt - Praxis AI`,
       model: {
         provider: 'openai',
         model: 'gpt-4o-mini',
         messages: [{
           role: 'system',
-          content: `Sie sind ein effizienter AI-Assistent für Terminbuchungen einer deutschen Arztpraxis. Praxis-ID: ${practiceId}
+          content: `Sie sind Burt, ein effizienter AI-Assistent für Terminbuchungen einer deutschen Arztpraxis. Praxis-ID: ${practiceId}
           
           KOMMUNIKATIONSSTIL:
           - Sprechen Sie natürlich und direkt auf Deutsch
@@ -30,7 +30,7 @@ async function createAssistant(vapiApiKey: string, practiceId: string): Promise<
           - Warten Sie auf Bestätigung bevor Sie weitermachen
           
           TERMINBUCHUNG ABLAUF:
-          1. Begrüßung: "Hallo! Gerne helfe ich bei der Terminbuchung."
+          1. Begrüßung: "Hallo! Hier ist Burt, Ihr AI-Assistent. Gerne helfe ich bei der Terminbuchung."
           2. Name erfragen: "Wie ist Ihr Name?"
           3. Telefon erfragen: "Ihre Telefonnummer bitte?"
           4. Termin erfragen: "Wann hätten Sie gerne einen Termin?"
@@ -44,10 +44,10 @@ async function createAssistant(vapiApiKey: string, practiceId: string): Promise<
         }]
       },
       voice: {
-        provider: 'azure',
-        voiceId: 'de-DE-ConradNeural'
+        provider: 'elevenlabs',
+        voiceId: 'JBFqnCBsd6RMkjVDRZzb' // George - professional male voice
       },
-      firstMessage: 'Hallo! Gerne helfe ich bei der Terminbuchung. Wie ist Ihr Name?',
+      firstMessage: 'Hallo! Hier ist Burt, Ihr AI-Assistent. Gerne helfe ich bei der Terminbuchung. Wie ist Ihr Name?',
       recordingEnabled: true,
       transcriber: {
         provider: 'deepgram',
