@@ -135,18 +135,14 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
         appointment.appointment_date !== format(formData.appointment_date, 'yyyy-MM-dd') ||
         appointment.appointment_time !== formData.appointment_time
       ))) {
-        const { data: existingAppointment, error: checkError } = await supabase
+        const { data: existingAppointment } = await supabase
           .from('appointments')
           .select('id')
           .eq('practice_id', practice.id)
           .eq('patient_id', formData.patient_id)
           .eq('appointment_date', format(formData.appointment_date, 'yyyy-MM-dd'))
           .eq('appointment_time', formData.appointment_time)
-          .single();
-
-        if (checkError && checkError.code !== 'PGRST116') {
-          throw checkError;
-        }
+          .maybeSingle();
 
         if (existingAppointment) {
           toast({
