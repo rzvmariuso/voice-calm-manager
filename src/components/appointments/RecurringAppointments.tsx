@@ -154,12 +154,12 @@ export function RecurringAppointments() {
 
       if (patientsError) throw patientsError;
 
-      setRecurringAppointments((recurringData || []).map(item => ({
+      const appointmentsWithPatients = (recurringData || []).map(item => ({
         ...item,
-        patient: item.patient && typeof item.patient === 'object' && 'id' in item.patient 
-          ? item.patient as Patient 
-          : undefined
-      })) as RecurringAppointment[]);
+        patient: Array.isArray(item.patient) && item.patient.length > 0 ? item.patient[0] as Patient : undefined
+      }));
+
+      setRecurringAppointments(appointmentsWithPatients as RecurringAppointment[]);
       setPatients(patientsData || []);
     } catch (error) {
       console.error('Error loading data:', error);
