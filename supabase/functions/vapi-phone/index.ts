@@ -15,7 +15,7 @@ async function createAssistant(vapiApiKey: string, practiceId: string): Promise<
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      name: `Praxis Assistant ${practiceId}`,
+      name: `Praxis AI`,
       model: {
         provider: 'openai',
         model: 'gpt-4o-mini',
