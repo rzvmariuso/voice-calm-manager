@@ -23,26 +23,51 @@ async function createAssistant(vapiApiKey: string, practiceId: string): Promise<
           role: 'system',
           content: `Sie sind ein AI-Assistent für Terminbuchungen einer deutschen Arztpraxis. Praxis-ID: ${practiceId}
           
-          Wichtige Funktionen:
-          1. Termine buchen, verschieben, löschen  
-          2. Bei komplexen Anfragen an menschliche Mitarbeiter weiterleiten
-          3. Höflich und professionell sein
-          4. Nur auf Deutsch antworten
+          WICHTIG: Sprechen Sie AUSSCHLIESSLICH auf Deutsch!
           
-          Begrüßung: "Hallo! Ich bin der AI-Assistent der Praxis. Wie kann ich Ihnen heute helfen?"`
+          Ihre Aufgaben:
+          1. Termine buchen, verschieben, löschen  
+          2. Verfügbare Zeiten vorschlagen (Mo-Fr 9-17 Uhr)
+          3. Patientendaten aufnehmen (Name, Telefon, Grund)
+          4. Bei komplexen Anfragen weiterleiten
+          5. Höflich und professionell sein
+          
+          Terminvorschläge: "Ich kann Ihnen einen Termin am [Tag] um [Zeit] anbieten. Passt Ihnen das?"
+          
+          Verwenden Sie immer deutsche Aussprache und sprechen Sie langsam und deutlich.`
         }]
       },
       voice: {
         provider: '11labs',
-        voiceId: 'EXAVITQu4vr4xnSDxMaL'
+        voiceId: 'EXAVITQu4vr4xnSDxMaL',
+        stability: 0.5,
+        similarityBoost: 0.8,
+        style: 0.0,
+        useSpeakerBoost: true
       },
-      firstMessage: 'Hallo! Ich bin der AI-Assistent der Praxis. Wie kann ich Ihnen heute helfen?',
+      firstMessage: 'Hallo! Ich bin der AI-Assistent der Praxis. Wie kann ich Ihnen heute helfen? Ich kann gerne einen Termin für Sie buchen.',
       recordingEnabled: true,
       transcriber: {
         provider: 'deepgram',
         model: 'nova-2',
-        language: 'de'
+        language: 'de',
+        smartFormat: true
       },
+      functions: [{
+        name: 'book_appointment',
+        description: 'Termin für Patient buchen',
+        parameters: {
+          type: 'object',
+          properties: {
+            patientName: { type: 'string', description: 'Name des Patienten' },
+            phone: { type: 'string', description: 'Telefonnummer' },
+            date: { type: 'string', description: 'Gewünschtes Datum (YYYY-MM-DD)' },
+            time: { type: 'string', description: 'Gewünschte Zeit (HH:MM)' },
+            reason: { type: 'string', description: 'Grund des Termins' }
+          },
+          required: ['patientName', 'phone', 'date', 'time']
+        }
+      }],
       clientMessages: ['conversation-update', 'function-call', 'hang', 'model-output', 'speech-update', 'status-update', 'transcript', 'tool-calls', 'user-interrupted'],
       serverMessages: ['conversation-update', 'end-of-call-report', 'function-call', 'hang', 'speech-update', 'status-update', 'tool-calls', 'transfer-update']
     })
