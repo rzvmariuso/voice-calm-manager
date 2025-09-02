@@ -86,98 +86,61 @@ serve(async (req) => {
       throw new Error('Praxis nicht gefunden');
     }
 
-    // Get available appointments for the next 7 days
+    // Calculate next Wednesday
     const today = new Date();
-    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    
-    const { data: existingAppointments } = await supabase
-      .from('appointments')
-      .select('appointment_date, appointment_time')
-      .eq('practice_id', practiceId)
-      .gte('appointment_date', today.toISOString().split('T')[0])
-      .lte('appointment_date', nextWeek.toISOString().split('T')[0]);
+    const nextWednesday = new Date(today);
+    const daysUntilWednesday = (3 - today.getDay() + 7) % 7;
+    nextWednesday.setDate(today.getDate() + (daysUntilWednesday === 0 ? 7 : daysUntilWednesday));
+    const nextWednesdayStr = nextWednesday.toISOString().split('T')[0];
 
-    // Generate available time slots based on business hours
-    const generateAvailableSlots = (businessHours: any) => {
-      const slots = [];
-      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
-      
-      for (let i = 0; i < 7; i++) {
-        const date = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
-        const dayName = days[date.getDay() - 1]; // Adjust for Monday = 0
-        
-        if (dayName && businessHours[dayName] && !businessHours[dayName].closed) {
-          const openTime = businessHours[dayName].open;
-          const closeTime = businessHours[dayName].close;
-          
-          // Generate hourly slots
-          const [openHour] = openTime.split(':').map(Number);
-          const [closeHour] = closeTime.split(':').map(Number);
-          
-          for (let hour = openHour; hour < closeHour; hour++) {
-            const timeSlot = `${hour.toString().padStart(2, '0')}:00`;
-            const dateStr = date.toISOString().split('T')[0];
-            
-            // Check if slot is already booked
-            const isBooked = existingAppointments?.some(
-              apt => apt.appointment_date === dateStr && apt.appointment_time === timeSlot
-            );
-            
-            if (!isBooked) {
-              slots.push(`${dateStr} um ${timeSlot}`);
-            }
-          }
-        }
-      }
-      
-      return slots.slice(0, 10); // Limit to 10 slots
-    };
-
-    const availableSlots = generateAvailableSlots(practice.business_hours);
+    // Calculate tomorrow
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
     // Prepare AI prompt with context
-    const systemPrompt = `Sie sind ein AI-System zur Analyse von Telefongesprächs-Transkripten einer deutschen Arztpraxis und Terminbuchung.
+    const systemPrompt = `Sie sind ein AI-System zur Terminbuchungs-Extraktion aus deutschen Telefongesprächs-Transkripten.
 
-KONTEXT:
-- Praxisname: ${practice.name}
-- Adresse: ${practice.address || 'Nicht angegeben'}
-- Telefon: ${practice.phone || 'Nicht angegeben'}
-- Verfügbare Termine: ${availableSlots.join(', ') || 'Aktuell keine freien Termine'}
+AUFGABE: Extrahieren Sie Terminbuchungen aus dem Transkript.
 
-AUFGABE:
-Analysieren Sie das Telefongesprächs-Transkript und extrahieren Sie Terminbuchungsdetails.
-Falls ein Termin während des Gesprächs bestätigt wurde, erstellen Sie eine Buchung.
+REGEL: Falls der AI-Assistent im Gespräch eine der folgenden Phrasen verwendet hat:
+- "erfolgreich gebucht" 
+- "Termin wurde gebucht"
+- "Terminbuchung wird durchgeführt"
+- "Ihr Termin wurde erfolgreich gebucht"
+- "Termin ist gebucht"
 
-WICHTIG: Analysieren Sie das komplette Gespräch um herauszufinden:
-1. Hat der Patient einen Termin gewünscht?
-2. Hat der AI-Assistent "erfolgreich gebucht" oder ähnliches gesagt?
-3. Wurden Name, Telefon und Terminwunsch erwähnt?
+→ Dann MÜSSEN Sie eine Buchung erstellen, auch wenn Daten unvollständig sind!
 
-Falls der AI-Assistent eine Buchung bestätigt hat ("erfolgreich gebucht", "Termin ist gebucht"), dann erstellen Sie eine Buchung:
-
+BUCHUNGS-FORMAT (JSON):
 {
-  "response": "Termin wurde erfolgreich aus dem Gespräch extrahiert und gebucht",
+  "response": "Termin aus Gespräch extrahiert",
   "booking": {
     "patient_name": "Name aus Gespräch (auch nur Vorname OK)",
-    "patient_phone": "Telefonnummer aus Gespräch (bereinigt)", 
-    "service": "Art der Behandlung aus Gespräch oder 'Allgemeine Behandlung'",
-    "preferred_date": "YYYY-MM-DD (berechnet aus Angaben wie 'morgen'=${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}, 'nächste Mittwoch'=nächster Mittwoch)",
-    "preferred_time": "HH:MM (aus Zeitangaben wie '13 Uhr 30' → '13:30')",
+    "patient_phone": "Bereinigtes Telefon (+4917663098540)", 
+    "service": "Massage oder 'Behandlung'",
+    "preferred_date": "${nextWednesdayStr} (für 'nächster Mittwoch') oder ${tomorrowStr} (für 'morgen')",
+    "preferred_time": "15:30 (aus '15 Uhr 30')",
     "confirmed": true
   }
 }
 
-Für gescheiterte oder unvollständige Gespräche:
+KEINE BUCHUNG nur wenn AI NICHT "gebucht" gesagt hat:
 {
-  "response": "Gespräch analysiert - keine vollständige Terminbuchung"
+  "response": "Keine Buchungsbestätigung vom AI-Assistenten"
 }
 
-BEISPIEL-ANALYSE:
-Wenn im Transkript steht: "User: Mein Name ist Gino Pombino. Telefon 01766304040. Termin morgen 15 Uhr für Massage" 
-und AI antwortete: "Ihr Termin ist gebucht"
-→ Dann erstellen Sie eine Buchung für Gino Pombino, +49176630404, morgen 15:00, Massage
+TELEFONNUMMER BEREINIGEN:
+"0 1 7 6 6 3 0 9 8 5 4 0" → "+4917663098540"
 
-Bereinigen Sie Telefonnummern: "0 1 7 6 6 3 0 4 0 4 0" → "01766304040"`;
+DATUM BERECHNEN:
+- "morgen" = ${tomorrowStr}
+- "nächster Mittwoch" = ${nextWednesdayStr}
+- "Mittwoch" = ${nextWednesdayStr}
+
+ZEIT KONVERTIEREN:
+- "15 Uhr 30" → "15:30"
+- "13 Uhr" → "13:00"`;
 
     // Call OpenAI API
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -204,11 +167,10 @@ Bereinigen Sie Telefonnummern: "0 1 7 6 6 3 0 4 0 4 0" → "01766304040"`;
 
     const aiResult = await openAIResponse.json();
     const aiResponse = aiResult.choices[0].message.content;
+    console.log('AI Response:', aiResponse);
 
     // Try to parse as JSON for different actions
     let bookingData = null;
-    let modifyData = null;
-    let transferData = null;
     let responseText = aiResponse;
     
     try {
@@ -216,84 +178,11 @@ Bereinigen Sie Telefonnummern: "0 1 7 6 6 3 0 4 0 4 0" → "01766304040"`;
       if (parsed.booking && parsed.booking.confirmed) {
         bookingData = parsed.booking;
         responseText = parsed.response;
-      } else if (parsed.modify_appointment) {
-        modifyData = parsed.modify_appointment;
-        responseText = parsed.response;
-      } else if (parsed.transfer_human) {
-        transferData = parsed.transfer_human;
-        responseText = parsed.response;
+        console.log('Booking data extracted:', bookingData);
       }
     } catch {
       // Not JSON, treat as regular response
-    }
-
-    // Handle appointment modification
-    let modificationResult = null;
-    if (modifyData) {
-      // Find existing appointment by phone number
-      const { data: existingPatient } = await supabase
-        .from('patients')
-        .select('id')
-        .eq('practice_id', practiceId)
-        .eq('phone', modifyData.patient_phone)
-        .maybeSingle();
-
-      if (existingPatient) {
-        if (modifyData.action === 'cancel') {
-          // Cancel appointment
-          const { error: cancelError } = await supabase
-            .from('appointments')
-            .update({ 
-              status: 'cancelled',
-              notes: `Terminabsage: ${modifyData.reason || 'Auf Patientenwunsch'}`
-            })
-            .eq('practice_id', practiceId)
-            .eq('patient_id', existingPatient.id)
-            .eq('status', 'pending')
-            .gte('appointment_date', new Date().toISOString().split('T')[0]);
-
-          if (!cancelError) {
-            modificationResult = 'cancelled';
-          }
-        } else if (modifyData.action === 'reschedule' && modifyData.new_date && modifyData.new_time) {
-          // Reschedule appointment
-          const { error: rescheduleError } = await supabase
-            .from('appointments')
-            .update({ 
-              appointment_date: modifyData.new_date,
-              appointment_time: modifyData.new_time,
-              notes: `Terminverschiebung: ${modifyData.reason || 'Auf Patientenwunsch'}`
-            })
-            .eq('practice_id', practiceId)
-            .eq('patient_id', existingPatient.id)
-            .eq('status', 'pending')
-            .gte('appointment_date', new Date().toISOString().split('T')[0]);
-
-          if (!rescheduleError) {
-            modificationResult = 'rescheduled';
-          }
-        }
-      }
-    }
-
-    // Handle human transfer request
-    let transferResult = null;
-    if (transferData) {
-      // Create data request for human follow-up
-      const { data: dataRequest, error: transferError } = await supabase
-        .from('data_requests')
-        .insert({
-          practice_id: practiceId,
-          request_type: 'human_transfer',
-          requested_by_email: transferData.patient_phone,
-          notes: `Patient möchte persönlich sprechen. Grund: ${transferData.reason}. Priorität: ${transferData.priority}. ${transferData.patient_name ? `Name: ${transferData.patient_name}` : ''}`
-        })
-        .select('id')
-        .single();
-
-      if (!transferError) {
-        transferResult = dataRequest.id;
-      }
+      console.log('Failed to parse JSON, treating as regular response');
     }
 
     // If booking confirmed, create appointment
@@ -304,17 +193,21 @@ Bereinigen Sie Telefonnummern: "0 1 7 6 6 3 0 4 0 4 0" → "01766304040"`;
       // First, create or find patient
       const names = bookingData.patient_name.split(' ');
       const firstName = names[0];
-      const lastName = names.slice(1).join(' ') || firstName;
+      const lastName = names.slice(1).join(' ') || 'Patient';
 
       // Clean phone number
-      let cleanPhone = bookingData.patient_phone.replace(/\s+/g, '').replace(/\D/g, '');
-      if (cleanPhone.startsWith('49')) {
-        cleanPhone = '+' + cleanPhone;
-      } else if (cleanPhone.startsWith('0')) {
-        cleanPhone = '+49' + cleanPhone.substring(1);
-      } else if (!cleanPhone.startsWith('+')) {
-        cleanPhone = '+49' + cleanPhone;
+      let cleanPhone = bookingData.patient_phone.replace(/\s+/g, '').replace(/[^\d+]/g, '');
+      if (!cleanPhone.startsWith('+')) {
+        if (cleanPhone.startsWith('49')) {
+          cleanPhone = '+' + cleanPhone;
+        } else if (cleanPhone.startsWith('0')) {
+          cleanPhone = '+49' + cleanPhone.substring(1);
+        } else {
+          cleanPhone = '+49' + cleanPhone;
+        }
       }
+
+      console.log('Clean phone:', cleanPhone);
 
       const { data: existingPatient } = await supabase
         .from('patients')
@@ -345,6 +238,7 @@ Bereinigen Sie Telefonnummern: "0 1 7 6 6 3 0 4 0 4 0" → "01766304040"`;
         }
 
         patientId = newPatient.id;
+        console.log('Created new patient:', patientId);
       }
 
       // Create appointment
@@ -373,9 +267,7 @@ Bereinigen Sie Telefonnummern: "0 1 7 6 6 3 0 4 0 4 0" → "01766304040"`;
     }
 
     // Log the AI call with appropriate outcome
-    const outcome = bookingData ? 'appointment_booked' : 
-                   modifyData ? `appointment_${modificationResult || 'modification_attempted'}` :
-                   transferData ? 'transferred_to_human' : 'information_provided';
+    const outcome = bookingData ? 'appointment_booked' : 'information_provided';
 
     await supabase
       .from('ai_call_logs')
@@ -383,7 +275,7 @@ Bereinigen Sie Telefonnummern: "0 1 7 6 6 3 0 4 0 4 0" → "01766304040"`;
         practice_id: practiceId,
         caller_phone: callerPhone,
         outcome,
-        transcript: `Input: ${message}\nAI Response: ${responseText}`,
+        transcript: `Input: ${message.substring(0, 1000)}...\nAI Response: ${responseText}`,
         appointment_id: appointmentId
       });
 
@@ -392,11 +284,7 @@ Bereinigen Sie Telefonnummern: "0 1 7 6 6 3 0 4 0 4 0" → "01766304040"`;
         response: responseText,
         booking_confirmed: !!bookingData,
         appointment_id: appointmentId,
-        modification_result: modificationResult,
-        transfer_request_id: transferResult,
-        action_type: bookingData ? 'booking' : 
-                    modifyData ? 'modification' : 
-                    transferData ? 'transfer' : 'information'
+        action_type: bookingData ? 'booking' : 'information'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
