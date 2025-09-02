@@ -20,7 +20,38 @@ serve(async (req) => {
   }
 
   try {
-    const { practiceId, message, callerPhone }: BookingRequest = await req.json();
+    // Handle Vapi webhook format
+    const requestBody = await req.json();
+    console.log('Received webhook:', JSON.stringify(requestBody, null, 2));
+    
+    // Extract data from Vapi webhook format
+    let practiceId: string;
+    let message: string;
+    let callerPhone: string | undefined;
+    
+    // Vapi webhook formats
+    if (requestBody.message && requestBody.message.type) {
+      // Vapi function call format
+      const { message: vapiMessage, call } = requestBody;
+      
+      practiceId = call?.assistant?.metadata?.practiceId || 
+                  call?.metadata?.practiceId || 
+                  '8b4d340f-075e-494b-86d3-65742a33c07c'; // fallback to your practice ID
+                  
+      message = vapiMessage.content || vapiMessage.text || JSON.stringify(vapiMessage);
+      callerPhone = call?.customer?.number || call?.phoneNumber;
+      
+    } else if (requestBody.practiceId) {
+      // Legacy direct format
+      ({ practiceId, message, callerPhone } = requestBody as BookingRequest);
+    } else {
+      // Try to extract from any format
+      practiceId = requestBody.practiceId || '8b4d340f-075e-494b-86d3-65742a33c07c';
+      message = requestBody.message || JSON.stringify(requestBody);
+      callerPhone = requestBody.callerPhone || requestBody.phoneNumber;
+    }
+    
+    console.log('Extracted data:', { practiceId, message, callerPhone });
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
