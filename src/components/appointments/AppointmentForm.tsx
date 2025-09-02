@@ -55,7 +55,7 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
   const [loading, setLoading] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [formData, setFormData] = useState({
-    patient_id: appointment?.patient_id || "",
+    patient_id: appointment?.patient_id || appointment?.patient?.id || "",
     appointment_date: appointment?.appointment_date ? new Date(appointment.appointment_date) : new Date(),
     appointment_time: appointment?.appointment_time || "",
     service: appointment?.service || "",
@@ -63,6 +63,21 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
     notes: appointment?.notes || "",
     status: appointment?.status || "pending"
   });
+
+  // Update form data when appointment changes
+  useEffect(() => {
+    if (appointment) {
+      setFormData({
+        patient_id: appointment.patient_id || appointment.patient?.id || "",
+        appointment_date: appointment.appointment_date ? new Date(appointment.appointment_date) : new Date(),
+        appointment_time: appointment.appointment_time || "",
+        service: appointment.service || "",
+        duration_minutes: appointment.duration_minutes || 30,
+        notes: appointment.notes || "",
+        status: appointment.status || "pending"
+      });
+    }
+  }, [appointment]);
 
   useEffect(() => {
     if (practice) {
