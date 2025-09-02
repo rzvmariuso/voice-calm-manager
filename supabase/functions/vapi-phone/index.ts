@@ -44,8 +44,8 @@ async function createAssistant(vapiApiKey: string, practiceId: string): Promise<
         }]
       },
       voice: {
-        provider: '11labs',
-        voiceId: '9BWtsMINqrJLrRacOk9x' // Aria - professional female voice
+        provider: 'vapi',
+        voiceId: 'jennifer' // Vapi's female voice
       },
       firstMessage: 'Hallo! Hier ist Burt, Ihr AI-Assistent. Gerne helfe ich bei der Terminbuchung. Wie ist Ihr Name?',
       recordingEnabled: true,
