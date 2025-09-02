@@ -77,6 +77,39 @@ export const VapiInterface: React.FC<VapiInterfaceProps> = ({ onCallStatusChange
     }
   };
 
+  const setupInboundCalls = async (phoneNumberId: string) => {
+    if (!practice) return;
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('vapi-phone', {
+        body: { 
+          action: 'setup_inbound',
+          practiceId: practice.id,
+          phoneNumber: phoneNumberId
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Inbound Calls konfiguriert!",
+          description: "Du kannst jetzt die Nummer anrufen!",
+        });
+      }
+    } catch (error) {
+      console.error('Error setting up inbound calls:', error);
+      toast({
+        title: "Fehler",
+        description: "Inbound-Setup fehlgeschlagen",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const createTestCall = async (phoneNumberId: string) => {
     if (!practice) return;
 
@@ -218,14 +251,26 @@ export const VapiInterface: React.FC<VapiInterfaceProps> = ({ onCallStatusChange
                     </div>
                   </div>
                   
-                  <Button
-                    onClick={() => createTestCall(phoneNumber.id)}
-                    disabled={isLoading || !!activeCall}
-                    size="sm"
-                    variant="outline"
-                  >
-                    Test-Anruf
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setupInboundCalls(phoneNumber.id)}
+                      disabled={isLoading}
+                      size="sm"
+                      className="flex items-center gap-1"
+                    >
+                      <Settings className="h-3 w-3" />
+                      Setup Eingehend
+                    </Button>
+                    
+                    <Button
+                      onClick={() => createTestCall(phoneNumber.id)}
+                      disabled={isLoading || !!activeCall}
+                      size="sm"
+                      variant="outline"
+                    >
+                      Test-Anruf
+                    </Button>
+                  </div>
                 </div>
               ))}
               

@@ -89,6 +89,43 @@ serve(async (req) => {
         }
       );
 
+    } else if (action === 'setup_inbound') {
+      // Create assistant and link to phone number for inbound calls
+      const assistantId = await createAssistant(vapiApiKey, practiceId);
+      
+      // Update phone number to use this assistant for inbound calls
+      const response = await fetch(`https://api.vapi.ai/phone-number/${phoneNumber}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${vapiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          assistantId: assistantId
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Phone number update error:', error);
+        throw new Error(`Failed to setup inbound calls: ${error.message}`);
+      }
+
+      const result = await response.json();
+      console.log('Phone number configured for inbound calls:', result);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          assistantId: assistantId,
+          phoneNumber: result,
+          message: 'Inbound calls konfiguriert! Du kannst jetzt anrufen.'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+
     } else if (action === 'create_call') {
       // Use provided assistantId or create new one
       const callAssistantId = assistantId || await createAssistant(vapiApiKey, practiceId);
