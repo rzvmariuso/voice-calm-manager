@@ -6,6 +6,8 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { StatsCard } from "@/components/dashboard/StatsCard"
 import { RecentAppointments } from "@/components/dashboard/RecentAppointments"
+import { AppointmentDialog } from "@/components/appointments/AppointmentDialog"
+import { PatientDialog } from "@/components/patients/PatientDialog"
 import { Calendar, Users, Bot, TrendingUp, Phone, Clock, LogOut, Crown, Zap } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -25,6 +27,8 @@ export default function Index() {
     aiBookings: 0,
     totalPatients: 0
   });
+  const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
+  const [showPatientDialog, setShowPatientDialog] = useState(false);
 
   useEffect(() => {
     if (!practice) return;
@@ -135,24 +139,32 @@ export default function Index() {
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in">
             <div className="animate-scale-in" style={{ animationDelay: '0.1s' }}>
-              <StatsCard
-                title="Termine heute"
-                value={stats.todayAppointments}
-                change={stats.todayAppointments > 0 ? "Heute geplant" : "Keine Termine heute"}
-                changeType={stats.todayAppointments > 0 ? "positive" : "neutral"}
-                icon={Calendar}
-                description={stats.todayAppointments > 0 ? "Anstehende Termine" : ""}
-              />
+              <Link to="/calendar">
+                <div className="cursor-pointer hover:scale-105 transition-transform duration-200">
+                  <StatsCard
+                    title="Termine heute"
+                    value={stats.todayAppointments}
+                    change={stats.todayAppointments > 0 ? "Heute geplant" : "Keine Termine heute"}
+                    changeType={stats.todayAppointments > 0 ? "positive" : "neutral"}
+                    icon={Calendar}
+                    description={stats.todayAppointments > 0 ? "Anstehende Termine" : ""}
+                  />
+                </div>
+              </Link>
             </div>
             <div className="animate-scale-in" style={{ animationDelay: '0.2s' }}>
-              <StatsCard
-                title="Gesamte Termine"
-                value={stats.totalAppointments}
-                change="Alle Termine"
-                changeType="neutral"
-                icon={TrendingUp}
-                description="Buchungen insgesamt"
-              />
+              <Link to="/calendar">
+                <div className="cursor-pointer hover:scale-105 transition-transform duration-200">
+                  <StatsCard
+                    title="Gesamte Termine"
+                    value={stats.totalAppointments}
+                    change="Alle Termine"
+                    changeType="neutral"
+                    icon={TrendingUp}
+                    description="Buchungen insgesamt"
+                  />
+                </div>
+              </Link>
             </div>
             <div className="animate-scale-in" style={{ animationDelay: '0.3s' }}>
               <StatsCard
@@ -318,24 +330,47 @@ export default function Index() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <Button variant="outline" className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 hover:scale-105 transition-all duration-200">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 hover:scale-105 transition-all duration-200"
+                      onClick={() => setShowAppointmentDialog(true)}
+                    >
                       <Calendar className="w-4 h-4 mr-2" />
                       Neuer Termin
                     </Button>
-                    <Button variant="outline" className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 hover:scale-105 transition-all duration-200">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 hover:scale-105 transition-all duration-200"
+                      onClick={() => setShowPatientDialog(true)}
+                    >
                       <Users className="w-4 h-4 mr-2" />
                       Patient hinzufügen
                     </Button>
-                    <Button variant="outline" className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 hover:scale-105 transition-all duration-200">
-                      <TrendingUp className="w-4 h-4 mr-2" />
-                      Berichte anzeigen
-                    </Button>
+                    <Link to="/analytics">
+                      <Button variant="outline" className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 hover:scale-105 transition-all duration-200">
+                        <TrendingUp className="w-4 h-4 mr-2" />
+                        Berichte anzeigen
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
             </div>
           </div>
         </main>
+        
+        {/* Dialogs */}
+        <AppointmentDialog
+          open={showAppointmentDialog}
+          onOpenChange={setShowAppointmentDialog}
+          onSuccess={() => window.location.reload()}
+        />
+        
+        <PatientDialog
+          open={showPatientDialog}
+          onOpenChange={setShowPatientDialog}
+          onSuccess={() => window.location.reload()}
+        />
       </div>
     </SidebarProvider>
   );

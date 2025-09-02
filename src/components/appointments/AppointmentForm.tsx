@@ -114,6 +114,35 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
     try {
       setLoading(true);
 
+      // Check for duplicate appointments (same patient, date, and time)
+      if (!isEditing || (isEditing && appointment && (
+        appointment.patient_id !== formData.patient_id ||
+        appointment.appointment_date !== format(formData.appointment_date, 'yyyy-MM-dd') ||
+        appointment.appointment_time !== formData.appointment_time
+      ))) {
+        const { data: existingAppointment, error: checkError } = await supabase
+          .from('appointments')
+          .select('id')
+          .eq('practice_id', practice.id)
+          .eq('patient_id', formData.patient_id)
+          .eq('appointment_date', format(formData.appointment_date, 'yyyy-MM-dd'))
+          .eq('appointment_time', formData.appointment_time)
+          .single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          throw checkError;
+        }
+
+        if (existingAppointment) {
+          toast({
+            title: "Termin bereits vorhanden",
+            description: "Für diesen Patienten existiert bereits ein Termin zu diesem Zeitpunkt.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       const appointmentData = {
         practice_id: practice.id,
         patient_id: formData.patient_id,

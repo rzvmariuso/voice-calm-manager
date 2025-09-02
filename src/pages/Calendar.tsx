@@ -4,14 +4,26 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Bot, Clock } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Bot, Clock, Edit, Trash2 } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
+import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, isSameMonth } from "date-fns";
 import { de } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useAppointmentWebhook } from "@/hooks/useAppointmentWebhook";
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { appointments, isLoading } = useAppointments();
+  const { appointments, isLoading, refetch } = useAppointments();
+  const { toast } = useToast();
+  const { triggerWebhook } = useAppointmentWebhook();
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [appointmentToDelete, setAppointmentToDelete] = useState<any>(null);
   
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -36,6 +48,63 @@ export default function Calendar() {
     const newDate = new Date(currentDate);
     newDate.setMonth(currentDate.getMonth() + (direction === 'next' ? 1 : -1));
     setCurrentDate(newDate);
+  };
+
+  const handleEditAppointment = (appointment: any) => {
+    setSelectedAppointment(appointment);
+    setIsEditing(true);
+    setShowAppointmentDialog(true);
+  };
+
+  const handleDeleteAppointment = (appointment: any) => {
+    setAppointmentToDelete(appointment);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!appointmentToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('id', appointmentToDelete.id);
+
+      if (error) throw error;
+
+      // Trigger webhook for cancellation
+      await triggerWebhook('cancelled', appointmentToDelete.id, appointmentToDelete, appointmentToDelete.patient);
+
+      toast({
+        title: "Termin gelöscht",
+        description: "Der Termin wurde erfolgreich gelöscht.",
+      });
+
+      refetch();
+    } catch (error: any) {
+      console.error('Error deleting appointment:', error);
+      toast({
+        title: "Fehler",
+        description: "Termin konnte nicht gelöscht werden",
+        variant: "destructive",
+      });
+    } finally {
+      setShowDeleteDialog(false);
+      setAppointmentToDelete(null);
+    }
+  };
+
+  const handleNewAppointment = () => {
+    setSelectedAppointment(null);
+    setIsEditing(false);
+    setShowAppointmentDialog(true);
+  };
+
+  const handleAppointmentSuccess = () => {
+    setShowAppointmentDialog(false);
+    setSelectedAppointment(null);
+    setIsEditing(false);
+    refetch();
   };
 
   const weekDays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
@@ -75,7 +144,7 @@ export default function Calendar() {
                 </p>
               </div>
             </div>
-            <Button className="bg-gradient-primary text-white shadow-glow">
+            <Button className="bg-gradient-primary text-white shadow-glow" onClick={handleNewAppointment}>
               <Plus className="w-4 h-4 mr-2" />
               Neuer Termin
             </Button>
@@ -153,12 +222,12 @@ export default function Calendar() {
                               <div 
                                 key={i}
                                 className={`
-                                  text-xs p-1 rounded text-white cursor-pointer truncate
+                                  relative group text-xs p-2 rounded text-white cursor-pointer truncate transition-all duration-200
                                   ${appointment.ai_booked 
-                                    ? 'bg-gradient-primary shadow-sm' 
+                                    ? 'bg-gradient-primary shadow-sm hover:shadow-lg' 
                                     : appointment.status === 'confirmed' 
-                                      ? 'bg-success' 
-                                      : 'bg-warning'
+                                      ? 'bg-success hover:bg-success/80' 
+                                      : 'bg-warning hover:bg-warning/80'
                                   }
                                 `}
                                 title={`${appointment.appointment_time} - ${appointment.patient.first_name} ${appointment.patient.last_name} (${appointment.service})`}
@@ -170,6 +239,32 @@ export default function Calendar() {
                                 </div>
                                 <div className="truncate">
                                   {appointment.patient.first_name} {appointment.patient.last_name}
+                                </div>
+                                
+                                {/* Action buttons - appear on hover */}
+                                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-4 w-4 p-0 text-white hover:bg-white/20"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditAppointment(appointment);
+                                    }}
+                                  >
+                                    <Edit className="h-2 w-2" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-4 w-4 p-0 text-white hover:bg-red-500/50"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteAppointment(appointment);
+                                    }}
+                                  >
+                                    <Trash2 className="h-2 w-2" />
+                                  </Button>
                                 </div>
                               </div>
                             ))}
@@ -304,6 +399,43 @@ export default function Calendar() {
             </div>
           </div>
         </main>
+        
+        {/* Appointment Dialog */}
+        <AppointmentDialog
+          open={showAppointmentDialog}
+          onOpenChange={setShowAppointmentDialog}
+          appointment={selectedAppointment}
+          isEditing={isEditing}
+          onSuccess={handleAppointmentSuccess}
+        />
+        
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Termin löschen?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Möchten Sie den Termin wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+                {appointmentToDelete && (
+                  <div className="mt-2 p-3 bg-muted rounded-lg">
+                    <p className="font-medium">{appointmentToDelete.patient.first_name} {appointmentToDelete.patient.last_name}</p>
+                    <p className="text-sm text-muted-foreground">{format(new Date(appointmentToDelete.appointment_date), 'dd.MM.yyyy', { locale: de })} um {appointmentToDelete.appointment_time}</p>
+                    <p className="text-sm text-muted-foreground">{appointmentToDelete.service}</p>
+                  </div>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Löschen
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </SidebarProvider>
   );
