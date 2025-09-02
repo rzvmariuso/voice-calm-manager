@@ -56,6 +56,43 @@ serve(async (req) => {
               provider: '11labs',
               voiceId: 'EXAVITQu4vr4xnSDxMaL'
             },
+            tools: [{
+              type: 'function',
+              function: {
+                name: 'book_appointment',
+                description: 'Termine buchen, verschieben oder löschen',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    message: { type: 'string', description: 'Patient message' },
+                    practiceId: { type: 'string', description: 'Practice ID' }
+                  },
+                  required: ['message', 'practiceId']
+                }
+              },
+              server: {
+                url: 'https://jdbprivzprvpfoxrfyjy.supabase.co/functions/v1/ai-booking',
+                secret: 'appointment-booking'
+              }
+            }, {
+              type: 'function',
+              function: {
+                name: 'transfer_to_human',
+                description: 'Transfer call to human agent',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    reason: { type: 'string', description: 'Reason for transfer' },
+                    priority: { type: 'string', enum: ['normal', 'urgent'] }
+                  },
+                  required: ['reason']
+                }
+              },
+              server: {
+                url: 'https://jdbprivzprvpfoxrfyjy.supabase.co/functions/v1/transfer-call',
+                secret: 'human-transfer'
+              }
+            }],
             firstMessage: 'Hallo! Ich bin der AI-Assistent der Praxis. Wie kann ich Ihnen heute helfen?',
             recordingEnabled: true,
             transcriber: {
