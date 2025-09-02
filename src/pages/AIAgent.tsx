@@ -19,7 +19,8 @@ import {
   PhoneCall,
   Clock,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Users
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
@@ -307,7 +308,7 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* AI Configuration */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2">
               <Card className="shadow-soft">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
