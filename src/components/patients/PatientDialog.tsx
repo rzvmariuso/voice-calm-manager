@@ -33,11 +33,20 @@ export function PatientDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-3xl max-h-[90vh] overflow-y-auto animate-scale-in"
+        aria-describedby="patient-dialog-description"
+      >
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Patient bearbeiten" : "Neuer Patient"}
           </DialogTitle>
+          <div id="patient-dialog-description" className="sr-only">
+            {isEditing 
+              ? "Bearbeiten Sie die Informationen des ausgewählten Patienten" 
+              : "Erstellen Sie einen neuen Patienteneintrag mit allen erforderlichen Daten"
+            }
+          </div>
         </DialogHeader>
         <PatientForm
           patient={patient}

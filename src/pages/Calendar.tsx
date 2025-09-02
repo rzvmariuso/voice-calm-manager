@@ -5,10 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Bot, Clock, Edit, Trash2 } from "lucide-react";
+import { Clock, User, Calendar as CalendarIcon } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isToday, isSameMonth } from "date-fns";
+import { CalendarHeader } from "@/components/calendar/CalendarHeader";
+import { MonthView } from "@/components/calendar/MonthView";
+import { WeekView } from "@/components/calendar/WeekView";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, startOfWeek, endOfWeek } from "date-fns";
 import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -16,35 +19,86 @@ import { useAppointmentWebhook } from "@/hooks/useAppointmentWebhook";
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const { appointments, isLoading, refetch } = useAppointments();
   const { toast } = useToast();
   const { triggerWebhook } = useAppointmentWebhook();
+  
+  // Dialog states
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<any>(null);
-  
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
-  
-// Pad calendar to show full weeks (Monday start)
-const startDay = startOfWeek(monthStart, { weekStartsOn: 1 });
-const endDay = endOfWeek(monthEnd, { weekStartsOn: 1 });
 
-const calendarDays = eachDayOfInterval({ start: startDay, end: endDay });
-  
-  const getAppointmentsForDay = (date: Date) => {
-    return appointments.filter(appointment => 
-      isSameDay(new Date(`${appointment.appointment_date}T00:00:00`), date)
-    );
+  // Filter states
+  const [filters, setFilters] = useState({
+    status: 'all',
+    service: 'all',
+    aiOnly: false,
+    searchTerm: ''
+  });
+
+  // Filter appointments based on current filters
+  const filteredAppointments = appointments.filter(appointment => {
+    // Status filter
+    if (filters.status !== 'all' && appointment.status !== filters.status) {
+      return false;
+    }
+
+    // Service filter
+    if (filters.service !== 'all' && appointment.service !== filters.service) {
+      return false;
+    }
+
+    // AI only filter
+    if (filters.aiOnly && !appointment.ai_booked) {
+      return false;
+    }
+
+    // Search term filter
+    if (filters.searchTerm) {
+      const searchLower = filters.searchTerm.toLowerCase();
+      const patientName = `${appointment.patient.first_name} ${appointment.patient.last_name}`.toLowerCase();
+      const service = appointment.service.toLowerCase();
+      const notes = (appointment.notes || '').toLowerCase();
+      
+      if (!patientName.includes(searchLower) && 
+          !service.includes(searchLower) && 
+          !notes.includes(searchLower)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Calculate stats for display
+  const appointmentStats = {
+    total: filteredAppointments.length,
+    aiBookings: filteredAppointments.filter(a => a.ai_booked).length,
+    thisWeek: (() => {
+      const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
+      return filteredAppointments.filter(appointment => {
+        const appointmentDate = new Date(`${appointment.appointment_date}T00:00:00`);
+        return appointmentDate >= weekStart && appointmentDate <= weekEnd;
+      }).length;
+    })()
   };
-  
-  const navigateMonth = (direction: 'prev' | 'next') => {
+
+  const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
-    newDate.setMonth(currentDate.getMonth() + (direction === 'next' ? 1 : -1));
+    if (viewMode === 'month') {
+      newDate.setMonth(currentDate.getMonth() + (direction === 'next' ? 1 : -1));
+    } else {
+      newDate.setDate(currentDate.getDate() + (direction === 'next' ? 7 : -7));
+    }
     setCurrentDate(newDate);
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date());
   };
 
   const handleEditAppointment = (appointment: any) => {
@@ -91,8 +145,8 @@ const calendarDays = eachDayOfInterval({ start: startDay, end: endDay });
     }
   };
 
-  const handleNewAppointment = () => {
-    setSelectedAppointment(null);
+  const handleNewAppointment = (selectedDate?: Date) => {
+    setSelectedAppointment(selectedDate ? { appointment_date: format(selectedDate, 'yyyy-MM-dd') } : null);
     setIsEditing(false);
     setShowAppointmentDialog(true);
   };
@@ -104,7 +158,44 @@ const calendarDays = eachDayOfInterval({ start: startDay, end: endDay });
     refetch();
   };
 
-  const weekDays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+  const handleDayClick = (date: Date) => {
+    if (isSameDay(date, currentDate)) {
+      handleNewAppointment(date);
+    } else {
+      setCurrentDate(date);
+    }
+  };
+
+  const handleAppointmentDrop = async (appointmentId: string, newDate: string) => {
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ appointment_date: newDate })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Termin verschoben",
+        description: `Der Termin wurde erfolgreich auf den ${format(new Date(newDate), 'dd.MM.yyyy', { locale: de })} verschoben.`,
+      });
+
+      refetch();
+    } catch (error) {
+      console.error('Error moving appointment:', error);
+      toast({
+        title: "Fehler",
+        description: "Termin konnte nicht verschoben werden",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getTodaysAppointments = () => {
+    return filteredAppointments.filter(appointment => 
+      isSameDay(new Date(`${appointment.appointment_date}T00:00:00`), new Date())
+    ).sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
+  };
 
   if (isLoading) {
     return (
@@ -113,7 +204,7 @@ const calendarDays = eachDayOfInterval({ start: startDay, end: endDay });
           <AppSidebar />
           <main className="flex-1 p-6 bg-background">
             <div className="flex items-center justify-center h-64">
-              <div className="text-center">
+              <div className="text-center animate-fade-in">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
                 <p className="text-muted-foreground">Lade Kalender...</p>
               </div>
@@ -128,271 +219,188 @@ const calendarDays = eachDayOfInterval({ start: startDay, end: endDay });
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
-        <main className="flex-1 p-6 bg-background">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger />
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-                  Kalender
-                </h1>
-                <p className="text-muted-foreground">
-                  Monatsübersicht aller Termine
-                </p>
-              </div>
-            </div>
-            <Button className="bg-gradient-primary text-white shadow-glow" onClick={handleNewAppointment}>
-              <Plus className="w-4 h-4 mr-2" />
-              Neuer Termin
-            </Button>
+        <main className="flex-1 p-3 sm:p-6 bg-background">
+          <div className="flex items-center mb-6">
+            <SidebarTrigger className="mr-4" />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Calendar */}
-            <div className="lg:col-span-3">
-              <Card className="shadow-soft">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
+          <div className="space-y-6">
+            {/* Header with filters and navigation */}
+            <CalendarHeader
+              currentDate={currentDate}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              onNavigate={navigateDate}
+              onToday={handleToday}
+              onNewAppointment={() => handleNewAppointment()}
+              filters={filters}
+              onFiltersChange={setFilters}
+              appointmentStats={appointmentStats}
+            />
+
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+              {/* Main Calendar */}
+              <div className="xl:col-span-3">
+                {viewMode === 'month' ? (
+                  <MonthView
+                    currentDate={currentDate}
+                    appointments={filteredAppointments}
+                    onEditAppointment={handleEditAppointment}
+                    onDeleteAppointment={handleDeleteAppointment}
+                    onDayClick={handleDayClick}
+                    onAppointmentDrop={handleAppointmentDrop}
+                  />
+                ) : (
+                  <WeekView
+                    currentDate={currentDate}
+                    appointments={filteredAppointments}
+                    onEditAppointment={handleEditAppointment}
+                    onDeleteAppointment={handleDeleteAppointment}
+                  />
+                )}
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                {/* Today's Appointments */}
+                <Card className="shadow-soft animate-fade-in">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
                       <CalendarIcon className="w-5 h-5 text-primary" />
-                      {format(currentDate, 'MMMM yyyy', { locale: de })}
+                      Heute
                     </CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => navigateMonth('prev')}
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setCurrentDate(new Date())}
-                      >
-                        Heute
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => navigateMonth('next')}
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {/* Calendar Grid */}
-                  <div className="grid grid-cols-7 gap-1">
-                    {/* Week headers */}
-                    {weekDays.map(day => (
-                      <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground border-b">
-                        {day}
-                      </div>
-                    ))}
-                    
-                    {/* Calendar days */}
-                    {calendarDays.map((day, index) => {
-                      const dayAppointments = getAppointmentsForDay(day);
-                      const isCurrentMonth = isSameMonth(day, currentDate);
-                      const isTodayDate = isToday(day);
+                  </CardHeader>
+                  <CardContent>
+                    {(() => {
+                      const todayAppointments = getTodaysAppointments();
+                      if (todayAppointments.length === 0) {
+                        return (
+                          <div className="text-center py-4">
+                            <CalendarIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                            <p className="text-sm text-muted-foreground">
+                              Keine Termine heute
+                            </p>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="mt-2 hover-scale"
+                              onClick={() => handleNewAppointment(new Date())}
+                            >
+                              Termin hinzufügen
+                            </Button>
+                          </div>
+                        );
+                      }
                       
                       return (
-                        <div 
-                          key={index} 
-                          className={`
-                            min-h-[120px] p-2 border border-border transition-colors hover:bg-accent/30
-                            ${!isCurrentMonth ? 'opacity-40 bg-muted/20' : ''}
-                            ${isTodayDate ? 'bg-primary/5 border-primary/30' : ''}
-                          `}
-                        >
-                          <div className={`
-                            text-sm font-medium mb-2 
-                            ${isTodayDate ? 'text-primary' : isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'}
-                          `}>
-                            {format(day, 'd')}
-                          </div>
-                          
-                          <div className="space-y-1">
-                            {dayAppointments.slice(0, 3).map((appointment, i) => (
-                              <div 
-                                key={i}
-                                className={`
-                                  relative group text-xs p-2 rounded text-white cursor-pointer truncate transition-all duration-200
-                                  ${appointment.ai_booked 
-                                    ? 'bg-gradient-primary shadow-sm hover:shadow-lg' 
-                                    : appointment.status === 'confirmed' 
-                                      ? 'bg-success hover:bg-success/80' 
-                                      : 'bg-warning hover:bg-warning/80'
-                                  }
-                                `}
-                                title={`${appointment.appointment_time} - ${appointment.patient.first_name} ${appointment.patient.last_name} (${appointment.service})`}
-                              >
-                                <div className="flex items-center gap-1">
-                                  {appointment.ai_booked && <Bot className="w-2 h-2" />}
-                                  <Clock className="w-2 h-2" />
-                                  <span>{appointment.appointment_time}</span>
-                                </div>
-                                <div className="truncate">
+                        <div className="space-y-3">
+                          {todayAppointments.map((appointment) => (
+                            <div 
+                              key={appointment.id} 
+                              className="p-3 bg-accent/30 rounded-lg hover:bg-accent/40 transition-colors cursor-pointer animate-fade-in hover-scale"
+                              onClick={() => handleEditAppointment(appointment)}
+                            >
+                              <div className="flex items-center gap-2 mb-2">
+                                <Clock className="w-3 h-3 text-primary" />
+                                <span className="font-medium text-sm">
+                                  {appointment.appointment_time}
+                                </span>
+                                {appointment.ai_booked && (
+                                  <Badge variant="outline" className="border-primary text-primary text-xs">
+                                    KI
+                                  </Badge>
+                                )}
+                                <Badge 
+                                  variant={appointment.status === 'confirmed' ? 'default' : 'secondary'}
+                                  className="text-xs"
+                                >
+                                  {appointment.status === 'confirmed' ? 'Bestätigt' : 
+                                   appointment.status === 'pending' ? 'Wartend' :
+                                   appointment.status === 'completed' ? 'Fertig' : 'Abgesagt'}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <User className="w-3 h-3 text-muted-foreground" />
+                                <p className="text-sm font-medium">
                                   {appointment.patient.first_name} {appointment.patient.last_name}
-                                </div>
-                                
-                                {/* Action buttons - appear on hover */}
-                                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-4 w-4 p-0 text-white hover:bg-white/20"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEditAppointment(appointment);
-                                    }}
-                                  >
-                                    <Edit className="h-2 w-2" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-4 w-4 p-0 text-white hover:bg-red-500/50"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteAppointment(appointment);
-                                    }}
-                                  >
-                                    <Trash2 className="h-2 w-2" />
-                                  </Button>
-                                </div>
+                                </p>
                               </div>
-                            ))}
-                            
-                            {dayAppointments.length > 3 && (
-                              <div className="text-xs text-muted-foreground text-center py-1">
-                                +{dayAppointments.length - 3} weitere
-                              </div>
-                            )}
-                          </div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {appointment.service} • {appointment.duration_minutes || 30}min
+                              </p>
+                            </div>
+                          ))}
                         </div>
                       );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                    })()}
+                  </CardContent>
+                </Card>
 
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Today's Appointments */}
-              <Card className="shadow-soft">
-                <CardHeader>
-                  <CardTitle className="text-lg">Heute</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {(() => {
-                    const todayAppointments = getAppointmentsForDay(new Date());
-                    if (todayAppointments.length === 0) {
-                      return (
-                        <p className="text-sm text-muted-foreground">
-                          Keine Termine heute
-                        </p>
-                      );
-                    }
-                    
-                    return (
-                      <div className="space-y-3">
-                        {todayAppointments.map((appointment) => (
-                          <div key={appointment.id} className="p-3 bg-accent/30 rounded-lg">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Clock className="w-3 h-3 text-primary" />
-                              <span className="font-medium text-sm">
-                                {appointment.appointment_time}
-                              </span>
-                              {appointment.ai_booked && (
-                                <Badge variant="outline" className="border-primary text-primary text-xs">
-                                  <Bot className="w-2 h-2 mr-1" />
-                                  KI
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm font-medium">
-                              {appointment.patient.first_name} {appointment.patient.last_name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {appointment.service}
-                            </p>
-                          </div>
-                        ))}
+                {/* Calendar Stats */}
+                <Card className="shadow-soft animate-fade-in">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Statistiken</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          {viewMode === 'month' ? 'Termine im Monat' : 'Termine in der Woche'}
+                        </span>
+                        <span className="font-medium">{appointmentStats.total}</span>
                       </div>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">KI-Buchungen</span>
+                        <span className="font-medium text-primary">{appointmentStats.aiBookings}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Diese Woche</span>
+                        <span className="font-medium">{appointmentStats.thisWeek}</span>
+                      </div>
 
-              {/* Calendar Stats */}
-              <Card className="shadow-soft">
-                <CardHeader>
-                  <CardTitle className="text-lg">Monatsstatistik</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Gesamt Termine</span>
-                      <span className="font-medium">
-                        {monthDays.reduce((count, day) => 
-                          count + getAppointmentsForDay(day).length, 0
-                        )}
-                      </span>
+                      {filters.searchTerm && (
+                        <div className="flex justify-between items-center pt-2 border-t">
+                          <span className="text-sm text-muted-foreground">Suchergebnisse</span>
+                          <span className="font-medium text-accent-foreground">{filteredAppointments.length}</span>
+                        </div>
+                      )}
                     </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">KI-Buchungen</span>
-                      <span className="font-medium text-primary">
-                        {monthDays.reduce((count, day) => 
-                          count + getAppointmentsForDay(day).filter(a => a.ai_booked).length, 0
-                        )}
-                      </span>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Termine diese Woche</span>
-                      <span className="font-medium">
-                        {(() => {
-                          const weekStart = new Date();
-                          weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
-                          const weekEnd = new Date(weekStart);
-                          weekEnd.setDate(weekStart.getDate() + 6);
-                          
-                          return eachDayOfInterval({ start: weekStart, end: weekEnd })
-                            .reduce((count, day) => count + getAppointmentsForDay(day).length, 0);
-                        })()}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              {/* Legend */}
-              <Card className="shadow-soft">
-                <CardHeader>
-                  <CardTitle className="text-lg">Legende</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-gradient-primary rounded"></div>
-                      <span className="text-sm">KI-Buchung</span>
+                {/* Legend */}
+                <Card className="shadow-soft animate-fade-in">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Legende</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-gradient-primary rounded"></div>
+                        <span className="text-sm">KI-Buchung</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-success rounded"></div>
+                        <span className="text-sm">Bestätigt</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-warning rounded"></div>
+                        <span className="text-sm">Wartend</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-muted rounded"></div>
+                        <span className="text-sm">Abgeschlossen</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-destructive rounded"></div>
+                        <span className="text-sm">Abgesagt</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-success rounded"></div>
-                      <span className="text-sm">Bestätigt</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-warning rounded"></div>
-                      <span className="text-sm">Wartend</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </main>
@@ -405,28 +413,34 @@ const calendarDays = eachDayOfInterval({ start: startDay, end: endDay });
           isEditing={isEditing}
           onSuccess={handleAppointmentSuccess}
         />
-        
+
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
+          <AlertDialogContent className="animate-scale-in">
             <AlertDialogHeader>
               <AlertDialogTitle>Termin löschen?</AlertDialogTitle>
               <AlertDialogDescription>
-                Möchten Sie den Termin wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+                Möchten Sie den folgenden Termin wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
                 {appointmentToDelete && (
-                  <div className="mt-2 p-3 bg-muted rounded-lg">
-                    <p className="font-medium">{appointmentToDelete.patient.first_name} {appointmentToDelete.patient.last_name}</p>
-                    <p className="text-sm text-muted-foreground">{format(new Date(appointmentToDelete.appointment_date), 'dd.MM.yyyy', { locale: de })} um {appointmentToDelete.appointment_time}</p>
-                    <p className="text-sm text-muted-foreground">{appointmentToDelete.service}</p>
+                  <div className="mt-4 p-3 bg-muted rounded-lg">
+                    <p className="font-medium">
+                      {appointmentToDelete.patient?.first_name} {appointmentToDelete.patient?.last_name}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(`${appointmentToDelete.appointment_date}T${appointmentToDelete.appointment_time}`), 'PPpp', { locale: de })}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {appointmentToDelete.service}
+                    </p>
                   </div>
                 )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+              <AlertDialogCancel className="hover-scale">Abbrechen</AlertDialogCancel>
               <AlertDialogAction 
                 onClick={confirmDelete}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-destructive hover:bg-destructive/90 hover-scale"
               >
                 Löschen
               </AlertDialogAction>

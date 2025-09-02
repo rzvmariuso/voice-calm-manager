@@ -33,11 +33,20 @@ export function AppointmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-3xl max-h-[90vh] overflow-y-auto animate-scale-in"
+        aria-describedby="appointment-dialog-description"
+      >
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Termin bearbeiten" : "Neuer Termin"}
           </DialogTitle>
+          <div id="appointment-dialog-description" className="sr-only">
+            {isEditing 
+              ? "Bearbeiten Sie die Details des ausgewählten Termins" 
+              : "Erstellen Sie einen neuen Termin mit Patientendaten und Zeitplan"
+            }
+          </div>
         </DialogHeader>
         <AppointmentForm
           appointment={appointment}
