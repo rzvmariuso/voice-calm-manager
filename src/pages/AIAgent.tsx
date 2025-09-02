@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import BookingTest from "@/components/BookingTest"
 import { 
   Bot, 
   Play, 
@@ -305,6 +306,9 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
               </CardContent>
             </Card>
           </div>
+
+          {/* AI Booking Test */}
+          <BookingTest />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* AI Configuration */}

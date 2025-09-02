@@ -13,6 +13,7 @@ import Patients from "./pages/Patients";
 import AIAgent from "./pages/AIAgent";
 import Automation from "./pages/Automation";
 import Phone from "./pages/Phone";
+import FAQ from "./pages/FAQ";
 import Auth from "./pages/Auth";
 import PracticeSetup from "./pages/PracticeSetup";
 import Privacy from "./pages/Privacy";
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/ai-agent" element={<AIAgent />} />
             <Route path="/automation" element={<Automation />} />
             <Route path="/phone" element={<Phone />} />
+            <Route path="/faq" element={<FAQ />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/data-protection" element={<DataProtection />} />
