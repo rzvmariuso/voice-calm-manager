@@ -101,7 +101,7 @@ export default function Index() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button className="bg-gradient-primary text-white shadow-glow">
+              <Button className="bg-gradient-primary text-white shadow-glow hover:shadow-lg transition-all duration-300">
                 <Bot className="w-4 h-4 mr-2" />
                 KI-Agent aktivieren
               </Button>
@@ -180,7 +180,7 @@ export default function Index() {
                       <span className="text-sm text-muted-foreground">Erfolgsrate</span>
                       <span className="text-sm font-medium">94%</span>
                     </div>
-                    <Button variant="outline" className="w-full mt-4">
+                    <Button variant="outline" className="w-full mt-4 hover:bg-gradient-primary hover:text-white hover:border-primary transition-all duration-200">
                       <Phone className="w-4 h-4 mr-2" />
                       Telefonie einrichten
                     </Button>
@@ -195,15 +195,15 @@ export default function Index() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <Button variant="outline" className="w-full justify-start">
+                    <Button variant="outline" className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 transition-all duration-200">
                       <Calendar className="w-4 h-4 mr-2" />
                       Neuer Termin
                     </Button>
-                    <Button variant="outline" className="w-full justify-start">
+                    <Button variant="outline" className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 transition-all duration-200">
                       <Users className="w-4 h-4 mr-2" />
                       Patient hinzufügen
                     </Button>
-                    <Button variant="outline" className="w-full justify-start">
+                    <Button variant="outline" className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 transition-all duration-200">
                       <TrendingUp className="w-4 h-4 mr-2" />
                       Berichte anzeigen
                     </Button>

@@ -24,6 +24,11 @@ const items = [
     icon: Calendar,
   },
   {
+    title: "Kalender",
+    url: "/calendar",
+    icon: Calendar,
+  },
+  {
     title: "KI-Agent",
     url: "/ai-agent",
     icon: Bot,
