@@ -238,7 +238,7 @@ Sei immer höflich, professionell und hilfsbereit. Sprich Deutsch.`)
                     <Bot className="w-5 h-5 text-primary" />
                     KI-Prompt Konfiguration
                     <Badge variant="outline" className="border-primary text-primary">
-                      ElevenLabs
+                      Vapi
                     </Badge>
                   </CardTitle>
                 </CardHeader>

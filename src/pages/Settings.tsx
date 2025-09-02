@@ -43,9 +43,9 @@ export default function Settings() {
       webhookUrl: ""
     },
     ai: {
-      elevenlabsApiKey: "",
-      voiceId: "9BWtsMINqrJLrRacOk9x",
-      model: "eleven_multilingual_v2",
+      vapiApiKey: "",
+      voiceId: "EXAVITQu4vr4xnSDxMaL", // Sarah - deutscher Akzent
+      model: "gpt-4o-mini",
       language: "de"
     },
     phone: {
@@ -305,33 +305,33 @@ export default function Settings() {
                     <Bot className="w-5 h-5 text-primary" />
                     KI-Agent Konfiguration
                     <Badge variant="outline" className="border-primary text-primary">
-                      ElevenLabs
+                      Vapi
                     </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="elevenlabs-api">ElevenLabs API Key *</Label>
+                    <Label htmlFor="vapi-api">Vapi API Key *</Label>
                     <div className="flex gap-2">
                       <Input 
-                        id="elevenlabs-api"
+                        id="vapi-api"
                         type="password"
-                        value={settings.ai.elevenlabsApiKey}
+                        value={settings.ai.vapiApiKey}
                         onChange={(e) => setSettings(s => ({
                           ...s, 
-                          ai: {...s.ai, elevenlabsApiKey: e.target.value}
+                          ai: {...s.ai, vapiApiKey: e.target.value}
                         }))}
-                        placeholder="sk-..."
+                        placeholder="vapi_..."
                       />
                       <Button 
                         variant="outline" 
-                        onClick={() => testConnection("ElevenLabs")}
+                        onClick={() => testConnection("Vapi")}
                       >
                         <TestTube className="w-4 h-4" />
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Benötigt für KI-Sprachverarbeitung und Telefonie
+                      Benötigt für DSGVO-konforme Telefonie und Voice AI
                     </p>
                   </div>
 
@@ -580,8 +580,8 @@ export default function Settings() {
                     </div>
                     <div className="text-center">
                       <Globe className="w-8 h-8 text-success mx-auto mb-2" />
-                      <p className="text-sm font-medium">ElevenLabs EU</p>
-                      <p className="text-xs text-muted-foreground">Dublin Server</p>
+                      <p className="text-sm font-medium">Vapi EU</p>
+                      <p className="text-xs text-muted-foreground">Deutschland Server</p>
                     </div>
                     <div className="text-center">
                       <Shield className="w-8 h-8 text-success mx-auto mb-2" />
