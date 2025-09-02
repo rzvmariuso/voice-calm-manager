@@ -33,7 +33,7 @@ serve(async (req) => {
         body: JSON.stringify({
           phoneNumberId: phoneNumber, // Vapi phone number ID
           customer: {
-            number: '+4917663098540' // Test number - needs to be E.164 format
+            number: '+18048081248' // Test number - needs to be E.164 format
           },
           assistant: {
             model: {
