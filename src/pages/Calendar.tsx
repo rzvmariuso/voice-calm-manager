@@ -160,38 +160,61 @@ export default function Calendar() {
     refetch();
   };
 
-  const handleDayClick = (date: Date) => {
-    if (isSameDay(date, currentDate)) {
-      handleNewAppointment(date);
-    } else {
-      setCurrentDate(date);
-    }
-  };
+const handleDayClick = (date: Date) => {
+  // Blockiere Wochenenden (Samstag = 6, Sonntag = 0)
+  const dayOfWeek = date.getDay();
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    toast({
+      title: "Wochenende",
+      description: "An Wochenenden können keine Termine gebucht werden.",
+      variant: "destructive",
+    });
+    return;
+  }
+  
+  if (isSameDay(date, currentDate)) {
+    handleNewAppointment(date);
+  } else {
+    setCurrentDate(date);
+  }
+};
 
-  const handleAppointmentDrop = async (appointmentId: string, newDate: string) => {
-    try {
-      const { error } = await supabase
-        .from('appointments')
-        .update({ appointment_date: newDate })
-        .eq('id', appointmentId);
+const handleAppointmentDrop = async (appointmentId: string, newDate: string) => {
+  // Blockiere Wochenenden beim Verschieben
+  const date = new Date(newDate);
+  const dayOfWeek = date.getDay();
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    toast({
+      title: "Wochenende",
+      description: "Termine können nicht auf Wochenenden verschoben werden.",
+      variant: "destructive",
+    });
+    return;
+  }
 
-      if (error) throw error;
+  try {
+    const { error } = await supabase
+      .from('appointments')
+      .update({ appointment_date: newDate })
+      .eq('id', appointmentId);
 
-      toast({
-        title: "Termin verschoben",
-        description: `Der Termin wurde erfolgreich auf den ${format(new Date(newDate), 'dd.MM.yyyy', { locale: de })} verschoben.`,
-      });
+    if (error) throw error;
 
-      refetch();
-    } catch (error) {
-      console.error('Error moving appointment:', error);
-      toast({
-        title: "Fehler",
-        description: "Termin konnte nicht verschoben werden",
-        variant: "destructive",
-      });
-    }
-  };
+    toast({
+      title: "Termin verschoben",
+      description: `Der Termin wurde erfolgreich auf den ${format(new Date(newDate), 'dd.MM.yyyy', { locale: de })} verschoben.`,
+    });
+
+    refetch();
+  } catch (error) {
+    console.error('Error moving appointment:', error);
+    toast({
+      title: "Fehler",
+      description: "Termin konnte nicht verschoben werden",
+      variant: "destructive",
+    });
+  }
+};
 
   const getTodaysAppointments = () => {
     return filteredAppointments.filter(appointment => 

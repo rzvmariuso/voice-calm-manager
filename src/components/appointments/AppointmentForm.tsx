@@ -593,7 +593,13 @@ const loadPatients = async () => {
                     mode="single"
                     selected={formData.appointment_date}
                     onSelect={(date) => date && setFormData(prev => ({ ...prev, appointment_date: date }))}
-                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    disabled={(date) => {
+                      // Vergangenheit blockieren
+                      if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+                      // Wochenenden blockieren (Samstag = 6, Sonntag = 0)
+                      const dayOfWeek = date.getDay();
+                      return dayOfWeek === 0 || dayOfWeek === 6;
+                    }}
                     initialFocus
                   />
                 </PopoverContent>

@@ -71,25 +71,31 @@ export function MonthView({
             const dayAppointments = getAppointmentsForDay(day);
             const isCurrentMonth = isSameMonth(day, currentDate);
             const isTodayDate = isToday(day);
+            const isWeekend = day.getDay() === 0 || day.getDay() === 6; // Sonntag oder Samstag
             
             return (
               <div 
                 key={index} 
                 className={`
-                  min-h-[140px] p-2 border-r border-b border-border/30 transition-all duration-200 cursor-pointer
-                  ${!isCurrentMonth ? 'opacity-40 bg-muted/10' : 'hover:bg-accent/30'}
+                  min-h-[140px] p-2 border-r border-b border-border/30 transition-all duration-200
+                  ${!isCurrentMonth ? 'opacity-40 bg-muted/10' : ''}
                   ${isTodayDate ? 'bg-primary/5 border-primary/30' : ''}
-                  ${dayAppointments.length === 0 ? 'hover:bg-accent/20' : ''}
+                  ${isWeekend ? 'bg-red-50 cursor-not-allowed' : 'cursor-pointer hover:bg-accent/30'}
+                  ${dayAppointments.length === 0 && !isWeekend ? 'hover:bg-accent/20' : ''}
                 `}
-                onClick={() => onDayClick?.(day)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, day)}
+                onClick={() => !isWeekend && onDayClick?.(day)}
+                onDragOver={!isWeekend ? handleDragOver : undefined}
+                onDrop={!isWeekend ? (e) => handleDrop(e, day) : undefined}
               >
                 <div className={`
                   text-sm font-medium mb-2 flex items-center justify-between
                   ${isTodayDate ? 'text-primary' : isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'}
+                  ${isWeekend ? 'text-red-500' : ''}
                 `}>
                   <span>{format(day, 'd')}</span>
+                  {isWeekend && (
+                    <span className="text-xs bg-red-100 text-red-600 px-1 rounded">WE</span>
+                  )}
                   {dayAppointments.length > 0 && (
                     <span className="text-xs bg-primary/20 text-primary px-1 rounded">
                       {dayAppointments.length}
@@ -116,9 +122,14 @@ export function MonthView({
                   )}
 
                   {/* Drop zone indicator */}
-                  {dayAppointments.length === 0 && isCurrentMonth && (
+                  {dayAppointments.length === 0 && isCurrentMonth && !isWeekend && (
                     <div className="text-xs text-muted-foreground/50 text-center py-4 border-2 border-dashed border-border/30 rounded">
                       Termin hier ablegen
+                    </div>
+                  )}
+                  {isWeekend && isCurrentMonth && (
+                    <div className="text-xs text-red-400 text-center py-4">
+                      Wochenende
                     </div>
                   )}
                 </div>

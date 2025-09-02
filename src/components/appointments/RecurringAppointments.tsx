@@ -91,9 +91,8 @@ const weekDays = [
   { value: 2, label: 'Di' },
   { value: 3, label: 'Mi' },
   { value: 4, label: 'Do' },
-  { value: 5, label: 'Fr' },
-  { value: 6, label: 'Sa' },
-  { value: 0, label: 'So' }
+  { value: 5, label: 'Fr' }
+  // Wochenenden (Sa/So) entfernt
 ];
 
 export function RecurringAppointments() {
@@ -548,6 +547,13 @@ setPatients(patientsData || []);
                         mode="single"
                         selected={formData.start_date}
                         onSelect={(date) => date && setFormData(prev => ({ ...prev, start_date: date }))}
+                        disabled={(date) => {
+                          // Vergangenheit blockieren
+                          if (date < new Date()) return true;
+                          // Wochenenden blockieren (Samstag = 6, Sonntag = 0)
+                          const dayOfWeek = date.getDay();
+                          return dayOfWeek === 0 || dayOfWeek === 6;
+                        }}
                         initialFocus
                       />
                     </PopoverContent>
@@ -670,6 +676,13 @@ setPatients(patientsData || []);
                       mode="single"
                       selected={formData.end_date || undefined}
                       onSelect={(date) => setFormData(prev => ({ ...prev, end_date: date || null }))}
+                      disabled={(date) => {
+                        // Vor Startdatum blockieren
+                        if (date < formData.start_date) return true;
+                        // Wochenenden blockieren (Samstag = 6, Sonntag = 0)
+                        const dayOfWeek = date.getDay();
+                        return dayOfWeek === 0 || dayOfWeek === 6;
+                      }}
                       initialFocus
                     />
                     <div className="p-2 border-t">
