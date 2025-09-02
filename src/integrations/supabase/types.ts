@@ -14,13 +14,266 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_call_logs: {
+        Row: {
+          appointment_id: string | null
+          call_duration: number | null
+          caller_phone: string | null
+          created_at: string
+          id: string
+          outcome: string | null
+          practice_id: string
+          transcript: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          call_duration?: number | null
+          caller_phone?: string | null
+          created_at?: string
+          id?: string
+          outcome?: string | null
+          practice_id: string
+          transcript?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          call_duration?: number | null
+          caller_phone?: string | null
+          created_at?: string
+          id?: string
+          outcome?: string | null
+          practice_id?: string
+          transcript?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_call_logs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_call_logs_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appointments: {
+        Row: {
+          ai_booked: boolean | null
+          appointment_date: string
+          appointment_time: string
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          notes: string | null
+          patient_id: string
+          practice_id: string
+          service: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ai_booked?: boolean | null
+          appointment_date: string
+          appointment_time: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          patient_id: string
+          practice_id: string
+          service: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_booked?: boolean | null
+          appointment_date?: string
+          appointment_time?: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          practice_id?: string
+          service?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_requests: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          patient_id: string | null
+          practice_id: string
+          request_type: string
+          requested_by_email: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          practice_id: string
+          request_type: string
+          requested_by_email: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          practice_id?: string
+          request_type?: string
+          requested_by_email?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_requests_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_requests_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patients: {
+        Row: {
+          consent_date: string | null
+          created_at: string
+          data_retention_until: string | null
+          date_of_birth: string | null
+          email: string | null
+          first_name: string
+          id: string
+          last_name: string
+          phone: string | null
+          practice_id: string
+          privacy_consent: boolean
+          updated_at: string
+        }
+        Insert: {
+          consent_date?: string | null
+          created_at?: string
+          data_retention_until?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          phone?: string | null
+          practice_id: string
+          privacy_consent?: boolean
+          updated_at?: string
+        }
+        Update: {
+          consent_date?: string | null
+          created_at?: string
+          data_retention_until?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          phone?: string | null
+          practice_id?: string
+          privacy_consent?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patients_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practices: {
+        Row: {
+          address: string | null
+          ai_prompt: string | null
+          business_hours: Json | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          owner_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          ai_prompt?: string | null
+          business_hours?: Json | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          ai_prompt?: string | null
+          business_hours?: Json | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_expired_patient_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
