@@ -85,6 +85,7 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (practice) {
@@ -187,6 +188,8 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
     if (!appointmentToDelete) return;
 
     try {
+      setDeletingId(appointmentToDelete.id);
+
       const { error } = await supabase
         .from('appointments')
         .delete()
@@ -194,12 +197,15 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
 
       if (error) throw error;
 
+      // Optimistisch entfernen mit kleiner Verzögerung für Fade-Out
+      setTimeout(() => {
+        setAppointments(prev => prev.filter(a => a.id !== appointmentToDelete.id));
+      }, 250);
+
       toast({
         title: "Erfolg",
         description: "Termin wurde gelöscht",
       });
-
-      loadAppointments();
     } catch (error) {
       console.error('Error deleting appointment:', error);
       toast({
@@ -209,7 +215,10 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
       });
     } finally {
       setDeleteDialogOpen(false);
-      setAppointmentToDelete(null);
+      setTimeout(() => {
+        setDeletingId(null);
+        setAppointmentToDelete(null);
+      }, 300);
     }
   };
 
@@ -290,7 +299,10 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
           </div>
         ) : (
           filteredAppointments.map((appointment) => (
-            <Card key={appointment.id} className="card-interactive hover:shadow-soft transition-all duration-200">
+            <Card
+              key={appointment.id}
+              className={`card-interactive hover:shadow-soft transition-all duration-300 ${deletingId === appointment.id ? 'animate-fade-out' : 'animate-fade-in'}`}
+            >
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   {/* Main Info */}
@@ -302,7 +314,7 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
                           {format(new Date(appointment.appointment_date), "dd. MMM yyyy", { locale: de })}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-primary" />
                         <span>{appointment.appointment_time}</span>
@@ -310,14 +322,14 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
                           ({appointment.duration_minutes} Min.)
                         </span>
                       </div>
-                      
-                      <Badge 
-                        variant="outline" 
+
+                      <Badge
+                        variant="outline"
                         className={statusColors[appointment.status as keyof typeof statusColors]}
                       >
                         {statusLabels[appointment.status as keyof typeof statusLabels]}
                       </Badge>
-                      
+
                       {appointment.ai_booked && (
                         <Badge variant="secondary" className="bg-blue-500/10 text-blue-700">
                           KI-Buchung
@@ -332,14 +344,14 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
                           {appointment.patient.first_name} {appointment.patient.last_name}
                         </span>
                       </div>
-                      
+
                       {appointment.patient.email && (
                         <div className="flex items-center gap-2 text-muted-foreground text-sm">
                           <Mail className="w-4 h-4" />
                           <span>{appointment.patient.email}</span>
                         </div>
                       )}
-                      
+
                       {appointment.patient.phone && (
                         <div className="flex items-center gap-2 text-muted-foreground text-sm">
                           <Phone className="w-4 h-4" />
@@ -352,7 +364,7 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
                       <div className="text-sm font-medium text-primary">
                         {appointment.service}
                       </div>
-                      
+
                       {appointment.notes && (
                         <p className="text-sm text-muted-foreground">
                           {appointment.notes}
@@ -384,7 +396,7 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
                         </Button>
                       </>
                     )}
-                    
+
                     {appointment.status === 'confirmed' && (
                       <>
                         <Button
@@ -405,7 +417,7 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
                         </Button>
                       </>
                     )}
-                    
+
                     {appointment.status === 'cancelled' && (
                       <Button
                         variant="outline"
@@ -427,7 +439,7 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
                         <Edit className="w-4 h-4" />
                       </Button>
                     )}
-                    
+
                     <Button
                       variant="outline"
                       size="sm"

@@ -167,14 +167,18 @@ export default function Index() {
               </Link>
             </div>
             <div className="animate-scale-in" style={{ animationDelay: '0.3s' }}>
-              <StatsCard
-                title="AI-gebuchte Termine"
-                value={stats.aiBookings}
-                change={`${stats.totalAppointments > 0 ? Math.round((stats.aiBookings / stats.totalAppointments) * 100) : 0}% aller Termine`}
-                changeType="positive"
-                icon={Bot}
-                description="Automatische Buchungen"
-              />
+              <Link to="/calendar">
+                <div className="cursor-pointer hover:scale-105 transition-transform duration-200">
+                  <StatsCard
+                    title="AI-gebuchte Termine"
+                    value={stats.aiBookings}
+                    change={`${stats.totalAppointments > 0 ? Math.round((stats.aiBookings / stats.totalAppointments) * 100) : 0}% aller Termine`}
+                    changeType="positive"
+                    icon={Bot}
+                    description="Automatische Buchungen"
+                  />
+                </div>
+              </Link>
             </div>
             <div className="animate-scale-in" style={{ animationDelay: '0.4s' }}>
               <StatsCard
