@@ -22,11 +22,16 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
-  Users
+  Users,
+  Webhook,
+  Zap,
+  TestTube,
+  Link
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { Switch } from "@/components/ui/switch"
 
 const recentCalls = [
   {
@@ -76,11 +81,15 @@ export default function AIAgent() {
   const [aiPrompt, setAiPrompt] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [n8nWebhookUrl, setN8nWebhookUrl] = useState("")
+  const [n8nEnabled, setN8nEnabled] = useState(false)
+  const [isTestingWebhook, setIsTestingWebhook] = useState(false)
   const { toast } = useToast()
 
   // Load AI configuration on component mount
   useEffect(() => {
     loadAIConfig()
+    loadN8nConfig()
   }, [])
 
   const loadAIConfig = async () => {
@@ -128,6 +137,21 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
     }
   }
 
+  const loadN8nConfig = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-n8n-config')
+      
+      if (error) throw error
+      
+      if (data.success) {
+        setN8nWebhookUrl(data.webhookUrl)
+        setN8nEnabled(data.enabled)
+      }
+    } catch (error) {
+      console.error('Error loading n8n config:', error)
+    }
+  }
+
   const saveAIConfig = async () => {
     if (!aiPrompt.trim()) {
       toast({
@@ -166,6 +190,74 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
       })
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const saveN8nConfig = async () => {
+    try {
+      setIsSaving(true)
+      const { data, error } = await supabase.functions.invoke('update-n8n-config', {
+        body: { 
+          webhookUrl: n8nWebhookUrl,
+          enabled: n8nEnabled
+        }
+      })
+      
+      if (error) throw error
+      
+      if (data.success) {
+        toast({
+          title: "Gespeichert",
+          description: "n8n Konfiguration wurde erfolgreich aktualisiert",
+        })
+      } else {
+        throw new Error(data.error || 'Unbekannter Fehler')
+      }
+    } catch (error) {
+      console.error('Error saving n8n config:', error)
+      toast({
+        title: "Fehler",
+        description: "n8n Konfiguration konnte nicht gespeichert werden",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const testN8nWebhook = async () => {
+    if (!n8nWebhookUrl || !n8nEnabled) {
+      toast({
+        title: "Fehler",
+        description: "Bitte konfigurieren Sie zuerst Ihre n8n Webhook URL",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      setIsTestingWebhook(true)
+      const { data, error } = await supabase.functions.invoke('test-n8n-webhook')
+      
+      if (error) throw error
+      
+      if (data.success) {
+        toast({
+          title: "Test erfolgreich",
+          description: "n8n Webhook wurde erfolgreich ausgelöst",
+        })
+      } else {
+        throw new Error(data.error || 'Test fehlgeschlagen')
+      }
+    } catch (error) {
+      console.error('Error testing n8n webhook:', error)
+      toast({
+        title: "Test fehlgeschlagen",
+        description: error.message || "Webhook konnte nicht ausgelöst werden",
+        variant: "destructive"
+      })
+    } finally {
+      setIsTestingWebhook(false)
     }
   }
 
@@ -355,6 +447,88 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                       <Settings className="w-4 h-4 mr-2" />
                       {isSaving ? "Speichern..." : "Speichern"}
                     </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* n8n Automation */}
+              <Card className="shadow-soft">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Webhook className="w-5 h-5 text-primary" />
+                    n8n Workflow Automation
+                    <Badge variant="outline" className="border-secondary text-secondary">
+                      Pro
+                    </Badge>
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Automatische Aktionen nach jeder AI-Terminbuchung
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="n8n-enabled">n8n Automation aktivieren</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Triggert Workflows bei neuen Terminen
+                      </p>
+                    </div>
+                    <Switch
+                      id="n8n-enabled"
+                      checked={n8nEnabled}
+                      onCheckedChange={setN8nEnabled}
+                    />
+                  </div>
+
+                  {n8nEnabled && (
+                    <div>
+                      <Label htmlFor="n8n-webhook">n8n Webhook URL</Label>
+                      <Input
+                        id="n8n-webhook"
+                        value={n8nWebhookUrl}
+                        onChange={(e) => setN8nWebhookUrl(e.target.value)}
+                        placeholder="https://your-n8n-instance.com/webhook/..."
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Webhook URL aus deinem n8n Workflow
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={testN8nWebhook}
+                      disabled={!n8nEnabled || !n8nWebhookUrl || isTestingWebhook}
+                      className="flex-1"
+                    >
+                      <TestTube className="w-4 h-4 mr-2" />
+                      {isTestingWebhook ? "Teste..." : "Test Webhook"}
+                    </Button>
+                    <Button 
+                      onClick={saveN8nConfig}
+                      disabled={isSaving}
+                      className="bg-gradient-secondary text-white shadow-glow flex-1"
+                    >
+                      <Zap className="w-4 h-4 mr-2" />
+                      {isSaving ? "Speichern..." : "n8n Speichern"}
+                    </Button>
+                  </div>
+
+                  <div className="bg-accent/50 p-3 rounded-lg">
+                    <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                      <Zap className="w-4 h-4" />
+                      Mögliche Automatisierungen:
+                    </h4>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• Email-Bestätigung an Patient</li>
+                      <li>• SMS-Erinnerung 24h vorher</li>
+                      <li>• Google Calendar Eintrag</li>
+                      <li>• Slack/WhatsApp Team-Benachrichtigung</li>
+                      <li>• CRM-System aktualisieren</li>
+                      <li>• Rechnung vorbereiten</li>
+                    </ul>
                   </div>
                 </CardContent>
               </Card>
