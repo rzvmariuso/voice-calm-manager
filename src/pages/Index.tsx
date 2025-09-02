@@ -1,19 +1,23 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { StatsCard } from "@/components/dashboard/StatsCard"
 import { RecentAppointments } from "@/components/dashboard/RecentAppointments"
-import { Calendar, Users, Bot, TrendingUp, Phone, Clock, LogOut } from "lucide-react"
+import { Calendar, Users, Bot, TrendingUp, Phone, Clock, LogOut, Crown, Zap } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { usePractice } from "@/hooks/usePractice";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 export default function Index() {
   const { user, signOut } = useAuth();
   const { practice, loading } = usePractice();
+  const { subscription, isSubscribed, currentPlan, canAccessAI } = useSubscription();
   const { toast } = useToast();
   const [stats, setStats] = useState({
     totalAppointments: 0,
@@ -101,10 +105,26 @@ export default function Index() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button className="button-gradient hover:scale-105 transition-all duration-300 animate-glow-pulse">
-                <Bot className="w-4 h-4 mr-2" />
-                KI-Agent aktivieren
-              </Button>
+              {!isSubscribed ? (
+                <Link to="/billing">
+                  <Button className="button-gradient hover:scale-105 transition-all duration-300">
+                    <Crown className="w-4 h-4 mr-2" />
+                    Jetzt upgraden
+                  </Button>
+                </Link>
+              ) : canAccessAI ? (
+                <Button className="button-gradient hover:scale-105 transition-all duration-300 animate-glow-pulse">
+                  <Bot className="w-4 h-4 mr-2" />
+                  KI-Agent aktivieren
+                </Button>
+              ) : (
+                <Link to="/billing">
+                  <Button variant="outline" className="hover:scale-105 transition-all duration-300">
+                    <Zap className="w-4 h-4 mr-2" />
+                    KI-Features freischalten
+                  </Button>
+                </Link>
+              )}
               <Button variant="ghost" size="sm" onClick={handleSignOut} className="hover:scale-105 transition-transform duration-200">
                 <LogOut className="mr-2 h-4 w-4" />
                 Abmelden
@@ -163,6 +183,83 @@ export default function Index() {
             </div>
             
             <div className="space-y-6">
+              {/* Subscription Status Card */}
+              {isSubscribed && currentPlan ? (
+                <Card className="shadow-soft card-interactive border-2 border-success/20 bg-gradient-to-r from-success/5 to-primary/5">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-success animate-bounce-gentle" />
+                      {currentPlan.name} Plan Aktiv
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Status</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+                          <span className="text-sm font-medium text-success">Aktiv</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Max. Patienten</span>
+                        <span className="text-sm font-bold text-primary">
+                          {currentPlan.max_patients === -1 ? "Unbegrenzt" : currentPlan.max_patients}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">KI-Features</span>
+                        <span className="text-sm font-medium text-success">
+                          {canAccessAI ? "Verfügbar" : "Nicht verfügbar"}
+                        </span>
+                      </div>
+                      <Link to="/billing">
+                        <Button variant="outline" className="w-full mt-4 hover:scale-105 transition-transform duration-200">
+                          <Crown className="w-4 h-4 mr-2" />
+                          Abonnement verwalten
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="shadow-soft card-interactive border-2 border-warning/30">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-warning animate-bounce-gentle" />
+                      Upgrade verfügbar
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Schalten Sie Premium-Features frei:
+                      </p>
+                      <ul className="text-sm space-y-1">
+                        <li className="flex items-center gap-2">
+                          <div className="w-1 h-1 bg-primary rounded-full"></div>
+                          KI-Terminbuchung
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-1 h-1 bg-primary rounded-full"></div>
+                          Erweiterte Analytics
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-1 h-1 bg-primary rounded-full"></div>
+                          Prioritäts-Support
+                        </li>
+                      </ul>
+                      <Link to="/billing">
+                        <Button className="w-full mt-4 button-gradient hover:scale-105 transition-transform duration-200">
+                          <Crown className="w-4 h-4 mr-2" />
+                          Jetzt upgraden
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* AI Status Card */}
               <Card className="shadow-soft card-interactive">
                 <CardHeader>
@@ -176,8 +273,17 @@ export default function Index() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Status</span>
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
-                        <span className="text-sm font-medium text-success">Bereit</span>
+                        {canAccessAI ? (
+                          <>
+                            <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+                            <span className="text-sm font-medium text-success">Bereit</span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-2 h-2 bg-muted rounded-full"></div>
+                            <span className="text-sm font-medium text-muted-foreground">Upgrade erforderlich</span>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
@@ -188,10 +294,19 @@ export default function Index() {
                       <span className="text-sm text-muted-foreground">Erfolgsrate</span>
                       <span className="text-sm font-medium text-success">94%</span>
                     </div>
-                    <Button variant="outline" className="w-full mt-4 button-gradient hover:scale-105 transition-transform duration-200">
-                      <Phone className="w-4 h-4 mr-2" />
-                      Telefonie einrichten
-                    </Button>
+                    {canAccessAI ? (
+                      <Button variant="outline" className="w-full mt-4 button-gradient hover:scale-105 transition-transform duration-200">
+                        <Phone className="w-4 h-4 mr-2" />
+                        Telefonie einrichten
+                      </Button>
+                    ) : (
+                      <Link to="/billing">
+                        <Button variant="outline" className="w-full mt-4 hover:scale-105 transition-transform duration-200">
+                          <Zap className="w-4 h-4 mr-2" />
+                          KI-Features freischalten
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -1,4 +1,4 @@
-import { Calendar, Phone, Settings, Users, BarChart3, Bot } from "lucide-react"
+import { Calendar, Phone, Settings, Users, BarChart3, Bot, CreditCard } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import {
   Sidebar,
@@ -37,6 +37,11 @@ const items = [
     title: "Telefonie",
     url: "/phone",
     icon: Phone,
+  },
+  {
+    title: "Billing & Abos",
+    url: "/billing",
+    icon: CreditCard,
   },
   {
     title: "Patienten",

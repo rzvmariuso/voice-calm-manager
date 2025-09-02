@@ -14,6 +14,7 @@ import Phone from "./pages/Phone";
 import Auth from "./pages/Auth";
 import PracticeSetup from "./pages/PracticeSetup";
 import Privacy from "./pages/Privacy";
+import Billing from "./pages/Billing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/patients" element={<Patients />} />
             <Route path="/ai-agent" element={<AIAgent />} />
             <Route path="/phone" element={<Phone />} />
+            <Route path="/billing" element={<Billing />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
