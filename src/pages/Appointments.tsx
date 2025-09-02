@@ -157,54 +157,62 @@ export default function Appointments() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card className="shadow-soft">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Gesamt</p>
-                    <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 animate-fade-in">
+            <div className="animate-scale-in" style={{ animationDelay: '0.1s' }}>
+              <Card className="shadow-soft card-interactive">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Gesamt</p>
+                      <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+                    </div>
+                    <Calendar className="w-8 h-8 text-primary group-hover:scale-110 transition-transform duration-200" />
                   </div>
-                  <Calendar className="w-8 h-8 text-primary" />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
             
-            <Card className="shadow-soft">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Bestätigt</p>
-                    <p className="text-2xl font-bold text-success">{stats.confirmed}</p>
+            <div className="animate-scale-in" style={{ animationDelay: '0.2s' }}>
+              <Card className="shadow-soft card-interactive">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Bestätigt</p>
+                      <p className="text-2xl font-bold text-success">{stats.confirmed}</p>
+                    </div>
+                    <CheckCircle className="w-8 h-8 text-success group-hover:scale-110 transition-transform duration-200" />
                   </div>
-                  <CheckCircle className="w-8 h-8 text-success" />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
-            <Card className="shadow-soft">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Wartend</p>
-                    <p className="text-2xl font-bold text-warning">{stats.pending}</p>
+            <div className="animate-scale-in" style={{ animationDelay: '0.3s' }}>
+              <Card className="shadow-soft card-interactive">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Wartend</p>
+                      <p className="text-2xl font-bold text-warning">{stats.pending}</p>
+                    </div>
+                    <AlertCircle className="w-8 h-8 text-warning group-hover:scale-110 transition-transform duration-200" />
                   </div>
-                  <AlertCircle className="w-8 h-8 text-warning" />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
-            <Card className="shadow-soft">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">KI-Buchungen</p>
-                    <p className="text-2xl font-bold text-primary">{stats.aiBooked}</p>
+            <div className="animate-scale-in" style={{ animationDelay: '0.4s' }}>
+              <Card className="shadow-soft card-interactive">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">KI-Buchungen</p>
+                      <p className="text-2xl font-bold text-primary">{stats.aiBooked}</p>
+                    </div>
+                    <Bot className="w-8 h-8 text-primary group-hover:scale-110 transition-transform duration-200 animate-bounce-gentle" />
                   </div>
-                  <Bot className="w-8 h-8 text-primary" />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Test Component - Temporary */}
@@ -252,12 +260,16 @@ export default function Appointments() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {filteredAppointments.map((appointment) => (
-                  <div key={appointment.id} className="p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
+              <div className="space-y-4 animate-fade-in">
+                {filteredAppointments.map((appointment, index) => (
+                  <div 
+                    key={appointment.id} 
+                    className="p-4 border border-border rounded-lg hover:bg-accent/50 transition-all duration-300 hover:shadow-soft hover:scale-[1.02] group animate-scale-in"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4 flex-1">
-                        <Avatar className="w-12 h-12">
+                        <Avatar className="w-12 h-12 group-hover:scale-110 transition-transform duration-200">
                           <AvatarFallback className="bg-gradient-primary text-white">
                             {appointment.patient.first_name[0]}{appointment.patient.last_name[0]}
                           </AvatarFallback>
@@ -265,7 +277,7 @@ export default function Appointments() {
                         
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-1">
-                            <h3 className="font-medium text-foreground">
+                            <h3 className="font-medium text-foreground group-hover:text-primary transition-colors duration-200">
                               {appointment.patient.first_name} {appointment.patient.last_name}
                             </h3>
                             {getStatusBadge(appointment.status, appointment.ai_booked)}
@@ -290,7 +302,9 @@ export default function Appointments() {
                             </div>
                             
                             <div className="flex items-center gap-4">
-                              <span className="font-medium">{appointment.service}</span>
+                              <span className="font-medium group-hover:text-primary/80 transition-colors duration-200">
+                                {appointment.service}
+                              </span>
                               {appointment.ai_booked && (
                                 <Badge variant="outline" className="border-primary text-primary text-xs">
                                   AI-gebucht
@@ -299,7 +313,9 @@ export default function Appointments() {
                             </div>
                             
                             {appointment.notes && (
-                              <p className="text-xs italic">{appointment.notes}</p>
+                              <p className="text-xs italic opacity-70 group-hover:opacity-90 transition-opacity duration-200">
+                                {appointment.notes}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -310,14 +326,14 @@ export default function Appointments() {
                           <Button 
                             size="sm" 
                             onClick={() => handleConfirm(appointment.id)}
-                            className="bg-success text-success-foreground hover:bg-success/80"
+                            className="bg-success text-success-foreground hover:bg-success/80 hover:scale-105 transition-all duration-200"
                           >
                             <CheckCircle className="w-4 h-4 mr-1" />
                             Bestätigen
                           </Button>
                         )}
                         
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="hover:scale-105 transition-transform duration-200">
                           <Edit3 className="w-4 h-4" />
                         </Button>
                         
@@ -325,7 +341,7 @@ export default function Appointments() {
                           variant="outline" 
                           size="sm"
                           onClick={() => handleCancel(appointment.id)}
-                          className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
+                          className="text-destructive hover:text-destructive-foreground hover:bg-destructive hover:scale-105 transition-all duration-200"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

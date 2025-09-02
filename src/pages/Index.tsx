@@ -101,11 +101,11 @@ export default function Index() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button className="bg-gradient-primary text-white shadow-glow hover:shadow-lg transition-all duration-300">
+              <Button className="button-gradient hover:scale-105 transition-all duration-300 animate-glow-pulse">
                 <Bot className="w-4 h-4 mr-2" />
                 KI-Agent aktivieren
               </Button>
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              <Button variant="ghost" size="sm" onClick={handleSignOut} className="hover:scale-105 transition-transform duration-200">
                 <LogOut className="mr-2 h-4 w-4" />
                 Abmelden
               </Button>
@@ -113,53 +113,61 @@ export default function Index() {
           </div>
 
           {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatsCard
-              title="Termine heute"
-              value={stats.todayAppointments}
-              change={stats.todayAppointments > 0 ? "Heute geplant" : "Keine Termine heute"}
-              changeType={stats.todayAppointments > 0 ? "positive" : "neutral"}
-              icon={Calendar}
-              description={stats.todayAppointments > 0 ? "Anstehende Termine" : ""}
-            />
-            <StatsCard
-              title="Gesamte Termine"
-              value={stats.totalAppointments}
-              change="Alle Termine"
-              changeType="neutral"
-              icon={TrendingUp}
-              description="Buchungen insgesamt"
-            />
-            <StatsCard
-              title="AI-gebuchte Termine"
-              value={stats.aiBookings}
-              change={`${stats.totalAppointments > 0 ? Math.round((stats.aiBookings / stats.totalAppointments) * 100) : 0}% aller Termine`}
-              changeType="positive"
-              icon={Bot}
-              description="Automatische Buchungen"
-            />
-            <StatsCard
-              title="Aktive Patienten"
-              value={stats.totalPatients}
-              change="Registrierte Patienten"
-              changeType="positive"
-              icon={Users}
-              description="In der Datenbank"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in">
+            <div className="animate-scale-in" style={{ animationDelay: '0.1s' }}>
+              <StatsCard
+                title="Termine heute"
+                value={stats.todayAppointments}
+                change={stats.todayAppointments > 0 ? "Heute geplant" : "Keine Termine heute"}
+                changeType={stats.todayAppointments > 0 ? "positive" : "neutral"}
+                icon={Calendar}
+                description={stats.todayAppointments > 0 ? "Anstehende Termine" : ""}
+              />
+            </div>
+            <div className="animate-scale-in" style={{ animationDelay: '0.2s' }}>
+              <StatsCard
+                title="Gesamte Termine"
+                value={stats.totalAppointments}
+                change="Alle Termine"
+                changeType="neutral"
+                icon={TrendingUp}
+                description="Buchungen insgesamt"
+              />
+            </div>
+            <div className="animate-scale-in" style={{ animationDelay: '0.3s' }}>
+              <StatsCard
+                title="AI-gebuchte Termine"
+                value={stats.aiBookings}
+                change={`${stats.totalAppointments > 0 ? Math.round((stats.aiBookings / stats.totalAppointments) * 100) : 0}% aller Termine`}
+                changeType="positive"
+                icon={Bot}
+                description="Automatische Buchungen"
+              />
+            </div>
+            <div className="animate-scale-in" style={{ animationDelay: '0.4s' }}>
+              <StatsCard
+                title="Aktive Patienten"
+                value={stats.totalPatients}
+                change="Registrierte Patienten"
+                changeType="positive"
+                icon={Users}
+                description="In der Datenbank"
+              />
+            </div>
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in" style={{ animationDelay: '0.5s' }}>
             <div className="lg:col-span-2">
               <RecentAppointments />
             </div>
             
             <div className="space-y-6">
               {/* AI Status Card */}
-              <Card className="shadow-soft">
+              <Card className="shadow-soft card-interactive">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Bot className="w-5 h-5 text-primary" />
+                    <Bot className="w-5 h-5 text-primary animate-bounce-gentle" />
                     KI-Agent Status
                   </CardTitle>
                 </CardHeader>
@@ -174,13 +182,13 @@ export default function Index() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">AI-Buchungen</span>
-                      <span className="text-sm">{stats.aiBookings}</span>
+                      <span className="text-sm font-bold text-primary">{stats.aiBookings}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Erfolgsrate</span>
-                      <span className="text-sm font-medium">94%</span>
+                      <span className="text-sm font-medium text-success">94%</span>
                     </div>
-                    <Button variant="outline" className="w-full mt-4 hover:bg-gradient-primary hover:text-white hover:border-primary transition-all duration-200">
+                    <Button variant="outline" className="w-full mt-4 button-gradient hover:scale-105 transition-transform duration-200">
                       <Phone className="w-4 h-4 mr-2" />
                       Telefonie einrichten
                     </Button>
@@ -189,21 +197,21 @@ export default function Index() {
               </Card>
 
               {/* Quick Actions */}
-              <Card className="shadow-soft">
+              <Card className="shadow-soft card-interactive">
                 <CardHeader>
                   <CardTitle>Schnellaktionen</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <Button variant="outline" className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 transition-all duration-200">
+                    <Button variant="outline" className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 hover:scale-105 transition-all duration-200">
                       <Calendar className="w-4 h-4 mr-2" />
                       Neuer Termin
                     </Button>
-                    <Button variant="outline" className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 transition-all duration-200">
+                    <Button variant="outline" className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 hover:scale-105 transition-all duration-200">
                       <Users className="w-4 h-4 mr-2" />
                       Patient hinzufügen
                     </Button>
-                    <Button variant="outline" className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 transition-all duration-200">
+                    <Button variant="outline" className="w-full justify-start hover:bg-gradient-accent hover:border-primary/30 hover:scale-105 transition-all duration-200">
                       <TrendingUp className="w-4 h-4 mr-2" />
                       Berichte anzeigen
                     </Button>

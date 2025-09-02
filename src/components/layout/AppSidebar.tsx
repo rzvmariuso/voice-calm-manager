@@ -1,5 +1,5 @@
 import { Calendar, Phone, Settings, Users, BarChart3, Bot } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 import {
   Sidebar,
   SidebarContent,
@@ -51,34 +51,57 @@ const items = [
 ]
 
 export function AppSidebar() {
+  const location = useLocation()
+  const currentPath = location.pathname
+
   return (
-    <Sidebar>
+    <Sidebar className="animate-slide-in-right">
       <SidebarHeader className="border-b border-sidebar-border p-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-            <Bot className="w-6 h-6 text-white" />
+        <div className="flex items-center gap-3 group">
+          <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center hover:shadow-glow transition-all duration-300 group-hover:scale-110">
+            <Bot className="w-6 h-6 text-white animate-bounce-gentle" />
           </div>
           <div>
-            <h2 className="font-bold text-lg text-sidebar-foreground">TerminAgent</h2>
+            <h2 className="font-bold text-lg text-sidebar-foreground group-hover:text-primary transition-colors duration-200">
+              TerminAgent
+            </h2>
             <p className="text-sm text-sidebar-foreground/70">KI-Terminbuchung</p>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/70">Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link to={item.url} className="flex items-center gap-3">
-                      <item.icon className="w-5 h-5" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+            <SidebarMenu className="space-y-1">
+              {items.map((item, index) => {
+                const isActive = currentPath === item.url;
+                return (
+                  <SidebarMenuItem key={item.title} className={`animate-fade-in`} style={{ animationDelay: `${index * 0.1}s` }}>
+                    <SidebarMenuButton asChild>
+                      <Link 
+                        to={item.url} 
+                        className={`
+                          flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group
+                          hover:bg-sidebar-accent hover:scale-105 hover:shadow-soft
+                          ${isActive 
+                            ? 'bg-gradient-primary text-white shadow-glow font-medium' 
+                            : 'text-sidebar-foreground hover:text-sidebar-primary'
+                          }
+                        `}
+                      >
+                        <item.icon className={`
+                          w-5 h-5 group-hover:scale-110 transition-transform duration-200
+                          ${isActive ? 'text-white' : ''}
+                        `} />
+                        <span className="group-hover:translate-x-1 transition-transform duration-200">
+                          {item.title}
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

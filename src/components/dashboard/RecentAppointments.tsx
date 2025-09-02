@@ -108,10 +108,10 @@ export function RecentAppointments() {
   };
 
   return (
-    <Card className="shadow-soft">
+    <Card className="shadow-soft card-interactive">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-primary" />
+          <Calendar className="w-5 h-5 text-primary animate-bounce-gentle" />
           Aktuelle Termine
         </CardTitle>
       </CardHeader>
@@ -119,31 +119,39 @@ export function RecentAppointments() {
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            <span className="ml-3 text-muted-foreground loading-dots">Lade Termine</span>
           </div>
         ) : appointments.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50 animate-bounce-gentle" />
             <p>Keine anstehenden Termine</p>
+            <p className="text-xs mt-1 opacity-70">Die nächsten Termine erscheinen hier</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {appointments.map((appointment) => (
-              <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
+            {appointments.map((appointment, index) => (
+              <div 
+                key={appointment.id} 
+                className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent/50 hover:shadow-soft transition-all duration-300 animate-fade-in hover:scale-[1.02] cursor-pointer group"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
                 <div className="flex items-center gap-3">
-                  <Avatar className="w-10 h-10">
+                  <Avatar className="w-10 h-10 group-hover:scale-110 transition-transform duration-200">
                     <AvatarFallback className="bg-gradient-primary text-white">
                       {appointment.patients.first_name[0]}{appointment.patients.last_name[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <div className="font-medium text-foreground">
+                    <div className="font-medium text-foreground group-hover:text-primary transition-colors duration-200">
                       {appointment.patients.first_name} {appointment.patients.last_name}
                     </div>
                     <div className="text-sm text-muted-foreground flex items-center gap-2">
                       <Clock className="w-3 h-3" />
                       {formatDate(appointment.appointment_date)}, {appointment.appointment_time.slice(0, 5)}
                       <span className="text-muted-foreground">•</span>
-                      {appointment.service}
+                      <span className="group-hover:text-primary/80 transition-colors duration-200">
+                        {appointment.service}
+                      </span>
                     </div>
                   </div>
                 </div>

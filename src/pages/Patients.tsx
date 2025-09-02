@@ -9,6 +9,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { StatsCard } from "@/components/dashboard/StatsCard";
+import { Loading } from "@/components/ui/loading";
+import { EmptyState } from "@/components/ui/empty-state";
 import { supabase } from "@/integrations/supabase/client";
 import { usePractice } from "@/hooks/usePractice";
 import { useToast } from "@/hooks/use-toast";
@@ -114,154 +116,175 @@ const Patients = () => {
   if (loading) {
     return (
       <SidebarProvider>
-        <AppSidebar />
-        <main className="flex-1 p-6">
-          <div className="flex items-center justify-center h-64">
-            <p>Lade Patienten...</p>
-          </div>
-        </main>
+        <div className="flex min-h-screen w-full">
+          <AppSidebar />
+          <main className="flex-1 p-6 bg-background">
+            <Loading text="Lade Patienten" />
+          </main>
+        </div>
       </SidebarProvider>
     );
   }
 
   return (
     <SidebarProvider>
-      <AppSidebar />
-      <main className="flex-1 p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <SidebarTrigger />
-            <h1 className="text-3xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-              Patienten
-            </h1>
-          </div>
-          <Button className="bg-gradient-primary text-white shadow-glow">
-            <Plus className="w-4 h-4 mr-2" />
-            Neuer Patient
-          </Button>
-        </div>
-
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatsCard
-            title="Gesamt Patienten"
-            value={stats.total}
-            change="Registrierte Patienten"
-            changeType="positive"
-            icon={User}
-            description="In der Datenbank"
-          />
-          <StatsCard
-            title="DSGVO Einwilligung"
-            value={stats.withConsent}
-            change={`${Math.round((stats.withConsent / stats.total) * 100) || 0}% haben zugestimmt`}
-            changeType="positive"
-            icon={Calendar}
-            description="Datenschutz konform"
-          />
-          <StatsCard
-            title="Neue Patienten"
-            value={stats.thisMonth}
-            change="Diesen Monat"
-            changeType="positive"
-            icon={Plus}
-            description="Monatliche Registrierungen"
-          />
-        </div>
-
-        {/* Search */}
-        <div className="flex gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder="Patienten suchen..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-        {/* Patients List */}
-        <div className="grid gap-4">
-          {filteredPatients.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <User className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Keine Patienten gefunden</h3>
+      <div className="flex min-h-screen w-full">
+        <AppSidebar />
+        <main className="flex-1 p-6 bg-background space-y-6">
+          <div className="flex items-center justify-between animate-fade-in">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger />
+              <div>
+                <h1 className="text-3xl font-bold text-gradient">
+                  Patienten
+                </h1>
                 <p className="text-muted-foreground">
-                  {searchTerm ? "Keine Patienten entsprechen Ihrer Suche." : "Noch keine Patienten registriert."}
+                  Verwalten Sie alle Patientendaten und DSGVO-Einwilligungen
                 </p>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredPatients.map((patient) => (
-              <Card key={patient.id} className="transition-all hover:shadow-soft">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="w-12 h-12">
-                        <AvatarFallback className="bg-gradient-primary text-white">
-                          {patient.first_name[0]}{patient.last_name[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-foreground">
-                            {patient.first_name} {patient.last_name}
-                          </h3>
-                          {getConsentStatus(patient.consent_date)}
-                        </div>
+              </div>
+            </div>
+            <Button className="button-gradient hover:scale-105 transition-transform duration-200">
+              <Plus className="w-4 h-4 mr-2" />
+              Neuer Patient
+            </Button>
+          </div>
+
+          {/* Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <div className="animate-scale-in" style={{ animationDelay: '0.2s' }}>
+              <StatsCard
+                title="Gesamt Patienten"
+                value={stats.total}
+                change="Registrierte Patienten"
+                changeType="positive"
+                icon={User}
+                description="In der Datenbank"
+              />
+            </div>
+            <div className="animate-scale-in" style={{ animationDelay: '0.3s' }}>
+              <StatsCard
+                title="DSGVO Einwilligung"
+                value={stats.withConsent}
+                change={`${Math.round((stats.withConsent / stats.total) * 100) || 0}% haben zugestimmt`}
+                changeType="positive"
+                icon={Calendar}
+                description="Datenschutz konform"
+              />
+            </div>
+            <div className="animate-scale-in" style={{ animationDelay: '0.4s' }}>
+              <StatsCard
+                title="Neue Patienten"
+                value={stats.thisMonth}
+                change="Diesen Monat"
+                changeType="positive"
+                icon={Plus}
+                description="Monatliche Registrierungen"
+              />
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="flex gap-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Patienten suchen (Name, E-Mail, Telefon)..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 hover:border-primary/50 focus:border-primary transition-colors duration-200"
+              />
+            </div>
+          </div>
+
+          {/* Patients List */}
+          <div className="grid gap-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+            {filteredPatients.length === 0 ? (
+              <EmptyState
+                icon={User}
+                title={searchTerm ? "Keine Patienten gefunden" : "Noch keine Patienten"}
+                description={
+                  searchTerm 
+                    ? "Versuchen Sie eine andere Suchanfrage oder fügen Sie einen neuen Patienten hinzu." 
+                    : "Fügen Sie Ihren ersten Patienten hinzu, um loszulegen."
+                }
+                action={{
+                  label: "Neuer Patient",
+                  onClick: () => console.log("Add patient") // Placeholder
+                }}
+              />
+            ) : (
+              filteredPatients.map((patient, index) => (
+                <Card 
+                  key={patient.id} 
+                  className="card-interactive animate-scale-in"
+                  style={{ animationDelay: `${0.7 + (index * 0.05)}s` }}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4 flex-1">
+                        <Avatar className="w-12 h-12 hover:scale-110 transition-transform duration-200">
+                          <AvatarFallback className="bg-gradient-primary text-white">
+                            {patient.first_name[0]}{patient.last_name[0]}
+                          </AvatarFallback>
+                        </Avatar>
                         
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          {patient.email && (
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-foreground hover:text-primary transition-colors duration-200">
+                              {patient.first_name} {patient.last_name}
+                            </h3>
+                            {getConsentStatus(patient.consent_date)}
+                          </div>
+                          
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            {patient.email && (
+                              <div className="flex items-center gap-1 hover:text-primary/80 transition-colors duration-200">
+                                <Mail className="w-3 h-3" />
+                                {patient.email}
+                              </div>
+                            )}
+                            {patient.phone && (
+                              <div className="flex items-center gap-1 hover:text-primary/80 transition-colors duration-200">
+                                <Phone className="w-3 h-3" />
+                                {patient.phone}
+                              </div>
+                            )}
                             <div className="flex items-center gap-1">
-                              <Mail className="w-3 h-3" />
-                              {patient.email}
+                              <Calendar className="w-3 h-3" />
+                              Registriert: {formatDate(patient.created_at)}
                             </div>
-                          )}
-                          {patient.phone && (
-                            <div className="flex items-center gap-1">
-                              <Phone className="w-3 h-3" />
-                              {patient.phone}
-                            </div>
-                          )}
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            Registriert: {formatDate(patient.created_at)}
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Edit2 className="w-4 h-4 mr-2" />
-                          Bearbeiten
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => handleDeletePatient(patient.id)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Löschen
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
-      </main>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="hover:scale-110 transition-transform duration-200">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="animate-scale-in">
+                          <DropdownMenuItem className="hover:bg-accent transition-colors duration-200">
+                            <Edit2 className="w-4 h-4 mr-2" />
+                            Bearbeiten
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDeletePatient(patient.id)}
+                            className="text-destructive hover:bg-destructive/10 transition-colors duration-200"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Löschen
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </main>
+      </div>
     </SidebarProvider>
   );
 };
