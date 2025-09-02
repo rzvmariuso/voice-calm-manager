@@ -310,6 +310,52 @@ ZEIT KONVERTIEREN:
 
       appointmentId = appointment.id;
       console.log('Successfully created appointment:', appointmentId);
+      
+      // Send to n8n webhook if configured
+      try {
+        if (practice.n8n_webhook_url && practice.n8n_enabled) {
+          const n8nPayload = {
+            trigger_type: 'new_appointment',
+            timestamp: new Date().toISOString(),
+            practice: {
+              id: practiceId,
+              name: practice.name,
+              phone: practice.phone,
+              email: practice.email
+            },
+            appointment: {
+              id: appointmentId,
+              date: bookingData.preferred_date,
+              time: bookingData.preferred_time,
+              service: bookingData.service,
+              status: 'pending',
+              ai_booked: true
+            },
+            patient: {
+              name: bookingData.patient_name,
+              phone: cleanPhone
+            },
+            source: 'ai_booking'
+          };
+          
+          const n8nResponse = await fetch(practice.n8n_webhook_url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(n8nPayload),
+          });
+          
+          if (n8nResponse.ok) {
+            console.log('Successfully sent appointment data to n8n');
+          } else {
+            console.error('n8n webhook returned error:', n8nResponse.status);
+          }
+        }
+      } catch (n8nError) {
+        console.error('Failed to send to n8n:', n8nError);
+        // Don't fail the appointment creation if n8n fails
+      }
     }
 
     // Log the AI call with appropriate outcome
