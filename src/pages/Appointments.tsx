@@ -22,101 +22,15 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
-
-const mockAppointments = [
-  {
-    id: "1",
-    patient: {
-      name: "Anna Müller",
-      phone: "+49 123 456789",
-      email: "anna.muller@email.de",
-      avatar: ""
-    },
-    date: "2024-01-15",
-    time: "09:00",
-    duration: 60,
-    service: "Ganzkörper-Massage",
-    status: "confirmed",
-    source: "ai",
-    notes: "Rückenschmerzen seit 2 Wochen",
-    price: 85.00
-  },
-  {
-    id: "2", 
-    patient: {
-      name: "Michael Schmidt",
-      phone: "+49 987 654321",
-      email: "m.schmidt@email.de",
-      avatar: ""
-    },
-    date: "2024-01-15",
-    time: "10:30",
-    duration: 45,
-    service: "Physiotherapie",
-    status: "pending",
-    source: "manual",
-    notes: "Nachbehandlung Knie-OP",
-    price: 65.00
-  },
-  {
-    id: "3",
-    patient: {
-      name: "Sarah Wagner",
-      phone: "+49 555 123456",
-      email: "s.wagner@email.de",
-      avatar: ""
-    },
-    date: "2024-01-16",
-    time: "14:00",
-    duration: 30,
-    service: "Prophylaxe",
-    status: "confirmed",
-    source: "ai",
-    notes: "Routinetermin",
-    price: 45.00
-  },
-  {
-    id: "4",
-    patient: {
-      name: "Thomas Bauer",
-      phone: "+49 444 987654", 
-      email: "t.bauer@email.de",
-      avatar: ""
-    },
-    date: "2024-01-16",
-    time: "16:15",
-    duration: 60,
-    service: "Hot Stone Massage",
-    status: "ai_booked",
-    source: "ai",
-    notes: "Ersttermin - telefonisch gebucht",
-    price: 95.00
-  },
-  {
-    id: "5",
-    patient: {
-      name: "Lisa Hoffman",
-      phone: "+49 111 222333",
-      email: "l.hoffman@email.de", 
-      avatar: ""
-    },
-    date: "2024-01-17",
-    time: "11:00",
-    duration: 90,
-    service: "Wellness Paket",
-    status: "confirmed",
-    source: "ai",
-    notes: "Geburtstagsgeschenk",
-    price: 120.00
-  }
-]
+import { useAppointments } from "@/hooks/useAppointments"
 
 export default function Appointments() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
   const { toast } = useToast()
+  const { appointments, isLoading, error } = useAppointments()
 
-  const getStatusBadge = (status: string, source: string) => {
+  const getStatusBadge = (status: string, aiBooked: boolean | null) => {
     switch (status) {
       case "confirmed":
         return (
@@ -125,7 +39,7 @@ export default function Appointments() {
               <CheckCircle className="w-3 h-3 mr-1" />
               Bestätigt
             </Badge>
-            {source === "ai" && (
+            {aiBooked && (
               <Badge variant="outline" className="border-primary text-primary text-xs">
                 <Bot className="w-3 h-3 mr-1" />
                 KI
@@ -135,25 +49,27 @@ export default function Appointments() {
         )
       case "pending":
         return (
-          <Badge variant="secondary" className="bg-warning text-warning-foreground">
-            <Clock className="w-3 h-3 mr-1" />
-            Wartend
-          </Badge>
-        )
-      case "ai_booked":
-        return (
-          <Badge variant="outline" className="border-primary text-primary">
-            <Bot className="w-3 h-3 mr-1" />
-            KI-Buchung
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="bg-warning text-warning-foreground">
+              <Clock className="w-3 h-3 mr-1" />
+              Wartend
+            </Badge>
+            {aiBooked && (
+              <Badge variant="outline" className="border-primary text-primary text-xs">
+                <Bot className="w-3 h-3 mr-1" />
+                KI-Buchung
+              </Badge>
+            )}
+          </div>
         )
       default:
         return <Badge variant="outline">Unbekannt</Badge>
     }
   }
 
-  const filteredAppointments = mockAppointments.filter(appointment => {
-    const matchesSearch = appointment.patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredAppointments = appointments.filter(appointment => {
+    const patientName = `${appointment.patient.first_name} ${appointment.patient.last_name}`;
+    const matchesSearch = patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          appointment.service.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesFilter = filterStatus === "all" || appointment.status === filterStatus
     return matchesSearch && matchesFilter
@@ -175,10 +91,46 @@ export default function Appointments() {
   }
 
   const stats = {
-    total: mockAppointments.length,
-    confirmed: mockAppointments.filter(a => a.status === "confirmed").length,
-    pending: mockAppointments.filter(a => a.status === "pending").length,
-    aiBooked: mockAppointments.filter(a => a.source === "ai").length
+    total: appointments.length,
+    confirmed: appointments.filter(a => a.status === "confirmed").length,
+    pending: appointments.filter(a => a.status === "pending").length,
+    aiBooked: appointments.filter(a => a.ai_booked === true).length
+  }
+
+  if (isLoading) {
+    return (
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full">
+          <AppSidebar />
+          <main className="flex-1 p-6 bg-background">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Lade Termine...</p>
+              </div>
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    )
+  }
+
+  if (error) {
+    return (
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full">
+          <AppSidebar />
+          <main className="flex-1 p-6 bg-background">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+                <p className="text-destructive">Fehler beim Laden der Termine: {error}</p>
+              </div>
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    )
   }
 
   return (
@@ -306,37 +258,44 @@ export default function Appointments() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4 flex-1">
                         <Avatar className="w-12 h-12">
-                          <AvatarImage src={appointment.patient.avatar} />
                           <AvatarFallback className="bg-gradient-primary text-white">
-                            {appointment.patient.name.split(' ').map(n => n[0]).join('')}
+                            {appointment.patient.first_name[0]}{appointment.patient.last_name[0]}
                           </AvatarFallback>
                         </Avatar>
                         
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-1">
-                            <h3 className="font-medium text-foreground">{appointment.patient.name}</h3>
-                            {getStatusBadge(appointment.status, appointment.source)}
+                            <h3 className="font-medium text-foreground">
+                              {appointment.patient.first_name} {appointment.patient.last_name}
+                            </h3>
+                            {getStatusBadge(appointment.status, appointment.ai_booked)}
                           </div>
                           
                           <div className="text-sm text-muted-foreground space-y-1">
                             <div className="flex items-center gap-4">
                               <span className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
-                                {new Date(appointment.date).toLocaleDateString('de-DE')}
+                                {new Date(appointment.appointment_date).toLocaleDateString('de-DE')}
                               </span>
                               <span className="flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
-                                {appointment.time} ({appointment.duration}min)
+                                {appointment.appointment_time} ({appointment.duration_minutes || 30}min)
                               </span>
-                              <span className="flex items-center gap-1">
-                                <Phone className="w-3 h-3" />
-                                {appointment.patient.phone}
-                              </span>
+                              {appointment.patient.phone && (
+                                <span className="flex items-center gap-1">
+                                  <Phone className="w-3 h-3" />
+                                  {appointment.patient.phone}
+                                </span>
+                              )}
                             </div>
                             
                             <div className="flex items-center gap-4">
                               <span className="font-medium">{appointment.service}</span>
-                              <span>€{appointment.price.toFixed(2)}</span>
+                              {appointment.ai_booked && (
+                                <Badge variant="outline" className="border-primary text-primary text-xs">
+                                  AI-gebucht
+                                </Badge>
+                              )}
                             </div>
                             
                             {appointment.notes && (
