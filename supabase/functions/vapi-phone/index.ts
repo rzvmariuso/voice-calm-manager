@@ -6,6 +6,59 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Create assistant in Vapi dashboard
+async function createAssistant(vapiApiKey: string, practiceId: string): Promise<string> {
+  const response = await fetch('https://api.vapi.ai/assistant', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${vapiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name: `Praxis Assistant ${practiceId}`,
+      model: {
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+        messages: [{
+          role: 'system',
+          content: `Sie sind ein AI-Assistent für Terminbuchungen einer deutschen Arztpraxis. Praxis-ID: ${practiceId}
+          
+          Wichtige Funktionen:
+          1. Termine buchen, verschieben, löschen  
+          2. Bei komplexen Anfragen an menschliche Mitarbeiter weiterleiten
+          3. Höflich und professionell sein
+          4. Nur auf Deutsch antworten
+          
+          Begrüßung: "Hallo! Ich bin der AI-Assistent der Praxis. Wie kann ich Ihnen heute helfen?"`
+        }]
+      },
+      voice: {
+        provider: '11labs',
+        voiceId: 'EXAVITQu4vr4xnSDxMaL'
+      },
+      firstMessage: 'Hallo! Ich bin der AI-Assistent der Praxis. Wie kann ich Ihnen heute helfen?',
+      recordingEnabled: true,
+      transcriber: {
+        provider: 'deepgram',
+        model: 'nova-2',
+        language: 'de'
+      },
+      clientMessages: ['conversation-update', 'function-call', 'hang', 'model-output', 'speech-update', 'status-update', 'transcript', 'tool-calls', 'user-interrupted'],
+      serverMessages: ['conversation-update', 'end-of-call-report', 'function-call', 'hang', 'speech-update', 'status-update', 'tool-calls', 'transfer-update']
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    console.error('Assistant creation error:', error);
+    throw new Error(`Failed to create assistant: ${error.message}`);
+  }
+
+  const result = await response.json();
+  console.log('Assistant created:', result.id);
+  return result.id;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -13,7 +66,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, practiceId, phoneNumber, message } = await req.json();
+    const { action, practiceId, phoneNumber, message, assistantId } = await req.json();
     const vapiApiKey = Deno.env.get('VAPI_API_KEY');
     
     if (!vapiApiKey) {
@@ -22,7 +75,24 @@ serve(async (req) => {
 
     console.log(`Vapi request: ${action} for practice ${practiceId}`);
 
-    if (action === 'create_call') {
+    if (action === 'create_assistant') {
+      // Create assistant in Vapi dashboard
+      const newAssistantId = await createAssistant(vapiApiKey, practiceId);
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          assistantId: newAssistantId
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+
+    } else if (action === 'create_call') {
+      // Use provided assistantId or create new one
+      const callAssistantId = assistantId || await createAssistant(vapiApiKey, practiceId);
+      
       // Create outbound call with Vapi
       const response = await fetch('https://api.vapi.ai/call', {
         method: 'POST',
@@ -31,39 +101,11 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          phoneNumberId: phoneNumber, // Vapi phone number ID
+          phoneNumberId: phoneNumber,
           customer: {
             number: '+18048081248' // Test number - needs to be E.164 format
           },
-          assistant: {
-            model: {
-              provider: 'openai',
-              model: 'gpt-4o-mini',
-              messages: [{
-                role: 'system',
-                content: `Sie sind ein AI-Assistent für Terminbuchungen. Praxis-ID: ${practiceId}. 
-                
-                Wichtige Funktionen:
-                1. Termine buchen, verschieben, löschen
-                2. Bei komplexen Anfragen an menschliche Mitarbeiter weiterleiten
-                3. Höflich und professionell sein
-                4. Nur auf Deutsch antworten
-                
-                Bei Terminaktionen verwenden Sie diese API: https://jdbprivzprvpfoxrfyjy.supabase.co/functions/v1/ai-booking`
-              }]
-            },
-            voice: {
-              provider: '11labs',
-              voiceId: 'EXAVITQu4vr4xnSDxMaL'
-            },
-            firstMessage: 'Hallo! Ich bin der AI-Assistent der Praxis. Wie kann ich Ihnen heute helfen?',
-            recordingEnabled: true,
-            transcriber: {
-              provider: 'deepgram',
-              model: 'nova-2',
-              language: 'de'
-            }
-          }
+          assistantId: callAssistantId
         })
       });
 
@@ -80,7 +122,8 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           callId: result.id,
-          status: result.status
+          status: result.status,
+          assistantId: callAssistantId
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
