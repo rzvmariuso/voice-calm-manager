@@ -54,6 +54,15 @@ export default function Settings() {
       phoneNumber: "",
       recordCalls: true
     },
+    n8n: {
+      webhookUrl: "",
+      enabled: false,
+      triggers: {
+        newAppointment: true,
+        appointmentUpdated: false,
+        newPatient: true
+      }
+    },
     gdpr: {
       dataRetentionDays: 1095,
       cookieConsent: true,
@@ -82,7 +91,54 @@ export default function Settings() {
     }
   }
 
+  const testN8nWebhook = async () => {
+    if (!settings.n8n.webhookUrl) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie eine n8n Webhook URL ein",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(settings.n8n.webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        mode: "no-cors",
+        body: JSON.stringify({
+          test: true,
+          timestamp: new Date().toISOString(),
+          source: "praxis-setup",
+          message: "Test-Nachricht von Ihrer Praxis-Software"
+        }),
+      });
+
+      toast({
+        title: "Test gesendet",
+        description: "Die Test-Nachricht wurde an n8n gesendet. Prüfen Sie Ihren n8n Workflow.",
+      });
+    } catch (error) {
+      console.error("n8n test error:", error);
+      toast({
+        title: "Fehler",
+        description: "Test konnte nicht gesendet werden. Prüfen Sie die URL.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const testConnection = async (service: string) => {
+    if (service === "n8n") {
+      testN8nWebhook();
+      return;
+    }
+    
     toast({
       title: "Verbindung wird getestet...",
       description: `${service} Verbindung wird überprüft.`,
@@ -117,7 +173,7 @@ export default function Settings() {
           </div>
 
           <Tabs defaultValue="practice" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="practice" className="flex items-center gap-2">
                 <SettingsIcon className="w-4 h-4" />
                 Praxis
@@ -133,6 +189,10 @@ export default function Settings() {
               <TabsTrigger value="phone" className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
                 Telefonie
+              </TabsTrigger>
+              <TabsTrigger value="automation" className="flex items-center gap-2">
+                <Database className="w-4 h-4" />
+                n8n
               </TabsTrigger>
               <TabsTrigger value="gdpr" className="flex items-center gap-2">
                 <Shield className="w-4 h-4" />
@@ -476,6 +536,135 @@ export default function Settings() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* n8n Automation Settings */}
+            <TabsContent value="automation">
+              <div className="space-y-6">
+                <Card className="shadow-soft">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Database className="w-5 h-5 text-primary" />
+                      n8n Automation
+                      <Badge variant="outline" className={settings.n8n.enabled ? "border-success text-success" : "border-muted text-muted"}>
+                        {settings.n8n.enabled ? "Aktiviert" : "Deaktiviert"}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="p-4 border border-primary/20 bg-primary/5 rounded-lg">
+                      <h4 className="font-medium mb-2">Was ist n8n?</h4>
+                      <p className="text-sm text-muted-foreground">
+                        n8n ist eine Open-Source Automatisierungs-Plattform. Verbinden Sie Ihre Praxis mit anderen Tools wie Excel, 
+                        Google Sheets, E-Mail-Marketing, Buchhaltungssoftware und vielem mehr.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <Label>n8n Integration aktivieren</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Automatische Weiterleitung von Termindaten an n8n
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={settings.n8n.enabled}
+                        onCheckedChange={(checked) => setSettings(s => ({
+                          ...s, 
+                          n8n: {...s.n8n, enabled: checked}
+                        }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="n8n-webhook">n8n Webhook URL</Label>
+                      <div className="flex gap-2">
+                        <Input 
+                          id="n8n-webhook"
+                          value={settings.n8n.webhookUrl}
+                          onChange={(e) => setSettings(s => ({
+                            ...s, 
+                            n8n: {...s.n8n, webhookUrl: e.target.value}
+                          }))}
+                          placeholder="https://your-n8n-instance.com/webhook/..."
+                          disabled={!settings.n8n.enabled}
+                        />
+                        <Button 
+                          variant="outline" 
+                          onClick={() => testConnection("n8n")}
+                          disabled={!settings.n8n.enabled || !settings.n8n.webhookUrl}
+                        >
+                          <TestTube className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        1. Erstellen Sie einen Workflow in n8n<br/>
+                        2. Fügen Sie einen "Webhook" Trigger hinzu<br/>
+                        3. Kopieren Sie die URL hierher
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label>Automatisierungen aktivieren:</Label>
+                      
+                      <div className="flex items-center justify-between p-3 border rounded">
+                        <div>
+                          <p className="text-sm font-medium">Neuer Termin</p>
+                          <p className="text-xs text-muted-foreground">Wird ausgelöst bei jeder AI-Terminbuchung</p>
+                        </div>
+                        <Switch 
+                          checked={settings.n8n.triggers.newAppointment}
+                          onCheckedChange={(checked) => setSettings(s => ({
+                            ...s, 
+                            n8n: {...s.n8n, triggers: {...s.n8n.triggers, newAppointment: checked}}
+                          }))}
+                          disabled={!settings.n8n.enabled}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 border rounded">
+                        <div>
+                          <p className="text-sm font-medium">Neuer Patient</p>
+                          <p className="text-xs text-muted-foreground">Wird ausgelöst bei der ersten Terminbuchung eines Patienten</p>
+                        </div>
+                        <Switch 
+                          checked={settings.n8n.triggers.newPatient}
+                          onCheckedChange={(checked) => setSettings(s => ({
+                            ...s, 
+                            n8n: {...s.n8n, triggers: {...s.n8n.triggers, newPatient: checked}}
+                          }))}
+                          disabled={!settings.n8n.enabled}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 border rounded">
+                        <div>
+                          <p className="text-sm font-medium">Termin aktualisiert</p>
+                          <p className="text-xs text-muted-foreground">Wird ausgelöst bei Änderungen an bestehenden Terminen</p>
+                        </div>
+                        <Switch 
+                          checked={settings.n8n.triggers.appointmentUpdated}
+                          onCheckedChange={(checked) => setSettings(s => ({
+                            ...s, 
+                            n8n: {...s.n8n, triggers: {...s.n8n.triggers, appointmentUpdated: checked}}
+                          }))}
+                          disabled={!settings.n8n.enabled}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-muted/20 rounded-lg">
+                      <h4 className="text-sm font-medium mb-2">Beispiel-Automatisierungen:</h4>
+                      <ul className="text-xs text-muted-foreground space-y-1">
+                        <li>• Neuer Termin → Google Kalender + Excel-Liste</li>
+                        <li>• Neuer Patient → CRM-System + Newsletter</li>
+                        <li>• Termin gebucht → SMS-Bestätigung + Buchhaltung</li>
+                        <li>• AI-Anruf → Slack-Benachrichtigung</li>
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* GDPR Settings */}
