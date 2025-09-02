@@ -381,7 +381,7 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
                         <SelectValue placeholder="Patient auswählen..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {patients.map((patient) => (
+                        {patients.length > 0 ? patients.map((patient) => (
                           <SelectItem key={patient.id} value={patient.id}>
                             <div className="flex items-center gap-2">
                               <User className="w-4 h-4" />
@@ -391,11 +391,10 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
                               )}
                             </div>
                           </SelectItem>
-                        ))}
-                        {patients.length === 0 && (
-                          <SelectItem value="" disabled>
+                        )) : (
+                          <div className="px-2 py-1.5 text-sm text-muted-foreground">
                             Keine Patienten gefunden
-                          </SelectItem>
+                          </div>
                         )}
                       </SelectContent>
                     </Select>
