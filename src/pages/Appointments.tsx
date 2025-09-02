@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import BookingTest from "@/components/BookingTest"
 import { 
   Calendar, 
   Plus, 
@@ -253,6 +254,9 @@ export default function Appointments() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Test Component - Temporary */}
+          <BookingTest />
 
           {/* Filters and Search */}
           <Card className="shadow-soft mb-6">
