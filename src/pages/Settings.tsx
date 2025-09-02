@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { DataRequestInterface } from "@/components/gdpr/DataRequestInterface"
 
 export default function Settings() {
   const [isLoading, setIsLoading] = useState(false)
@@ -679,105 +680,8 @@ export default function Settings() {
                     </Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="p-4 border border-warning/20 bg-warning/5 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-warning mt-0.5" />
-                      <div>
-                        <h4 className="font-medium text-warning">Wichtiger Hinweis</h4>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Diese Einstellungen gewährleisten DSGVO-Konformität für deutsche Praxen. 
-                          Alle Daten werden ausschließlich auf EU-Servern verarbeitet.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="retention-days">Datenaufbewahrung (Tage)</Label>
-                    <Input 
-                      id="retention-days"
-                      type="number"
-                      value={settings.gdpr.dataRetentionDays}
-                      onChange={(e) => setSettings(s => ({
-                        ...s, 
-                        gdpr: {...s.gdpr, dataRetentionDays: parseInt(e.target.value)}
-                      }))}
-                      min="30"
-                      max="3650"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Empfohlen: 3 Jahre (1095 Tage) für Healthcare-Dokumentation
-                    </p>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Cookie-Einverständnis erforderlich</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Nutzer müssen Cookies explizit zustimmen
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={settings.gdpr.cookieConsent}
-                        onCheckedChange={(checked) => setSettings(s => ({
-                          ...s, 
-                          gdpr: {...s.gdpr, cookieConsent: checked}
-                        }))}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Daten anonymisieren</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Persönliche Daten nach Aufbewahrungsfrist anonymisieren
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={settings.gdpr.anonymizeData}
-                        onCheckedChange={(checked) => setSettings(s => ({
-                          ...s, 
-                          gdpr: {...s.gdpr, anonymizeData: checked}
-                        }))}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Nur EU-Server verwenden</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Datenverarbeitung ausschließlich in der EU
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={settings.gdpr.euServerOnly}
-                        onCheckedChange={(checked) => setSettings(s => ({
-                          ...s, 
-                          gdpr: {...s.gdpr, euServerOnly: checked}
-                        }))}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-success/5 border border-success/20 rounded-lg">
-                    <div className="text-center">
-                      <Database className="w-8 h-8 text-success mx-auto mb-2" />
-                      <p className="text-sm font-medium">Supabase EU</p>
-                      <p className="text-xs text-muted-foreground">Frankfurt Server</p>
-                    </div>
-                    <div className="text-center">
-                      <Globe className="w-8 h-8 text-success mx-auto mb-2" />
-                      <p className="text-sm font-medium">Vapi EU</p>
-                      <p className="text-xs text-muted-foreground">Deutschland Server</p>
-                    </div>
-                    <div className="text-center">
-                      <Shield className="w-8 h-8 text-success mx-auto mb-2" />
-                      <p className="text-sm font-medium">SSL/TLS</p>
-                      <p className="text-xs text-muted-foreground">End-to-End</p>
-                    </div>
-                  </div>
+                <CardContent>
+                  <DataRequestInterface />
                 </CardContent>
               </Card>
             </TabsContent>
