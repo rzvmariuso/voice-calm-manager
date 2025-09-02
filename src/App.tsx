@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import Appointments from "./pages/Appointments";
+import Patients from "./pages/Patients";
 import AIAgent from "./pages/AIAgent";
 import Phone from "./pages/Phone";
 import Auth from "./pages/Auth";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/appointments" element={<Appointments />} />
+            <Route path="/patients" element={<Patients />} />
             <Route path="/ai-agent" element={<AIAgent />} />
             <Route path="/phone" element={<Phone />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
