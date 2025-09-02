@@ -18,7 +18,8 @@ import {
   Trash2, 
   Play,
   Pause,
-  Users
+  Users,
+  UserPlus
 } from "lucide-react";
 import {
   Dialog,
@@ -102,6 +103,7 @@ export function RecurringAppointments() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [newPatientDialogOpen, setNewPatientDialogOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     patient_id: "",
@@ -115,6 +117,14 @@ export function RecurringAppointments() {
     start_time: "",
     start_date: new Date(),
     end_date: null as Date | null,
+  });
+
+  const [newPatientData, setNewPatientData] = useState({
+    first_name: "",
+    last_name: "",
+    phone: "",
+    email: "",
+    date_of_birth: null as Date | null,
   });
 
   useEffect(() => {
@@ -273,6 +283,68 @@ export function RecurringAppointments() {
     }
   };
 
+  const createNewPatient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!practice || !newPatientData.first_name || !newPatientData.last_name) {
+      toast({
+        title: "Fehler",
+        description: "Bitte füllen Sie alle Pflichtfelder aus",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const patientData = {
+        practice_id: practice.id,
+        first_name: newPatientData.first_name,
+        last_name: newPatientData.last_name,
+        phone: newPatientData.phone || null,
+        email: newPatientData.email || null,
+        date_of_birth: newPatientData.date_of_birth ? format(newPatientData.date_of_birth, 'yyyy-MM-dd') : null,
+        privacy_consent: true,
+        consent_date: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase
+        .from('patients')
+        .insert([patientData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Erfolg",
+        description: "Neuer Patient wurde erstellt",
+      });
+
+      // Update form with new patient
+      setFormData(prev => ({ ...prev, patient_id: data.id }));
+      setNewPatientDialogOpen(false);
+      resetNewPatientForm();
+      loadData();
+    } catch (error: any) {
+      console.error('Error creating patient:', error);
+      toast({
+        title: "Fehler",
+        description: error.message || "Patient konnte nicht erstellt werden",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetNewPatientForm = () => {
+    setNewPatientData({
+      first_name: "",
+      last_name: "",
+      phone: "",
+      email: "",
+      date_of_birth: null,
+    });
+  };
+
   const resetForm = () => {
     setFormData({
       patient_id: "",
@@ -340,7 +412,19 @@ export function RecurringAppointments() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Patient Selection */}
               <div className="space-y-2">
-                <Label htmlFor="patient">Patient *</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="patient">Patient *</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setNewPatientDialogOpen(true)}
+                    className="text-xs"
+                  >
+                    <UserPlus className="w-3 h-3 mr-1" />
+                    Neuer Patient
+                  </Button>
+                </div>
                 <Select
                   value={formData.patient_id}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, patient_id: value }))}
@@ -607,6 +691,108 @@ export function RecurringAppointments() {
                 </Button>
                 <Button type="submit">
                   Serientermin erstellen
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* New Patient Dialog */}
+        <Dialog open={newPatientDialogOpen} onOpenChange={setNewPatientDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Neuen Patient hinzufügen</DialogTitle>
+              <DialogDescription>
+                Erstellen Sie einen neuen Patienten für die Praxis
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form onSubmit={createNewPatient} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-first-name">Vorname *</Label>
+                  <Input
+                    id="new-first-name"
+                    value={newPatientData.first_name}
+                    onChange={(e) => setNewPatientData(prev => ({ ...prev, first_name: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-last-name">Nachname *</Label>
+                  <Input
+                    id="new-last-name"
+                    value={newPatientData.last_name}
+                    onChange={(e) => setNewPatientData(prev => ({ ...prev, last_name: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="new-phone">Telefon</Label>
+                <Input
+                  id="new-phone"
+                  type="tel"
+                  value={newPatientData.phone}
+                  onChange={(e) => setNewPatientData(prev => ({ ...prev, phone: e.target.value }))}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="new-email">E-Mail</Label>
+                <Input
+                  id="new-email"
+                  type="email"
+                  value={newPatientData.email}
+                  onChange={(e) => setNewPatientData(prev => ({ ...prev, email: e.target.value }))}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Geburtsdatum</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !newPatientData.date_of_birth && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {newPatientData.date_of_birth ? (
+                        format(newPatientData.date_of_birth, "dd.MM.yyyy", { locale: de })
+                      ) : (
+                        <span>Geburtsdatum wählen</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newPatientData.date_of_birth || undefined}
+                      onSelect={(date) => setNewPatientData(prev => ({ ...prev, date_of_birth: date || null }))}
+                      initialFocus
+                      defaultMonth={new Date(1980, 0)}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setNewPatientDialogOpen(false);
+                    resetNewPatientForm();
+                  }}
+                >
+                  Abbrechen
+                </Button>
+                <Button type="submit">
+                  Patient erstellen
                 </Button>
               </div>
             </form>
