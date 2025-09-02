@@ -129,23 +129,7 @@ export function RecurringAppointments() {
     try {
       setLoading(true);
 
-      // Load recurring appointments
-      const { data: recurringData, error: recurringError } = await supabase
-        .from('recurring_appointments')
-        .select(`
-          *,
-          patient:patients (
-            id,
-            first_name,
-            last_name
-          )
-        `)
-        .eq('practice_id', practice.id)
-        .order('created_at', { ascending: false });
-
-      if (recurringError) throw recurringError;
-
-      // Load patients
+      // Load patients first (this is critical for the form)
       const { data: patientsData, error: patientsError } = await supabase
         .from('patients')
         .select('id, first_name, last_name')
@@ -154,10 +138,23 @@ export function RecurringAppointments() {
 
       if (patientsError) throw patientsError;
 
-      const appointmentsWithPatients = (recurringData || []).map(item => ({
-        ...item,
-        patient: Array.isArray(item.patient) && item.patient.length > 0 ? item.patient[0] as Patient : undefined
-      }));
+      // Load recurring appointments with a simpler query first, then enrich with patient data
+      const { data: recurringData, error: recurringError } = await supabase
+        .from('recurring_appointments')
+        .select('*')
+        .eq('practice_id', practice.id)
+        .order('created_at', { ascending: false });
+
+      if (recurringError) throw recurringError;
+
+      // Enrich recurring appointments with patient data
+      const appointmentsWithPatients = (recurringData || []).map(item => {
+        const patient = patientsData?.find(p => p.id === item.patient_id);
+        return {
+          ...item,
+          patient: patient || undefined
+        };
+      });
 
       setRecurringAppointments(appointmentsWithPatients as RecurringAppointment[]);
       setPatients(patientsData || []);
