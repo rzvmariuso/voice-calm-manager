@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { CookieBanner } from "@/components/CookieBanner";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import Appointments from "./pages/Appointments";
@@ -15,6 +16,9 @@ import Auth from "./pages/Auth";
 import PracticeSetup from "./pages/PracticeSetup";
 import Privacy from "./pages/Privacy";
 import Billing from "./pages/Billing";
+import Terms from "./pages/Terms";
+import DataProtection from "./pages/DataProtection";
+import Imprint from "./pages/Imprint";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,9 +47,13 @@ const App = () => (
             <Route path="/ai-agent" element={<AIAgent />} />
             <Route path="/phone" element={<Phone />} />
             <Route path="/billing" element={<Billing />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/data-protection" element={<DataProtection />} />
+            <Route path="/imprint" element={<Imprint />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <CookieBanner />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
