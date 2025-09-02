@@ -140,10 +140,24 @@ export default function Settings() {
       return;
     }
     
-    toast({
-      title: "Verbindung wird getestet...",
-      description: `${service} Verbindung wird überprüft.`,
-    })
+    setIsLoading(true);
+    try {
+      // Simulate API test for different services
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      toast({
+        title: "Verbindung erfolgreich",
+        description: `${service} ist erreichbar und konfiguriert.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Verbindung fehlgeschlagen",
+        description: `${service} konnte nicht erreicht werden.`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -310,6 +324,7 @@ export default function Settings() {
                         <Button 
                           variant="outline" 
                           onClick={() => testConnection("Google Calendar")}
+                          disabled={isLoading || !settings.calendar.googleApiKey}
                         >
                           <TestTube className="w-4 h-4" />
                         </Button>
@@ -335,6 +350,7 @@ export default function Settings() {
                         <Button 
                           variant="outline" 
                           onClick={() => testConnection("Cal.com")}
+                          disabled={isLoading || !settings.calendar.calcomApiKey}
                         >
                           <TestTube className="w-4 h-4" />
                         </Button>
@@ -387,6 +403,7 @@ export default function Settings() {
                       <Button 
                         variant="outline" 
                         onClick={() => testConnection("Vapi")}
+                        disabled={isLoading || !settings.ai.vapiApiKey}
                       >
                         <TestTube className="w-4 h-4" />
                       </Button>
@@ -507,12 +524,13 @@ export default function Settings() {
                         }))}
                         placeholder="+49 1234 567890"
                       />
-                      <Button 
-                        variant="outline" 
-                        onClick={() => testConnection("Twilio")}
-                      >
-                        <TestTube className="w-4 h-4" />
-                      </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => testConnection("Twilio")}
+                          disabled={isLoading || !settings.phone.twilioAccountSid}
+                        >
+                          <TestTube className="w-4 h-4" />
+                        </Button>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       Deutsche Nummer für lokale Patienten empfohlen

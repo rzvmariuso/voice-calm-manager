@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -49,6 +49,11 @@ export function DataRequestInterface() {
   const [newRequestType, setNewRequestType] = useState<RequestType>('data_export')
   const [newRequestNotes, setNewRequestNotes] = useState("")
   const { toast } = useToast()
+
+  // Load requests on component mount
+  useEffect(() => {
+    loadRequests()
+  }, [])
 
   const requestTypeLabels = {
     data_export: "Datenauskunft",
