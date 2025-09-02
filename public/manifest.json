@@ -1,0 +1,86 @@
+{
+  "name": "Voice Calm Manager - Praxis Management",
+  "short_name": "Voice Calm",
+  "description": "Moderne Praxis-Management-App für Terminverwaltung und Patientenbetreuung",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#007BFF",
+  "orientation": "portrait-primary",
+  "categories": ["medical", "productivity", "business"],
+  "lang": "de",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/placeholder.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/placeholder.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Kalender",
+      "short_name": "Kalender",
+      "description": "Terminkalender öffnen",
+      "url": "/calendar",
+      "icons": [
+        {
+          "src": "/placeholder.svg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Patienten",
+      "short_name": "Patienten",
+      "description": "Patientenverwaltung öffnen",
+      "url": "/patients",
+      "icons": [
+        {
+          "src": "/placeholder.svg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Neuer Termin",
+      "short_name": "Termin",
+      "description": "Neuen Termin erstellen",
+      "url": "/calendar?new=true",
+      "icons": [
+        {
+          "src": "/placeholder.svg",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/placeholder.svg",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "Dashboard Übersicht"
+    },
+    {
+      "src": "/placeholder.svg",
+      "sizes": "750x1334",
+      "type": "image/svg+xml",
+      "form_factor": "narrow",
+      "label": "Mobile Kalenderansicht"
+    }
+  ]
+}
