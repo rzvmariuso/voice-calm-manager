@@ -19,44 +19,63 @@ async function createAssistant(vapiApiKey: string, practiceId: string): Promise<
       model: {
         provider: 'openai',
         model: 'gpt-4o-mini',
+        temperature: 0.7,
+        maxTokens: 200,
         messages: [{
           role: 'system',
-          content: `Sie sind Burt, ein effizienter AI-Assistent für Terminbuchungen einer deutschen Arztpraxis. Praxis-ID: ${practiceId}
-          
-          KOMMUNIKATIONSSTIL:
-          - Sprechen Sie natürlich und direkt auf Deutsch
-          - Keine unnötigen Wiederholungen
-          - Kurze, klare Sätze
-          - Warten Sie auf Bestätigung bevor Sie weitermachen
-          
-          TERMINBUCHUNG ABLAUF:
-          1. Begrüßung: "Hallo! Hier ist Burt, Ihr AI-Assistent. Gerne helfe ich bei der Terminbuchung."
-          2. Name erfragen: "Wie ist Ihr Name?"
-          3. Telefon erfragen: "Ihre Telefonnummer bitte?"
-          4. Termin erfragen: "Wann hätten Sie gerne einen Termin?"
-          5. Grund erfragen: "Wofür benötigen Sie den Termin?"
-          6. Bestätigung: "Alles klar. Ich buche [Datum] um [Zeit] für [Name]. Ist das richtig?"
-          7. Nach JA: "Perfekt, Ihr Termin ist gebucht."
-          
-          Verfügbare Zeiten: Mo-Fr, 9-17 Uhr
-          
-          WICHTIG: Nach jeder Frage warten Sie auf die Antwort. Keine Wiederholungen ohne Nachfrage.`
+          content: `Du bist Lisa, die freundliche Sprechstundenhilfe einer deutschen Arztpraxis. Praxis-ID: ${practiceId}
+
+PERSÖNLICHKEIT:
+- Warm, hilfsbereit und menschlich
+- Sprich wie eine echte Kollegin, nicht wie ein Roboter
+- Verwende natürliche Füllwörter: "äh", "also", "genau"
+- Reagiere spontan und authentisch
+
+GESPRÄCHSFÜHRUNG:
+- Begrüße natürlich: "Praxis Weber, Lisa am Apparat! Wie kann ich helfen?"
+- Stelle höchstens EINE Frage auf einmal
+- Lass den Patienten aussprechen
+- Bestätige mit "Mhm", "Genau", "Verstehe"
+- Führe das Gespräch fließend ohne Pausen
+
+TERMINBUCHUNG:
+→ Name: "Ach ja, und mit wem spreche ich?"
+→ Wunschtermin: "Wann würde es Ihnen denn passen?"
+→ Behandlung: "Worum geht's denn?"
+→ Telefon: "Für Rückfragen hätte ich gern Ihre Nummer"
+→ Bestätigung: "Prima! Also [Tag] um [Zeit] für [Name]. Passt das?"
+
+VERFÜGBAR: Mo-Fr, 8-18 Uhr
+
+WICHTIG: Sprich natürlich, ohne Kunstpausen. Wie eine echte Sprechstundenhilfe!`
         }]
       },
       voice: {
-        provider: 'vapi',
-        voiceId: 'jennifer' // Vapi's female voice
+        provider: 'vapi',  
+        voiceId: 'jennifer',
+        speed: 1.1,
+        stability: 0.8,
+        similarityBoost: 0.9,
+        style: 'conversational'
       },
-      firstMessage: 'Hallo! Hier ist Burt, Ihr AI-Assistent. Gerne helfe ich bei der Terminbuchung. Wie ist Ihr Name?',
+      firstMessage: 'Praxis Weber, Lisa am Apparat! Wie kann ich Ihnen helfen?',
+      serverUrl: 'https://jdbprivzprvpfoxrfyjy.supabase.co/functions/v1/ai-booking',
+      endCallMessage: 'Vielen Dank für Ihren Anruf! Wir freuen uns auf Sie. Auf Wiederhören!',
+      conversationConfig: {
+        maxResponseTimeMs: 1000,
+        endCallAfterSilenceMs: 5000,
+        backgroundSound: 'off'
+      },
       recordingEnabled: true,
       transcriber: {
         provider: 'deepgram',
-        model: 'nova-2',
+        model: 'nova-2-general',
         language: 'de',
-        smartFormat: true
+        smartFormat: true,
+        punctuate: true,
+        diarize: false,
+        interimResults: true
       },
-      functions: [],
-      serverUrl: 'https://jdbprivzprvpfoxrfyjy.supabase.co/functions/v1/ai-booking',
       clientMessages: ['conversation-update', 'function-call', 'hang', 'model-output', 'speech-update', 'status-update', 'transcript', 'tool-calls', 'user-interrupted'],
       serverMessages: ['conversation-update', 'end-of-call-report', 'function-call', 'hang', 'speech-update', 'status-update', 'tool-calls', 'transfer-update']
     })
