@@ -176,6 +176,36 @@ export type Database = {
           },
         ]
       }
+      patient_notes: {
+        Row: {
+          created_at: string
+          id: string
+          note: string
+          note_type: string
+          patient_id: string
+          practice_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note: string
+          note_type?: string
+          patient_id: string
+          practice_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string
+          note_type?: string
+          patient_id?: string
+          practice_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       patients: {
         Row: {
           consent_date: string | null
@@ -274,6 +304,99 @@ export type Database = {
           owner_id?: string
           phone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      recurring_appointments: {
+        Row: {
+          created_at: string
+          day_of_month: number | null
+          days_of_week: number[] | null
+          duration_minutes: number | null
+          end_date: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          patient_id: string
+          practice_id: string
+          recurrence_interval: number
+          recurrence_type: string
+          service: string
+          start_date: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_month?: number | null
+          days_of_week?: number[] | null
+          duration_minutes?: number | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          patient_id: string
+          practice_id: string
+          recurrence_interval?: number
+          recurrence_type: string
+          service: string
+          start_date: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_month?: number | null
+          days_of_week?: number[] | null
+          duration_minutes?: number | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          patient_id?: string
+          practice_id?: string
+          recurrence_interval?: number
+          recurrence_type?: string
+          service?: string
+          start_date?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sms_reminders: {
+        Row: {
+          appointment_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          message: string
+          patient_phone: string
+          practice_id: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          appointment_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message: string
+          patient_phone: string
+          practice_id: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          appointment_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message?: string
+          patient_phone?: string
+          practice_id?: string
+          sent_at?: string | null
+          status?: string
         }
         Relationships: []
       }
