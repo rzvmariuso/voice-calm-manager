@@ -24,8 +24,9 @@ import {
   AlertTriangle,
   Users
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { supabase } from "@/integrations/supabase/client"
 
 const recentCalls = [
   {
@@ -72,7 +73,30 @@ const recentCalls = [
 
 export default function AIAgent() {
   const [isActive, setIsActive] = useState(true)
-  const [aiPrompt, setAiPrompt] = useState(`Du bist Lisa, die herzliche Sprechstundenhilfe einer Physiotherapie-Praxis.
+  const [aiPrompt, setAiPrompt] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const { toast } = useToast()
+
+  // Load AI configuration on component mount
+  useEffect(() => {
+    loadAIConfig()
+  }, [])
+
+  const loadAIConfig = async () => {
+    try {
+      setIsLoading(true)
+      const { data, error } = await supabase.functions.invoke('get-ai-config')
+      
+      if (error) throw error
+      
+      if (data.success) {
+        setAiPrompt(data.prompt)
+      }
+    } catch (error) {
+      console.error('Error loading AI config:', error)
+      // Set default prompt if loading fails
+      setAiPrompt(`Du bist Lisa, die herzliche Sprechstundenhilfe einer Physiotherapie-Praxis.
 
 🎯 PERSÖNLICHKEIT:
 - Warm, authentisch und hilfsbereit - wie eine echte Kollegin
@@ -99,8 +123,51 @@ export default function AIAgent() {
 💰 PREISE: Physiotherapie €65, Massage €85, Hot Stone €95, Wellness €120
 
 WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-  const { toast } = useToast()
+  const saveAIConfig = async () => {
+    if (!aiPrompt.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie einen AI-Prompt ein",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      setIsSaving(true)
+      const { data, error } = await supabase.functions.invoke('update-ai-config', {
+        body: { 
+          prompt: aiPrompt,
+          voiceSettings: {} 
+        }
+      })
+      
+      if (error) throw error
+      
+      if (data.success) {
+        toast({
+          title: "Gespeichert",
+          description: "KI-Konfiguration wurde erfolgreich aktualisiert",
+        })
+      } else {
+        throw new Error(data.error || 'Unbekannter Fehler')
+      }
+    } catch (error) {
+      console.error('Error saving AI config:', error)
+      toast({
+        title: "Fehler",
+        description: "Konfiguration konnte nicht gespeichert werden",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   const toggleAgent = () => {
     setIsActive(!isActive)
@@ -263,6 +330,8 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                       onChange={(e) => setAiPrompt(e.target.value)}
                       rows={12}
                       className="font-mono text-sm"
+                      disabled={isLoading}
+                      placeholder={isLoading ? "Konfiguration wird geladen..." : ""}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
                       Definiert das Verhalten und die Antworten des KI-Agenten
@@ -278,9 +347,13 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                       <Mic className="w-4 h-4 mr-2" />
                       Test-Anruf
                     </Button>
-                    <Button className="bg-gradient-primary text-white shadow-glow flex-1">
+                    <Button 
+                      onClick={saveAIConfig}
+                      disabled={isSaving || isLoading}
+                      className="bg-gradient-primary text-white shadow-glow flex-1"
+                    >
                       <Settings className="w-4 h-4 mr-2" />
-                      Speichern
+                      {isSaving ? "Speichern..." : "Speichern"}
                     </Button>
                   </div>
                 </CardContent>
