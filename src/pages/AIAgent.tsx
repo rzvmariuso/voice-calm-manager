@@ -2,7 +2,6 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
@@ -12,7 +11,6 @@ import {
   Play, 
   Pause, 
   Settings, 
-  Phone, 
   Activity, 
   MessageSquare, 
   TrendingUp,
@@ -21,17 +19,11 @@ import {
   PhoneCall,
   Clock,
   CheckCircle,
-  AlertTriangle,
-  Users,
-  Webhook,
-  Zap,
-  TestTube,
-  Link
+  AlertTriangle
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
-import { Switch } from "@/components/ui/switch"
 
 const recentCalls = [
   {
@@ -81,15 +73,11 @@ export default function AIAgent() {
   const [aiPrompt, setAiPrompt] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [n8nWebhookUrl, setN8nWebhookUrl] = useState("")
-  const [n8nEnabled, setN8nEnabled] = useState(false)
-  const [isTestingWebhook, setIsTestingWebhook] = useState(false)
   const { toast } = useToast()
 
   // Load AI configuration on component mount
   useEffect(() => {
     loadAIConfig()
-    loadN8nConfig()
   }, [])
 
   const loadAIConfig = async () => {
@@ -137,21 +125,6 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
     }
   }
 
-  const loadN8nConfig = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('get-n8n-config')
-      
-      if (error) throw error
-      
-      if (data.success) {
-        setN8nWebhookUrl(data.webhookUrl)
-        setN8nEnabled(data.enabled)
-      }
-    } catch (error) {
-      console.error('Error loading n8n config:', error)
-    }
-  }
-
   const saveAIConfig = async () => {
     if (!aiPrompt.trim()) {
       toast({
@@ -190,74 +163,6 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
       })
     } finally {
       setIsSaving(false)
-    }
-  }
-
-  const saveN8nConfig = async () => {
-    try {
-      setIsSaving(true)
-      const { data, error } = await supabase.functions.invoke('update-n8n-config', {
-        body: { 
-          webhookUrl: n8nWebhookUrl,
-          enabled: n8nEnabled
-        }
-      })
-      
-      if (error) throw error
-      
-      if (data.success) {
-        toast({
-          title: "Gespeichert",
-          description: "n8n Konfiguration wurde erfolgreich aktualisiert",
-        })
-      } else {
-        throw new Error(data.error || 'Unbekannter Fehler')
-      }
-    } catch (error) {
-      console.error('Error saving n8n config:', error)
-      toast({
-        title: "Fehler",
-        description: "n8n Konfiguration konnte nicht gespeichert werden",
-        variant: "destructive"
-      })
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const testN8nWebhook = async () => {
-    if (!n8nWebhookUrl || !n8nEnabled) {
-      toast({
-        title: "Fehler",
-        description: "Bitte konfigurieren Sie zuerst Ihre n8n Webhook URL",
-        variant: "destructive"
-      })
-      return
-    }
-
-    try {
-      setIsTestingWebhook(true)
-      const { data, error } = await supabase.functions.invoke('test-n8n-webhook')
-      
-      if (error) throw error
-      
-      if (data.success) {
-        toast({
-          title: "Test erfolgreich",
-          description: "n8n Webhook wurde erfolgreich ausgelöst",
-        })
-      } else {
-        throw new Error(data.error || 'Test fehlgeschlagen')
-      }
-    } catch (error) {
-      console.error('Error testing n8n webhook:', error)
-      toast({
-        title: "Test fehlgeschlagen",
-        description: error.message || "Webhook konnte nicht ausgelöst werden",
-        variant: "destructive"
-      })
-    } finally {
-      setIsTestingWebhook(false)
     }
   }
 
@@ -450,238 +355,56 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                   </div>
                 </CardContent>
               </Card>
+            </div>
 
-              {/* n8n Automation */}
-              <Card className="shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Webhook className="w-5 h-5 text-primary" />
-                    n8n Workflow Automation
-                    <Badge variant="outline" className="border-secondary text-secondary">
-                      Pro
-                    </Badge>
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Automatische Aktionen nach jeder AI-Terminbuchung
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="n8n-enabled">n8n Automation aktivieren</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Triggert Workflows bei neuen Terminen
-                      </p>
-                    </div>
-                    <Switch
-                      id="n8n-enabled"
-                      checked={n8nEnabled}
-                      onCheckedChange={setN8nEnabled}
-                    />
-                  </div>
-
-                  {n8nEnabled && (
-                    <div>
-                      <Label htmlFor="n8n-webhook">n8n Webhook URL</Label>
-                      <Input
-                        id="n8n-webhook"
-                        value={n8nWebhookUrl}
-                        onChange={(e) => setN8nWebhookUrl(e.target.value)}
-                        placeholder="https://your-n8n-instance.com/webhook/..."
-                        className="font-mono text-sm"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Webhook URL aus deinem n8n Workflow
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={testN8nWebhook}
-                      disabled={!n8nEnabled || !n8nWebhookUrl || isTestingWebhook}
-                      className="flex-1"
-                    >
-                      <TestTube className="w-4 h-4 mr-2" />
-                      {isTestingWebhook ? "Teste..." : "Test Webhook"}
-                    </Button>
-                    <Button 
-                      onClick={saveN8nConfig}
-                      disabled={isSaving}
-                      className="bg-gradient-secondary text-white shadow-glow flex-1"
-                    >
-                      <Zap className="w-4 h-4 mr-2" />
-                      {isSaving ? "Speichern..." : "n8n Speichern"}
-                    </Button>
-                  </div>
-
-                  <div className="bg-accent/50 p-3 rounded-lg">
-                    <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                      <Zap className="w-4 h-4" />
-                      Mögliche Automatisierungen:
-                    </h4>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>• Email-Bestätigung an Patient</li>
-                      <li>• SMS-Erinnerung 24h vorher</li>
-                      <li>• Google Calendar Eintrag</li>
-                      <li>• Slack/WhatsApp Team-Benachrichtigung</li>
-                      <li>• CRM-System aktualisieren</li>
-                      <li>• Rechnung vorbereiten</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Recent Calls */}
-              <Card className="shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-primary" />
-                    Letzte Anrufe
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {recentCalls.map((call) => (
-                      <div key={call.id} className="p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="w-8 h-8">
-                              <AvatarFallback className="bg-gradient-primary text-white text-xs">
-                                {call.caller !== "Unbekannt" ? call.caller.split(' ').map(n => n[0]).join('') : "?"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-sm">{call.caller}</p>
-                              <p className="text-xs text-muted-foreground">{call.phone}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground">{call.time}</p>
-                            <p className="text-xs font-medium">{call.duration}</p>
+            {/* Recent Calls */}
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-primary" />
+                  Letzte Anrufe
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {recentCalls.map((call) => (
+                    <div key={call.id} className="p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-8 h-8">
+                            <AvatarFallback className="bg-gradient-primary text-white text-xs">
+                              {call.caller !== "Unbekannt" ? call.caller.split(' ').map(n => n[0]).join('') : "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-sm">{call.caller}</p>
+                            <p className="text-xs text-muted-foreground">{call.phone}</p>
                           </div>
                         </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {getOutcomeBadge(call.outcome)}
-                            {call.service && (
-                              <span className="text-xs text-muted-foreground">{call.service}</span>
-                            )}
-                          </div>
-                          {call.appointmentDate && (
-                            <span className="text-xs text-success font-medium">
-                              {call.appointmentDate}
-                            </span>
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">{call.time}</p>
+                          <p className="text-xs font-medium">{call.duration}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {getOutcomeBadge(call.outcome)}
+                          {call.service && (
+                            <span className="text-xs text-muted-foreground">{call.service}</span>
                           )}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Live Status */}
-              <Card className="shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-primary" />
-                    Live Status
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Agent Status</span>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-success animate-pulse' : 'bg-muted'}`}></div>
-                        <span className="text-sm font-medium">{isActive ? "Bereit" : "Pausiert"}</span>
+                        {call.appointmentDate && (
+                          <span className="text-xs text-success font-medium">
+                            {call.appointmentDate}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Telefonnummer</span>
-                      <span className="text-sm font-medium">+49 1234 567890</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Letzte Aktivität</span>
-                      <span className="text-sm">vor 5 Min</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Nächster Termin</span>
-                      <span className="text-sm">14:00 - Anna M.</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Settings */}
-              <Card className="shadow-soft">
-                <CardHeader>
-                  <CardTitle>Schnelleinstellungen</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Volume2 className="w-4 h-4 mr-2" />
-                      Stimme ändern
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      Antworten bearbeiten
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <Phone className="w-4 h-4 mr-2" />
-                      Rufumleitung
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <TrendingUp className="w-4 h-4 mr-2" />
-                      Statistiken
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Performance Today */}
-              <Card className="shadow-soft">
-                <CardHeader>
-                  <CardTitle>Performance heute</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span>Anrufe beantwortet</span>
-                      <span className="font-medium">45/47</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div className="bg-success h-2 rounded-full" style={{width: '96%'}}></div>
-                    </div>
-                    
-                    <div className="flex justify-between text-sm">
-                      <span>Termine gebucht</span>
-                      <span className="font-medium">32/45</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div className="bg-primary h-2 rounded-full" style={{width: '71%'}}></div>
-                    </div>
-                    
-                    <div className="flex justify-between text-sm">
-                      <span>Kundenzufriedenheit</span>
-                      <span className="font-medium">4.8/5</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div className="bg-secondary h-2 rounded-full" style={{width: '96%'}}></div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </main>
       </div>
