@@ -230,6 +230,7 @@ export type Database = {
         Row: {
           address: string | null
           ai_prompt: string | null
+          ai_voice_settings: Json | null
           business_hours: Json | null
           created_at: string
           email: string | null
@@ -244,6 +245,7 @@ export type Database = {
         Insert: {
           address?: string | null
           ai_prompt?: string | null
+          ai_voice_settings?: Json | null
           business_hours?: Json | null
           created_at?: string
           email?: string | null
@@ -258,6 +260,7 @@ export type Database = {
         Update: {
           address?: string | null
           ai_prompt?: string | null
+          ai_voice_settings?: Json | null
           business_hours?: Json | null
           created_at?: string
           email?: string | null

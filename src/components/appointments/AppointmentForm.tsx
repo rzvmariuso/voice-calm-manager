@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePractice } from "@/hooks/usePractice";
 import { cn } from "@/lib/utils";
+import { useAppointmentWebhook } from "@/hooks/useAppointmentWebhook";
 
 interface Patient {
   id: string;
@@ -49,6 +50,7 @@ const services = [
 export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = false }: AppointmentFormProps) {
   const { practice } = usePractice();
   const { toast } = useToast();
+  const { triggerWebhook } = useAppointmentWebhook();
   
   const [loading, setLoading] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -124,23 +126,57 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
       };
 
       if (isEditing && appointment) {
-        const { error } = await supabase
+        const oldData = { ...appointment };
+        
+        const { data, error } = await supabase
           .from('appointments')
           .update(appointmentData)
-          .eq('id', appointment.id);
+          .eq('id', appointment.id)
+          .select(`
+            *,
+            patient:patients (
+              id,
+              first_name,
+              last_name,
+              email,
+              phone
+            )
+          `)
+          .single();
 
         if (error) throw error;
+
+        // Trigger webhook for appointment update
+        if (data) {
+          await triggerWebhook('updated', appointment.id, data, data.patient, oldData);
+        }
 
         toast({
           title: "Erfolg",
           description: "Termin wurde aktualisiert",
         });
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('appointments')
-          .insert([appointmentData]);
+          .insert([appointmentData])
+          .select(`
+            *,
+            patient:patients (
+              id,
+              first_name,
+              last_name,
+              email,
+              phone
+            )
+          `)
+          .single();
 
         if (error) throw error;
+
+        // Trigger webhook for new appointment
+        if (data) {
+          await triggerWebhook('created', data.id, data, data.patient);
+        }
 
         toast({
           title: "Erfolg", 

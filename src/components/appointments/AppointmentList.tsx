@@ -34,6 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useAppointmentWebhook } from "@/hooks/useAppointmentWebhook";
 
 interface Appointment {
   id: string;
@@ -76,6 +77,7 @@ const statusLabels = {
 export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentListProps) {
   const { practice } = usePractice();
   const { toast } = useToast();
+  const { triggerWebhook } = useAppointmentWebhook();
   
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,6 +130,56 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (appointmentId: string, newStatus: string) => {
+    const appointment = appointments.find(a => a.id === appointmentId);
+    if (!appointment) return;
+
+    const oldData = { ...appointment };
+
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({ status: newStatus })
+        .eq('id', appointmentId)
+        .select(`
+          *,
+          patient:patients (
+            id,
+            first_name,
+            last_name,
+            email,
+            phone
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+
+      // Trigger appropriate webhook based on status
+      let action: 'confirmed' | 'cancelled' | 'updated' = 'updated';
+      if (newStatus === 'confirmed') action = 'confirmed';
+      else if (newStatus === 'cancelled') action = 'cancelled';
+
+      if (data) {
+        await triggerWebhook(action, appointmentId, data, data.patient, oldData);
+      }
+
+      toast({
+        title: "Status aktualisiert",
+        description: `Termin wurde als ${statusLabels[newStatus as keyof typeof statusLabels]} markiert.`,
+      });
+
+      loadAppointments(); // Refresh the list
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Fehler",
+        description: "Status konnte nicht aktualisiert werden",
+        variant: "destructive",
+      });
     }
   };
 
@@ -311,6 +363,60 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
 
                   {/* Actions */}
                   <div className="flex gap-2">
+                    {/* Status Update Buttons */}
+                    {appointment.status === 'pending' && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleStatusChange(appointment.id, 'confirmed')}
+                          className="hover:scale-105 transition-transform duration-200 text-blue-600 hover:text-blue-700"
+                        >
+                          ✅ Bestätigen
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleStatusChange(appointment.id, 'cancelled')}
+                          className="hover:scale-105 transition-transform duration-200 text-red-600 hover:text-red-700"
+                        >
+                          ❌ Absagen
+                        </Button>
+                      </>
+                    )}
+                    
+                    {appointment.status === 'confirmed' && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleStatusChange(appointment.id, 'completed')}
+                          className="hover:scale-105 transition-transform duration-200 text-green-600 hover:text-green-700"
+                        >
+                          ✔️ Abgeschlossen
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleStatusChange(appointment.id, 'cancelled')}
+                          className="hover:scale-105 transition-transform duration-200 text-red-600 hover:text-red-700"
+                        >
+                          ❌ Absagen
+                        </Button>
+                      </>
+                    )}
+                    
+                    {appointment.status === 'cancelled' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusChange(appointment.id, 'pending')}
+                        className="hover:scale-105 transition-transform duration-200 text-yellow-600 hover:text-yellow-700"
+                      >
+                        🔄 Reaktivieren
+                      </Button>
+                    )}
+
                     {onEdit && (
                       <Button
                         variant="outline"

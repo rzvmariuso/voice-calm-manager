@@ -21,8 +21,8 @@
           "string": [
             {
               "value1": "={{$json.trigger_type}}",
-              "operation": "equal",
-              "value2": "new_appointment"
+              "operation": "in",
+              "value2": "new_appointment,created,updated,cancelled,confirmed,rescheduled"
             }
           ]
         }
@@ -37,7 +37,7 @@
       "parameters": {
         "fromEmail": "praxis@ihredomain.de",
         "toEmail": "={{$json.patient.name}} <{{$json.patient.email || 'test@example.com'}}>",
-        "subject": "✅ Ihr Termin bei {{$json.practice.name}} wurde gebucht",
+        "subject": "{{$json.trigger_type === 'created' || $json.trigger_type === 'new_appointment' ? '✅ Ihr Termin wurde gebucht' : $json.trigger_type === 'cancelled' ? '❌ Ihr Termin wurde storniert' : $json.trigger_type === 'confirmed' ? '✅ Ihr Termin wurde bestätigt' : $json.trigger_type === 'rescheduled' ? '📅 Ihr Termin wurde verschoben' : '📋 Terminupdate'}} - {{$json.practice.name}}",
         "text": "",
         "html": "<!DOCTYPE html>\n<html>\n<head>\n<style>\nbody { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }\n.container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }\n.header { text-align: center; color: #2c5aa0; margin-bottom: 30px; }\n.appointment-details { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }\n.detail-row { display: flex; justify-content: space-between; margin: 10px 0; padding: 8px 0; border-bottom: 1px solid #eee; }\n.footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }\n</style>\n</head>\n<body>\n<div class=\"container\">\n  <div class=\"header\">\n    <h1>🎉 Termin bestätigt!</h1>\n    <p>Liebe/r {{$json.patient.name}},</p>\n  </div>\n  \n  <p>vielen Dank für Ihre Terminbuchung! Wir freuen uns auf Ihren Besuch.</p>\n  \n  <div class=\"appointment-details\">\n    <h3>📅 Ihre Termindetails:</h3>\n    <div class=\"detail-row\">\n      <strong>Datum:</strong>\n      <span>{{$json.appointment.date}}</span>\n    </div>\n    <div class=\"detail-row\">\n      <strong>Uhrzeit:</strong>\n      <span>{{$json.appointment.time}} Uhr</span>\n    </div>\n    <div class=\"detail-row\">\n      <strong>Behandlung:</strong>\n      <span>{{$json.appointment.service}}</span>\n    </div>\n    <div class=\"detail-row\">\n      <strong>Dauer:</strong>\n      <span>ca. 45-60 Minuten</span>\n    </div>\n  </div>\n  \n  <h3>📍 Praxisadresse:</h3>\n  <p>\n    <strong>{{$json.practice.name}}</strong><br>\n    Musterstraße 123<br>\n    12345 Musterstadt<br>\n    Tel: {{$json.practice.phone}}\n  </p>\n  \n  <h3>💡 Wichtige Hinweise:</h3>\n  <ul>\n    <li>Bitte kommen Sie 10 Minuten vor Ihrem Termin</li>\n    <li>Bringen Sie bequeme Kleidung mit</li>\n    <li>Bei Verhinderung mindestens 24h vorher absagen</li>\n  </ul>\n  \n  <div class=\"footer\">\n    <p>Haben Sie Fragen? Rufen Sie uns gerne an: {{$json.practice.phone}}</p>\n    <p><em>Diese Bestätigung wurde automatisch generiert.</em></p>\n  </div>\n</div>\n</body>\n</html>",
         "options": {}
@@ -68,7 +68,7 @@
     {
       "parameters": {
         "channel": "#termine",
-        "text": "🎉 *Neuer Termin gebucht!*\\n\\n👤 *Patient:* {{$json.patient.name}}\\n📞 *Telefon:* {{$json.patient.phone}}\\n📅 *Datum:* {{$json.appointment.date}}\\n🕐 *Zeit:* {{$json.appointment.time}} Uhr\\n💆 *Behandlung:* {{$json.appointment.service}}\\n\\n_Automatisch gebucht über AI-Agent_ 🤖",
+        "text": "{{#if (eq trigger_type 'created')}}🎉 *Neuer Termin gebucht!*{{else if (eq trigger_type 'new_appointment')}}🎉 *Neuer Termin gebucht!*{{else if (eq trigger_type 'cancelled')}}❌ *Termin storniert*{{else if (eq trigger_type 'confirmed')}}✅ *Termin bestätigt*{{else if (eq trigger_type 'rescheduled')}}📅 *Termin verschoben*{{else}}📋 *Terminupdate*{{/if}}\\n\\n👤 *Patient:* {{$json.patient.name}}\\n📞 *Telefon:* {{$json.patient.phone}}\\n📅 *Datum:* {{$json.appointment.formatted_date}}\\n🕐 *Zeit:* {{$json.appointment.time}} Uhr\\n💆 *Behandlung:* {{$json.appointment.service}}\\n📊 *Status:* {{$json.appointment.status}}\\n{{#if changes}}\\n\\n🔄 *Änderung:*\\n_Vorher:_ {{$json.changes.old_formatted_datetime}}\\n_Jetzt:_ {{$json.appointment.formatted_datetime}}{{/if}}\\n\\n{{#if (eq source 'ai_booking')}}_Automatisch gebucht über AI-Agent_ 🤖{{else}}_Manuell verwaltet_ 👩‍💼{{/if}}",
         "otherOptions": {}
       },
       "id": "slack-notification",
@@ -82,7 +82,7 @@
         "accountSid": "={{ $credentials.twilioApi.accountSid }}",
         "fromPhoneNumber": "+491234567890",
         "toPhoneNumber": "={{$json.patient.phone}}",
-        "message": "Hallo {{$json.patient.name}}! 👋\\n\\nIhr Termin bei {{$json.practice.name}} ist bestätigt:\\n📅 {{$json.appointment.date}} um {{$json.appointment.time}} Uhr\\n💆 {{$json.appointment.service}}\\n\\nWir freuen uns auf Sie!\\n\\nIhre {{$json.practice.name}}",
+        "message": "{{#if (eq trigger_type 'created')}}Hallo {{$json.patient.name}}! 👋\\n\\nIhr Termin bei {{$json.practice.name}} wurde gebucht:\\n📅 {{$json.appointment.formatted_datetime}}\\n💆 {{$json.appointment.service}}\\n\\nWir freuen uns auf Sie!{{else if (eq trigger_type 'new_appointment')}}Hallo {{$json.patient.name}}! 👋\\n\\nIhr Termin bei {{$json.practice.name}} wurde gebucht:\\n📅 {{$json.appointment.formatted_datetime}}\\n💆 {{$json.appointment.service}}\\n\\nWir freuen uns auf Sie!{{else if (eq trigger_type 'cancelled')}}Hallo {{$json.patient.name}},\\n\\nIhr Termin am {{$json.appointment.formatted_datetime}} wurde storniert.\\n\\nBei Fragen rufen Sie uns gerne an: {{$json.practice.phone}}{{else if (eq trigger_type 'confirmed')}}Hallo {{$json.patient.name}}! ✅\\n\\nIhr Termin wurde bestätigt:\\n📅 {{$json.appointment.formatted_datetime}}\\n💆 {{$json.appointment.service}}\\n\\nWir freuen uns auf Sie!{{else if (eq trigger_type 'rescheduled')}}Hallo {{$json.patient.name}}! 📅\\n\\nIhr Termin wurde verschoben:\\n🔄 Neuer Termin: {{$json.appointment.formatted_datetime}}\\n💆 {{$json.appointment.service}}\\n\\nWir freuen uns auf Sie!{{else}}Hallo {{$json.patient.name}},\\n\\nEs gibt ein Update zu Ihrem Termin:\\n📅 {{$json.appointment.formatted_datetime}}\\n💆 {{$json.appointment.service}}{{/if}}\\n\\nIhre {{$json.practice.name}}",
         "options": {}
       },
       "id": "send-sms",
