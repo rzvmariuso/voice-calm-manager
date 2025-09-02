@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
+import { MobileNavigation } from "@/components/layout/MobileNavigation";
+import { LoadingPage } from "@/components/common/LoadingSpinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -202,13 +204,14 @@ export default function Calendar() {
       <SidebarProvider>
         <div className="flex min-h-screen w-full">
           <AppSidebar />
-          <main className="flex-1 p-6 bg-background">
-            <div className="flex items-center justify-center h-64">
-              <div className="text-center animate-fade-in">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Lade Kalender...</p>
-              </div>
+          <main className="flex-1 bg-background">
+            <div className="flex items-center p-3 sm:p-6 lg:hidden">
+              <MobileNavigation />
             </div>
+            <LoadingPage 
+              title="Lade Kalender..." 
+              description="Termine und Daten werden geladen" 
+            />
           </main>
         </div>
       </SidebarProvider>
@@ -220,8 +223,11 @@ export default function Calendar() {
       <div className="flex min-h-screen w-full">
         <AppSidebar />
         <main className="flex-1 p-3 sm:p-6 bg-background">
-          <div className="flex items-center mb-6">
-            <SidebarTrigger className="mr-4" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <SidebarTrigger className="mr-4 hidden lg:flex" />
+              <MobileNavigation />
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -416,10 +422,13 @@ export default function Calendar() {
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent className="animate-scale-in">
+          <AlertDialogContent 
+            className="animate-scale-in"
+            aria-describedby="delete-appointment-description"
+          >
             <AlertDialogHeader>
               <AlertDialogTitle>Termin löschen?</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogDescription id="delete-appointment-description">
                 Möchten Sie den folgenden Termin wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
                 {appointmentToDelete && (
                   <div className="mt-4 p-3 bg-muted rounded-lg">
