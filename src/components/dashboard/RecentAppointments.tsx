@@ -1,65 +1,112 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Clock, Phone, Calendar } from "lucide-react"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Calendar, Clock, Bot, Phone } from "lucide-react"
+import { supabase } from "@/integrations/supabase/client";
+import { usePractice } from "@/hooks/usePractice";
 
-const mockAppointments = [
-  {
-    id: "1",
-    patient: "Anna Müller",
-    time: "09:00",
-    date: "Heute",
-    service: "Massage",
-    status: "confirmed",
-    phone: "+49 123 456789",
-    avatar: ""
-  },
-  {
-    id: "2", 
-    patient: "Michael Schmidt",
-    time: "10:30",
-    date: "Heute",
-    service: "Physiotherapie",
-    status: "pending",
-    phone: "+49 987 654321",
-    avatar: ""
-  },
-  {
-    id: "3",
-    patient: "Sarah Wagner",
-    time: "14:00", 
-    date: "Morgen",
-    service: "Zahnreinigung",
-    status: "confirmed",
-    phone: "+49 555 123456",
-    avatar: ""
-  },
-  {
-    id: "4",
-    patient: "Thomas Bauer",
-    time: "16:15",
-    date: "Morgen", 
-    service: "Massage",
-    status: "ai_booked",
-    phone: "+49 444 987654",
-    avatar: ""
+interface Appointment {
+  id: string;
+  appointment_date: string;
+  appointment_time: string;
+  service: string;
+  status: string;
+  ai_booked: boolean;
+  patients: {
+    first_name: string;
+    last_name: string;
+  };
+}
+
+const getStatusBadge = (status: string, aiBooked: boolean) => {
+  if (aiBooked) {
+    return (
+      <Badge variant="outline" className="border-primary text-primary">
+        <Bot className="w-3 h-3 mr-1" />
+        AI-Buchung
+      </Badge>
+    );
   }
-]
-
-const getStatusBadge = (status: string) => {
+  
   switch (status) {
     case "confirmed":
       return <Badge variant="default" className="bg-success text-success-foreground">Bestätigt</Badge>
     case "pending":
       return <Badge variant="secondary" className="bg-warning text-warning-foreground">Wartend</Badge>
-    case "ai_booked":
-      return <Badge variant="outline" className="border-primary text-primary">KI-Buchung</Badge>
+    case "cancelled":
+      return <Badge variant="destructive">Abgesagt</Badge>
+    case "completed":
+      return <Badge variant="outline">Abgeschlossen</Badge>
     default:
       return <Badge variant="outline">Unbekannt</Badge>
   }
 }
 
 export function RecentAppointments() {
+  const { practice } = usePractice();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!practice) return;
+
+    const fetchRecentAppointments = async () => {
+      try {
+        const today = new Date();
+        const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+        const { data, error } = await supabase
+          .from('appointments')
+          .select(`
+            id,
+            appointment_date,
+            appointment_time,
+            service,
+            status,
+            ai_booked,
+            patients!inner (
+              first_name,
+              last_name
+            )
+          `)
+          .eq('practice_id', practice.id)
+          .gte('appointment_date', today.toISOString().split('T')[0])
+          .lte('appointment_date', nextWeek.toISOString().split('T')[0])
+          .order('appointment_date', { ascending: true })
+          .order('appointment_time', { ascending: true })
+          .limit(5);
+
+        if (error) {
+          console.error('Error fetching appointments:', error);
+        } else {
+          setAppointments(data || []);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecentAppointments();
+  }, [practice]);
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return "Heute";
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return "Morgen";
+    } else {
+      return date.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+    }
+  };
+
   return (
     <Card className="shadow-soft">
       <CardHeader>
@@ -69,37 +116,45 @@ export function RecentAppointments() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {mockAppointments.map((appointment) => (
-            <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
-              <div className="flex items-center gap-3">
-                <Avatar className="w-10 h-10">
-                  <AvatarImage src={appointment.avatar} />
-                  <AvatarFallback className="bg-gradient-primary text-white">
-                    {appointment.patient.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="font-medium text-foreground">{appointment.patient}</div>
-                  <div className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Clock className="w-3 h-3" />
-                    {appointment.date}, {appointment.time}
-                    <span className="text-muted-foreground">•</span>
-                    {appointment.service}
-                  </div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                    <Phone className="w-3 h-3" />
-                    {appointment.phone}
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          </div>
+        ) : appointments.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p>Keine anstehenden Termine</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {appointments.map((appointment) => (
+              <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-10 h-10">
+                    <AvatarFallback className="bg-gradient-primary text-white">
+                      {appointment.patients.first_name[0]}{appointment.patients.last_name[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="font-medium text-foreground">
+                      {appointment.patients.first_name} {appointment.patients.last_name}
+                    </div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Clock className="w-3 h-3" />
+                      {formatDate(appointment.appointment_date)}, {appointment.appointment_time.slice(0, 5)}
+                      <span className="text-muted-foreground">•</span>
+                      {appointment.service}
+                    </div>
                   </div>
                 </div>
+                <div className="flex flex-col items-end gap-2">
+                  {getStatusBadge(appointment.status, appointment.ai_booked)}
+                </div>
               </div>
-              <div className="flex flex-col items-end gap-2">
-                {getStatusBadge(appointment.status)}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
-  )
+  );
 }
