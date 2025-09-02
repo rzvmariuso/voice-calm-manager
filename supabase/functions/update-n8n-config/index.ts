@@ -39,7 +39,7 @@ serve(async (req) => {
     const { data: practice, error: practiceError } = await supabase
       .from('practices')
       .select('id')
-      .eq('user_id', user.id)
+      .eq('owner_id', user.id)
       .single();
 
     if (practiceError || !practice) {

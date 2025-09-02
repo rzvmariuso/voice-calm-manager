@@ -37,7 +37,7 @@ serve(async (req) => {
     const { data: practice, error: practiceError } = await supabase
       .from('practices')
       .select('n8n_webhook_url, n8n_enabled')
-      .eq('user_id', user.id)
+      .eq('owner_id', user.id)
       .single();
 
     if (practiceError || !practice) {
