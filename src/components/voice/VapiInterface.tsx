@@ -51,8 +51,8 @@ export const VapiInterface: React.FC<VapiInterfaceProps> = ({ onCallStatusChange
       const { data, error } = await supabase.functions.invoke('vapi-phone', {
         body: { 
           action: 'buy_phone_number',
-          areaCode: '030', // Berlin area code
-          country: 'DE'
+          areaCode: '212', // New York area code for US numbers
+          country: 'US'
         }
       });
 
@@ -135,7 +135,7 @@ export const VapiInterface: React.FC<VapiInterfaceProps> = ({ onCallStatusChange
             Vapi Voice Interface
           </CardTitle>
           <CardDescription>
-            DSGVO-konforme Telefonie-Integration für Deutschland
+            Vapi Voice AI über Twilio - Jetzt mit US-Nummer zum Testen
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -181,15 +181,24 @@ export const VapiInterface: React.FC<VapiInterfaceProps> = ({ onCallStatusChange
           {phoneNumbers.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">
-                Keine Telefonnummern vorhanden
+                Noch keine Telefonnummern gefunden
               </p>
+              <Button 
+                onClick={loadPhoneNumbers}
+                disabled={isLoading}
+                className="flex items-center gap-2 mr-2"
+              >
+                <Phone className="h-4 w-4" />
+                Nummern neu laden
+              </Button>
               <Button 
                 onClick={buyPhoneNumber}
                 disabled={isLoading}
+                variant="outline"
                 className="flex items-center gap-2"
               >
                 <Phone className="h-4 w-4" />
-                {isLoading ? 'Wird erworben...' : 'Telefonnummer erwerben'}
+                {isLoading ? 'Wird erworben...' : 'US-Nummer hinzufügen'}
               </Button>
             </div>
           ) : (
