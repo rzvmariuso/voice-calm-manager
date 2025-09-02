@@ -7,7 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Clock, User, FileText, Save, X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { CalendarIcon, Clock, User, FileText, Save, X, UserPlus, Users } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +25,15 @@ interface Patient {
   last_name: string;
   email: string | null;
   phone: string | null;
+}
+
+interface NewPatientData {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  date_of_birth: Date | null;
+  privacy_consent: boolean;
 }
 
 interface AppointmentFormProps {
@@ -39,12 +51,21 @@ const timeSlots = [
 ];
 
 const services = [
-  "Beratung",
-  "Behandlung", 
+  "Erstberatung",
+  "Physiotherapie", 
+  "Massage",
+  "Krankengymnastik",
   "Kontrolle",
-  "Ersttermin",
-  "Nachsorge",
-  "Diagnose"
+  "Manuelle Therapie",
+  "Elektrotherapie",
+  "Lymphdrainage",
+  "Hot Stone Massage",
+  "Ultraschalltherapie",
+  "Beratungsgespräch",
+  "Fango-Packung",
+  "Krafttraining",
+  "Osteopathie",
+  "Pilates"
 ];
 
 export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = false }: AppointmentFormProps) {
@@ -54,6 +75,8 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
   
   const [loading, setLoading] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [patientMode, setPatientMode] = useState<'existing' | 'new'>('existing');
+  
   const [formData, setFormData] = useState({
     patient_id: appointment?.patient_id || appointment?.patient?.id || "",
     appointment_date: appointment?.appointment_date ? new Date(appointment.appointment_date) : new Date(),
@@ -62,6 +85,15 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
     duration_minutes: appointment?.duration_minutes || 30,
     notes: appointment?.notes || "",
     status: appointment?.status || "pending"
+  });
+
+  const [newPatientData, setNewPatientData] = useState<NewPatientData>({
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    date_of_birth: null,
+    privacy_consent: false
   });
 
   // Update form data when appointment changes
@@ -85,6 +117,68 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
     }
   }, [practice]);
 
+  const createNewPatient = async (): Promise<string | null> => {
+    if (!practice) return null;
+
+    // Validate required fields
+    if (!newPatientData.first_name.trim() || !newPatientData.last_name.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Vor- und Nachname sind Pflichtfelder für neue Patienten",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    if (!newPatientData.privacy_consent) {
+      toast({
+        title: "Datenschutz",
+        description: "Die Datenschutzerklärung muss akzeptiert werden",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    try {
+      const patientDataToInsert = {
+        practice_id: practice.id,
+        first_name: newPatientData.first_name.trim(),
+        last_name: newPatientData.last_name.trim(),
+        email: newPatientData.email.trim() || null,
+        phone: newPatientData.phone.trim() || null,
+        date_of_birth: newPatientData.date_of_birth ? format(newPatientData.date_of_birth, 'yyyy-MM-dd') : null,
+        privacy_consent: newPatientData.privacy_consent,
+        consent_date: new Date().toISOString(),
+        data_retention_until: new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 10 years from now
+      };
+
+      const { data, error } = await supabase
+        .from('patients')
+        .insert([patientDataToInsert])
+        .select('id, first_name, last_name')
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Patient erstellt",
+        description: `${data.first_name} ${data.last_name} wurde erfolgreich angelegt`,
+      });
+
+      // Reload patients list
+      await loadPatients();
+      
+      return data.id;
+    } catch (error: any) {
+      console.error('Error creating patient:', error);
+      toast({
+        title: "Fehler",
+        description: error.message || "Patient konnte nicht erstellt werden",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
   const loadPatients = async () => {
     try {
       const { data, error } = await supabase
@@ -117,7 +211,16 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
       return;
     }
 
-    if (!formData.patient_id || !formData.appointment_time || !formData.service) {
+    let patientId = formData.patient_id;
+
+    // If creating new patient, create patient first
+    if (patientMode === 'new' && !isEditing) {
+      const newPatientId = await createNewPatient();
+      if (!newPatientId) return; // Error already handled in createNewPatient
+      patientId = newPatientId;
+    }
+
+    if (!patientId || !formData.appointment_time || !formData.service) {
       toast({
         title: "Fehler",
         description: "Bitte füllen Sie alle Pflichtfelder aus",
@@ -131,7 +234,7 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
 
       // Check for duplicate appointments (same patient, date, and time)
       if (!isEditing || (isEditing && appointment && (
-        appointment.patient_id !== formData.patient_id ||
+        appointment.patient_id !== patientId ||
         appointment.appointment_date !== format(formData.appointment_date, 'yyyy-MM-dd') ||
         appointment.appointment_time !== formData.appointment_time
       ))) {
@@ -139,7 +242,7 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
           .from('appointments')
           .select('id')
           .eq('practice_id', practice.id)
-          .eq('patient_id', formData.patient_id)
+          .eq('patient_id', patientId)
           .eq('appointment_date', format(formData.appointment_date, 'yyyy-MM-dd'))
           .eq('appointment_time', formData.appointment_time)
           .maybeSingle();
@@ -156,7 +259,7 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
 
       const appointmentData = {
         practice_id: practice.id,
-        patient_id: formData.patient_id,
+        patient_id: patientId,
         appointment_date: format(formData.appointment_date, 'yyyy-MM-dd'),
         appointment_time: formData.appointment_time,
         service: formData.service,
@@ -251,31 +354,199 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
 
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Patient Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="patient">Patient *</Label>
-            <Select
-              value={formData.patient_id}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, patient_id: value }))}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Patient auswählen..." />
-              </SelectTrigger>
-              <SelectContent>
-                {patients.map((patient) => (
-                  <SelectItem key={patient.id} value={patient.id}>
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      {patient.first_name} {patient.last_name}
-                      {patient.email && (
-                        <span className="text-muted-foreground text-sm">({patient.email})</span>
-                      )}
+          {/* Patient Selection Tabs */}
+          {!isEditing && (
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Patient auswählen</Label>
+              <Tabs value={patientMode} onValueChange={(value) => setPatientMode(value as 'existing' | 'new')} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="existing" className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Bestehender Patient
+                  </TabsTrigger>
+                  <TabsTrigger value="new" className="flex items-center gap-2">
+                    <UserPlus className="w-4 h-4" />
+                    Neuer Patient
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="existing" className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="patient">Patient auswählen *</Label>
+                    <Select
+                      value={formData.patient_id}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, patient_id: value }))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Patient auswählen..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {patients.map((patient) => (
+                          <SelectItem key={patient.id} value={patient.id}>
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4" />
+                              {patient.first_name} {patient.last_name}
+                              {patient.email && (
+                                <span className="text-muted-foreground text-sm">({patient.email})</span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                        {patients.length === 0 && (
+                          <SelectItem value="" disabled>
+                            Keine Patienten gefunden
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {patients.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Keine Patienten vorhanden. Erstellen Sie einen neuen Patienten.
+                      </p>
+                    )}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="new" className="space-y-4 mt-4">
+                  <div className="space-y-4 p-4 bg-accent/30 rounded-lg border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <UserPlus className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold">Neuen Patient anlegen</h3>
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-first-name">Vorname *</Label>
+                        <Input
+                          id="new-first-name"
+                          value={newPatientData.first_name}
+                          onChange={(e) => setNewPatientData(prev => ({ ...prev, first_name: e.target.value }))}
+                          placeholder="Max"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-last-name">Nachname *</Label>
+                        <Input
+                          id="new-last-name"
+                          value={newPatientData.last_name}
+                          onChange={(e) => setNewPatientData(prev => ({ ...prev, last_name: e.target.value }))}
+                          placeholder="Mustermann"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-email">E-Mail</Label>
+                        <Input
+                          id="new-email"
+                          type="email"
+                          value={newPatientData.email}
+                          onChange={(e) => setNewPatientData(prev => ({ ...prev, email: e.target.value }))}
+                          placeholder="max@example.com"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-phone">Telefon</Label>
+                        <Input
+                          id="new-phone"
+                          value={newPatientData.phone}
+                          onChange={(e) => setNewPatientData(prev => ({ ...prev, phone: e.target.value }))}
+                          placeholder="+49 123 456789"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Geburtsdatum</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !newPatientData.date_of_birth && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {newPatientData.date_of_birth ? (
+                              format(newPatientData.date_of_birth, "dd. MMMM yyyy", { locale: de })
+                            ) : (
+                              <span>Geburtsdatum wählen</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={newPatientData.date_of_birth || undefined}
+                            onSelect={(date) => setNewPatientData(prev => ({ ...prev, date_of_birth: date || null }))}
+                            disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="flex items-start space-x-2 pt-2">
+                      <input
+                        type="checkbox"
+                        id="privacy-consent"
+                        checked={newPatientData.privacy_consent}
+                        onChange={(e) => setNewPatientData(prev => ({ ...prev, privacy_consent: e.target.checked }))}
+                        className="mt-1"
+                        required
+                      />
+                      <Label htmlFor="privacy-consent" className="text-sm leading-relaxed">
+                        Ich stimme der Verarbeitung meiner personenbezogenen Daten gemäß der{" "}
+                        <a href="/privacy" target="_blank" className="text-primary hover:underline">
+                          Datenschutzerklärung
+                        </a>{" "}
+                        zu. *
+                      </Label>
+                    </div>
+                    
+                    {!newPatientData.privacy_consent && (
+                      <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                        Die Datenschutzerklärung muss akzeptiert werden, um den Patienten anzulegen.
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
+              <Separator />
+            </div>
+          )}
+
+          {/* Existing Patient Selection for Editing */}
+          {isEditing && (
+            <div className="space-y-2">
+              <Label htmlFor="patient">Patient</Label>
+              <Select
+                value={formData.patient_id}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, patient_id: value }))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Patient auswählen..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {patients.map((patient) => (
+                    <SelectItem key={patient.id} value={patient.id}>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        {patient.first_name} {patient.last_name}
+                        {patient.email && (
+                          <span className="text-muted-foreground text-sm">({patient.email})</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Date & Time */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
