@@ -31,15 +31,30 @@ serve(async (req) => {
     
     // Vapi webhook formats
     if (requestBody.message && requestBody.message.type) {
-      // Vapi function call format
+      // Vapi webhook format
       const { message: vapiMessage, call } = requestBody;
       
       practiceId = call?.assistant?.metadata?.practiceId || 
                   call?.metadata?.practiceId || 
-                  '8b4d340f-075e-494b-86d3-65742a33c07c'; // fallback to your practice ID
+                  '8b4d340f-075e-494b-86d3-65742a33c07c'; // fallback practice ID
                   
-      message = vapiMessage.content || vapiMessage.text || JSON.stringify(vapiMessage);
       callerPhone = call?.customer?.number || call?.phoneNumber;
+      
+      // Extract conversation from Vapi webhook
+      if (vapiMessage.type === 'end-of-call-report' && vapiMessage.artifact) {
+        // Use the transcript from the end-of-call report
+        const transcript = vapiMessage.artifact.transcript;
+        const analysis = vapiMessage.analysis;
+        
+        if (analysis?.successEvaluation === 'true' && transcript) {
+          // Use the full transcript for analysis
+          message = `TELEFONGESPRÄCHS-TRANSKRIPT:\n${transcript}\n\nGESPRÄCHS-ANALYSE: ${analysis.summary}`;
+        } else {
+          message = 'Anruf beendet ohne erfolgreiche Terminbuchung';
+        }
+      } else {
+        message = vapiMessage.content || vapiMessage.text || JSON.stringify(vapiMessage);
+      }
       
     } else if (requestBody.practiceId) {
       // Legacy direct format
@@ -121,7 +136,7 @@ serve(async (req) => {
     const availableSlots = generateAvailableSlots(practice.business_hours);
 
     // Prepare AI prompt with context
-    const systemPrompt = `${practice.ai_prompt}
+    const systemPrompt = `Sie sind ein AI-System zur Analyse von Telefongesprächs-Transkripten einer deutschen Arztpraxis und Terminbuchung.
 
 KONTEXT:
 - Praxisname: ${practice.name}
@@ -129,55 +144,40 @@ KONTEXT:
 - Telefon: ${practice.phone || 'Nicht angegeben'}
 - Verfügbare Termine: ${availableSlots.join(', ') || 'Aktuell keine freien Termine'}
 
-ANWEISUNGEN:
-1. Seien Sie freundlich und professionell
-2. Helfen Sie bei der Terminbuchung, Terminverschiebung oder Terminlöschung
-3. Wenn ein Termin gewünscht wird, fragen Sie nach Name, Telefonnummer und gewünschtem Service
-4. Bestätigen Sie alle Termindetails
-5. Bei medizinischen Notfällen, verweisen Sie sofort an den Notruf
-6. Antworten Sie nur auf Deutsch
-7. Falls verfügbare Termine angefragt werden, listen Sie die verfügbaren Zeiten auf
-8. Bei komplexen Anfragen oder wenn Patient persönlich sprechen möchte, leiten Sie an einen Mitarbeiter weiter
+AUFGABE:
+Analysieren Sie das Telefongesprächs-Transkript und extrahieren Sie Terminbuchungsdetails.
+Falls ein Termin während des Gesprächs bestätigt wurde, erstellen Sie eine Buchung.
 
-WICHTIGE JSON-FORMATE:
+WICHTIG: Analysieren Sie das komplette Gespräch um herauszufinden:
+1. Hat der Patient einen Termin gewünscht?
+2. Wurden alle erforderlichen Daten aufgenommen (Name, Telefon, Termin, Service)?
+3. Hat der Patient den Termin bestätigt?
+4. Wurde der Termin vom AI-Assistenten als "gebucht" bestätigt?
 
-Für NEUE Terminbuchungen:
+Für erfolgreiche Terminbuchungen (JSON-Format):
 {
-  "response": "Ihre Antwort an den Patienten",
+  "response": "Termin wurde erfolgreich aus dem Gespräch extrahiert und gebucht",
   "booking": {
-    "patient_name": "Vor- und Nachname",
-    "patient_phone": "Telefonnummer", 
-    "service": "Art der Behandlung",
-    "preferred_date": "YYYY-MM-DD",
-    "preferred_time": "HH:MM",
+    "patient_name": "Vor- und Nachname aus Gespräch",
+    "patient_phone": "Telefonnummer aus Gespräch (bereinigt)", 
+    "service": "Art der Behandlung aus Gespräch",
+    "preferred_date": "YYYY-MM-DD (morgen = ${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]})",
+    "preferred_time": "HH:MM (15:00, 13:00, etc.)",
     "confirmed": true
   }
 }
 
-Für TERMINVERSCHIEBUNG oder LÖSCHUNG:
+Für gescheiterte oder unvollständige Gespräche:
 {
-  "response": "Ihre Antwort an den Patienten",
-  "modify_appointment": {
-    "action": "reschedule|cancel",
-    "patient_phone": "Telefonnummer",
-    "new_date": "YYYY-MM-DD",
-    "new_time": "HH:MM",
-    "reason": "Grund für Änderung"
-  }
+  "response": "Gespräch analysiert - keine vollständige Terminbuchung"
 }
 
-Für WEITERLEITUNG an Mitarbeiter:
-{
-  "response": "Ihre Antwort an den Patienten",
-  "transfer_human": {
-    "patient_phone": "Telefonnummer", 
-    "reason": "Grund für Weiterleitung",
-    "priority": "normal|urgent",
-    "patient_name": "Name falls verfügbar"
-  }
-}
+BEISPIEL-ANALYSE:
+Wenn im Transkript steht: "User: Mein Name ist Gino Pombino. Telefon 01766304040. Termin morgen 15 Uhr für Massage" 
+und AI antwortete: "Ihr Termin ist gebucht"
+→ Dann erstellen Sie eine Buchung für Gino Pombino, +49176630404, morgen 15:00, Massage
 
-Andernfalls antworten Sie nur mit der normalen Textantwort.`;
+Bereinigen Sie Telefonnummern: "0 1 7 6 6 3 0 4 0 4 0" → "01766304040"`;
 
     // Call OpenAI API
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -299,16 +299,28 @@ Andernfalls antworten Sie nur mit der normalen Textantwort.`;
     // If booking confirmed, create appointment
     let appointmentId = null;
     if (bookingData) {
+      console.log('Creating appointment with booking data:', bookingData);
+      
       // First, create or find patient
       const names = bookingData.patient_name.split(' ');
       const firstName = names[0];
       const lastName = names.slice(1).join(' ') || firstName;
 
+      // Clean phone number
+      let cleanPhone = bookingData.patient_phone.replace(/\s+/g, '').replace(/\D/g, '');
+      if (cleanPhone.startsWith('49')) {
+        cleanPhone = '+' + cleanPhone;
+      } else if (cleanPhone.startsWith('0')) {
+        cleanPhone = '+49' + cleanPhone.substring(1);
+      } else if (!cleanPhone.startsWith('+')) {
+        cleanPhone = '+49' + cleanPhone;
+      }
+
       const { data: existingPatient } = await supabase
         .from('patients')
         .select('id')
         .eq('practice_id', practiceId)
-        .eq('phone', bookingData.patient_phone)
+        .eq('phone', cleanPhone)
         .maybeSingle();
 
       let patientId = existingPatient?.id;
@@ -320,7 +332,7 @@ Andernfalls antworten Sie nur mit der normalen Textantwort.`;
             practice_id: practiceId,
             first_name: firstName,
             last_name: lastName,
-            phone: bookingData.patient_phone,
+            phone: cleanPhone,
             privacy_consent: true,
             consent_date: new Date().toISOString()
           })
@@ -357,6 +369,7 @@ Andernfalls antworten Sie nur mit der normalen Textantwort.`;
       }
 
       appointmentId = appointment.id;
+      console.log('Successfully created appointment:', appointmentId);
     }
 
     // Log the AI call with appropriate outcome
@@ -370,7 +383,7 @@ Andernfalls antworten Sie nur mit der normalen Textantwort.`;
         practice_id: practiceId,
         caller_phone: callerPhone,
         outcome,
-        transcript: `User: ${message}\nAI: ${responseText}`,
+        transcript: `Input: ${message}\nAI Response: ${responseText}`,
         appointment_id: appointmentId
       });
 
