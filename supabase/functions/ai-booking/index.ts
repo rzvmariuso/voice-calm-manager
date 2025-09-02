@@ -98,14 +98,17 @@ KONTEXT:
 
 ANWEISUNGEN:
 1. Seien Sie freundlich und professionell
-2. Helfen Sie bei der Terminbuchung
+2. Helfen Sie bei der Terminbuchung, Terminverschiebung oder Terminlöschung
 3. Wenn ein Termin gewünscht wird, fragen Sie nach Name, Telefonnummer und gewünschtem Service
 4. Bestätigen Sie alle Termindetails
 5. Bei medizinischen Notfällen, verweisen Sie sofort an den Notruf
 6. Antworten Sie nur auf Deutsch
 7. Falls verfügbare Termine angefragt werden, listen Sie die verfügbaren Zeiten auf
+8. Bei komplexen Anfragen oder wenn Patient persönlich sprechen möchte, leiten Sie an einen Mitarbeiter weiter
 
-Wenn ein vollständiger Termin gebucht werden soll, antworten Sie im JSON-Format:
+WICHTIGE JSON-FORMATE:
+
+Für NEUE Terminbuchungen:
 {
   "response": "Ihre Antwort an den Patienten",
   "booking": {
@@ -115,6 +118,29 @@ Wenn ein vollständiger Termin gebucht werden soll, antworten Sie im JSON-Format
     "preferred_date": "YYYY-MM-DD",
     "preferred_time": "HH:MM",
     "confirmed": true
+  }
+}
+
+Für TERMINVERSCHIEBUNG oder LÖSCHUNG:
+{
+  "response": "Ihre Antwort an den Patienten",
+  "modify_appointment": {
+    "action": "reschedule|cancel",
+    "patient_phone": "Telefonnummer",
+    "new_date": "YYYY-MM-DD",
+    "new_time": "HH:MM",
+    "reason": "Grund für Änderung"
+  }
+}
+
+Für WEITERLEITUNG an Mitarbeiter:
+{
+  "response": "Ihre Antwort an den Patienten",
+  "transfer_human": {
+    "patient_phone": "Telefonnummer", 
+    "reason": "Grund für Weiterleitung",
+    "priority": "normal|urgent",
+    "patient_name": "Name falls verfügbar"
   }
 }
 
@@ -146,8 +172,10 @@ Andernfalls antworten Sie nur mit der normalen Textantwort.`;
     const aiResult = await openAIResponse.json();
     const aiResponse = aiResult.choices[0].message.content;
 
-    // Try to parse as JSON for booking confirmation
+    // Try to parse as JSON for different actions
     let bookingData = null;
+    let modifyData = null;
+    let transferData = null;
     let responseText = aiResponse;
     
     try {
@@ -155,9 +183,84 @@ Andernfalls antworten Sie nur mit der normalen Textantwort.`;
       if (parsed.booking && parsed.booking.confirmed) {
         bookingData = parsed.booking;
         responseText = parsed.response;
+      } else if (parsed.modify_appointment) {
+        modifyData = parsed.modify_appointment;
+        responseText = parsed.response;
+      } else if (parsed.transfer_human) {
+        transferData = parsed.transfer_human;
+        responseText = parsed.response;
       }
     } catch {
       // Not JSON, treat as regular response
+    }
+
+    // Handle appointment modification
+    let modificationResult = null;
+    if (modifyData) {
+      // Find existing appointment by phone number
+      const { data: existingPatient } = await supabase
+        .from('patients')
+        .select('id')
+        .eq('practice_id', practiceId)
+        .eq('phone', modifyData.patient_phone)
+        .maybeSingle();
+
+      if (existingPatient) {
+        if (modifyData.action === 'cancel') {
+          // Cancel appointment
+          const { error: cancelError } = await supabase
+            .from('appointments')
+            .update({ 
+              status: 'cancelled',
+              notes: `Terminabsage: ${modifyData.reason || 'Auf Patientenwunsch'}`
+            })
+            .eq('practice_id', practiceId)
+            .eq('patient_id', existingPatient.id)
+            .eq('status', 'pending')
+            .gte('appointment_date', new Date().toISOString().split('T')[0]);
+
+          if (!cancelError) {
+            modificationResult = 'cancelled';
+          }
+        } else if (modifyData.action === 'reschedule' && modifyData.new_date && modifyData.new_time) {
+          // Reschedule appointment
+          const { error: rescheduleError } = await supabase
+            .from('appointments')
+            .update({ 
+              appointment_date: modifyData.new_date,
+              appointment_time: modifyData.new_time,
+              notes: `Terminverschiebung: ${modifyData.reason || 'Auf Patientenwunsch'}`
+            })
+            .eq('practice_id', practiceId)
+            .eq('patient_id', existingPatient.id)
+            .eq('status', 'pending')
+            .gte('appointment_date', new Date().toISOString().split('T')[0]);
+
+          if (!rescheduleError) {
+            modificationResult = 'rescheduled';
+          }
+        }
+      }
+    }
+
+    // Handle human transfer request
+    let transferResult = null;
+    if (transferData) {
+      // Create data request for human follow-up
+      const { data: dataRequest, error: transferError } = await supabase
+        .from('data_requests')
+        .insert({
+          practice_id: practiceId,
+          request_type: 'human_transfer',
+          requested_by_email: transferData.patient_phone,
+          notes: `Patient möchte persönlich sprechen. Grund: ${transferData.reason}. Priorität: ${transferData.priority}. ${transferData.patient_name ? `Name: ${transferData.patient_name}` : ''}`
+        })
+        .select('id')
+        .single();
+
+      if (!transferError) {
+        transferResult = dataRequest.id;
+      }
     }
 
     // If booking confirmed, create appointment
@@ -223,13 +326,17 @@ Andernfalls antworten Sie nur mit der normalen Textantwort.`;
       appointmentId = appointment.id;
     }
 
-    // Log the AI call
+    // Log the AI call with appropriate outcome
+    const outcome = bookingData ? 'appointment_booked' : 
+                   modifyData ? `appointment_${modificationResult || 'modification_attempted'}` :
+                   transferData ? 'transferred_to_human' : 'information_provided';
+
     await supabase
       .from('ai_call_logs')
       .insert({
         practice_id: practiceId,
         caller_phone: callerPhone,
-        outcome: bookingData ? 'appointment_booked' : 'information_provided',
+        outcome,
         transcript: `User: ${message}\nAI: ${responseText}`,
         appointment_id: appointmentId
       });
@@ -238,7 +345,12 @@ Andernfalls antworten Sie nur mit der normalen Textantwort.`;
       JSON.stringify({
         response: responseText,
         booking_confirmed: !!bookingData,
-        appointment_id: appointmentId
+        appointment_id: appointmentId,
+        modification_result: modificationResult,
+        transfer_request_id: transferResult,
+        action_type: bookingData ? 'booking' : 
+                    modifyData ? 'modification' : 
+                    transferData ? 'transfer' : 'information'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
