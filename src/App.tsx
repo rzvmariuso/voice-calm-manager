@@ -11,6 +11,7 @@ import Appointments from "./pages/Appointments";
 import Calendar from "./pages/Calendar";
 import Patients from "./pages/Patients";
 import AIAgent from "./pages/AIAgent";
+import Automation from "./pages/Automation";
 import Phone from "./pages/Phone";
 import Auth from "./pages/Auth";
 import PracticeSetup from "./pages/PracticeSetup";
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/patients" element={<Patients />} />
             <Route path="/ai-agent" element={<AIAgent />} />
+            <Route path="/automation" element={<Automation />} />
             <Route path="/phone" element={<Phone />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/terms" element={<Terms />} />
