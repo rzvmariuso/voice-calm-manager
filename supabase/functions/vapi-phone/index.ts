@@ -23,29 +23,31 @@ async function createAssistant(vapiApiKey: string, practiceId: string): Promise<
           role: 'system',
           content: `Sie sind ein AI-Assistent für Terminbuchungen einer deutschen Arztpraxis. Praxis-ID: ${practiceId}
           
-          WICHTIG: Sprechen Sie AUSSCHLIESSLICH auf Deutsch!
+          WICHTIG: Sie sprechen AUSSCHLIESSLICH Deutsch mit natürlichem deutschen Akzent!
           
-          Ihre Aufgaben:
-          1. Termine buchen, verschieben, löschen  
-          2. Verfügbare Zeiten vorschlagen (Mo-Fr 9-17 Uhr)
-          3. Patientendaten aufnehmen (Name, Telefon, Grund)
-          4. Bei komplexen Anfragen weiterleiten
-          5. Höflich und professionell sein
+          Ihre Hauptaufgabe ist die Terminbuchung:
+          1. Begrüßen Sie freundlich auf Deutsch
+          2. Fragen Sie nach dem gewünschten Termin
+          3. Nehmen Sie folgende Daten auf:
+             - Vollständiger Name
+             - Telefonnummer  
+             - Gewünschtes Datum und Uhrzeit
+             - Grund des Besuchs
+          4. Bestätigen Sie alle Details
+          5. Wenn alle Daten vollständig sind, senden Sie diese an den Server zur Buchung
           
-          Terminvorschläge: "Ich kann Ihnen einen Termin am [Tag] um [Zeit] anbieten. Passt Ihnen das?"
+          Verfügbare Zeiten: Montag bis Freitag, 9:00 bis 17:00 Uhr
           
-          Verwenden Sie immer deutsche Aussprache und sprechen Sie langsam und deutlich.`
+          Beispiel: "Gerne kann ich einen Termin für Sie buchen. Wie ist Ihr vollständiger Name?"
+          
+          Sprechen Sie langsam, deutlich und ausschließlich auf Deutsch.`
         }]
       },
       voice: {
-        provider: '11labs',
-        voiceId: 'EXAVITQu4vr4xnSDxMaL',
-        stability: 0.5,
-        similarityBoost: 0.8,
-        style: 0.0,
-        useSpeakerBoost: true
+        provider: 'azure',
+        voiceId: 'de-DE-KatjaNeural'
       },
-      firstMessage: 'Hallo! Ich bin der AI-Assistent der Praxis. Wie kann ich Ihnen heute helfen? Ich kann gerne einen Termin für Sie buchen.',
+      firstMessage: 'Hallo! Hier ist der AI-Assistent der Praxis. Gerne helfe ich Ihnen bei der Terminbuchung. Wie kann ich Ihnen helfen?',
       recordingEnabled: true,
       transcriber: {
         provider: 'deepgram',
@@ -53,21 +55,8 @@ async function createAssistant(vapiApiKey: string, practiceId: string): Promise<
         language: 'de',
         smartFormat: true
       },
-      functions: [{
-        name: 'book_appointment',
-        description: 'Termin für Patient buchen',
-        parameters: {
-          type: 'object',
-          properties: {
-            patientName: { type: 'string', description: 'Name des Patienten' },
-            phone: { type: 'string', description: 'Telefonnummer' },
-            date: { type: 'string', description: 'Gewünschtes Datum (YYYY-MM-DD)' },
-            time: { type: 'string', description: 'Gewünschte Zeit (HH:MM)' },
-            reason: { type: 'string', description: 'Grund des Termins' }
-          },
-          required: ['patientName', 'phone', 'date', 'time']
-        }
-      }],
+      functions: [],
+      serverUrl: 'https://jdbprivzprvpfoxrfyjy.supabase.co/functions/v1/ai-booking',
       clientMessages: ['conversation-update', 'function-call', 'hang', 'model-output', 'speech-update', 'status-update', 'transcript', 'tool-calls', 'user-interrupted'],
       serverMessages: ['conversation-update', 'end-of-call-report', 'function-call', 'hang', 'speech-update', 'status-update', 'tool-calls', 'transfer-update']
     })
