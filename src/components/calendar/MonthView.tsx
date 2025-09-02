@@ -80,7 +80,7 @@ export function MonthView({
                   min-h-[140px] p-2 border-r border-b border-border/30 transition-all duration-200
                   ${!isCurrentMonth ? 'opacity-40 bg-muted/10' : ''}
                   ${isTodayDate ? 'bg-primary/5 border-primary/30' : ''}
-                  ${isWeekend ? 'bg-red-50 cursor-not-allowed' : 'cursor-pointer hover:bg-accent/30'}
+                  ${isWeekend ? 'bg-slate-100 cursor-not-allowed' : 'cursor-pointer hover:bg-accent/30'}
                   ${dayAppointments.length === 0 && !isWeekend ? 'hover:bg-accent/20' : ''}
                 `}
                 onClick={() => !isWeekend && onDayClick?.(day)}
@@ -90,11 +90,11 @@ export function MonthView({
                 <div className={`
                   text-sm font-medium mb-2 flex items-center justify-between
                   ${isTodayDate ? 'text-primary' : isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'}
-                  ${isWeekend ? 'text-red-500' : ''}
+                  ${isWeekend ? 'text-slate-600' : ''}
                 `}>
                   <span>{format(day, 'd')}</span>
                   {isWeekend && (
-                    <span className="text-xs bg-red-100 text-red-600 px-1 rounded">WE</span>
+                    <span className="text-xs bg-slate-200 text-slate-700 px-1 rounded">WE</span>
                   )}
                   {dayAppointments.length > 0 && (
                     <span className="text-xs bg-primary/20 text-primary px-1 rounded">
@@ -128,7 +128,7 @@ export function MonthView({
                     </div>
                   )}
                   {isWeekend && isCurrentMonth && (
-                    <div className="text-xs text-red-400 text-center py-4">
+                    <div className="text-xs text-slate-500 text-center py-4">
                       Wochenende
                     </div>
                   )}
