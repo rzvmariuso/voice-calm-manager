@@ -8,7 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Bot, Clock, Edit, Trash2 } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, isSameMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isToday, isSameMonth } from "date-fns";
 import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -29,18 +29,15 @@ export default function Calendar() {
   const monthEnd = endOfMonth(currentDate);
   const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
   
-  // Pad calendar to show full weeks
-  const startDay = new Date(monthStart);
-  startDay.setDate(startDay.getDate() - monthStart.getDay() + 1); // Start on Monday
-  
-  const endDay = new Date(monthEnd);
-  endDay.setDate(endDay.getDate() + (7 - monthEnd.getDay()));
-  
-  const calendarDays = eachDayOfInterval({ start: startDay, end: endDay });
+// Pad calendar to show full weeks (Monday start)
+const startDay = startOfWeek(monthStart, { weekStartsOn: 1 });
+const endDay = endOfWeek(monthEnd, { weekStartsOn: 1 });
+
+const calendarDays = eachDayOfInterval({ start: startDay, end: endDay });
   
   const getAppointmentsForDay = (date: Date) => {
     return appointments.filter(appointment => 
-      isSameDay(new Date(appointment.appointment_date), date)
+      isSameDay(new Date(`${appointment.appointment_date}T00:00:00`), date)
     );
   };
   
