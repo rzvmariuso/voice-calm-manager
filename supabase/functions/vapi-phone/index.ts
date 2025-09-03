@@ -52,7 +52,7 @@ WICHTIG: Sprich natürlich, ohne Kunstpausen. Wie eine echte Sprechstundenhilfe!
       },
       voice: {
         provider: 'elevenlabs',
-        voiceId: 'TX3LPaxmHKxFdv7VOQHJ', // Liam - natürliche deutsche Stimme
+        voiceId: 'EXAVITQu4vr4xnSDxMaL', // Sarah - weibliche deutsche Stimme
         model: 'eleven_multilingual_v2',
         stability: 0.9,
         similarityBoost: 0.95,
