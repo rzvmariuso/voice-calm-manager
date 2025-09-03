@@ -82,6 +82,8 @@ export const VapiInterface: React.FC<VapiInterfaceProps> = ({ onCallStatusChange
 
     setIsLoading(true);
     try {
+      console.log('Setting up inbound calls for phoneNumber:', phoneNumberId);
+      
       const { data, error } = await supabase.functions.invoke('vapi-phone', {
         body: { 
           action: 'setup_inbound',
@@ -90,19 +92,28 @@ export const VapiInterface: React.FC<VapiInterfaceProps> = ({ onCallStatusChange
         }
       });
 
-      if (error) throw error;
+      console.log('Vapi response:', { data, error });
 
-      if (data.success) {
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      if (data && data.success) {
         toast({
           title: "Inbound Calls konfiguriert!",
           description: "Du kannst jetzt die Nummer anrufen!",
         });
+      } else if (data && data.error) {
+        throw new Error(data.error);
+      } else {
+        throw new Error('Unbekannte Antwort vom Server');
       }
     } catch (error) {
       console.error('Error setting up inbound calls:', error);
       toast({
         title: "Fehler",
-        description: "Inbound-Setup fehlgeschlagen",
+        description: error.message || "Inbound-Setup fehlgeschlagen",
         variant: "destructive",
       });
     } finally {
