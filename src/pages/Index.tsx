@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/AppSidebar"
+import { MobileNavigation } from "@/components/layout/MobileNavigation"
 import { StatsCard } from "@/components/dashboard/StatsCard"
 import { RecentAppointments } from "@/components/dashboard/RecentAppointments"
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog"
@@ -95,6 +96,7 @@ export default function Index() {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
+        <MobileNavigation />
         <main className="flex-1 p-6 bg-background">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
