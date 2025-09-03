@@ -51,12 +51,15 @@ WICHTIG: Sprich natürlich, ohne Kunstpausen. Wie eine echte Sprechstundenhilfe!
         }]
       },
       voice: {
-        provider: 'vapi',  
-        voiceId: 'jennifer',
-        speed: 1.1,
-        stability: 0.8,
-        similarityBoost: 0.9,
-        style: 'conversational'
+        provider: 'elevenlabs',
+        voiceId: 'TX3LPaxmHKxFdv7VOQHJ', // Liam - natürliche deutsche Stimme
+        model: 'eleven_multilingual_v2',
+        stability: 0.9,
+        similarityBoost: 0.95,
+        style: 0.2,
+        useSpeakerBoost: true,
+        optimizeStreamingLatency: 4,
+        outputFormat: 'pcm_16000'
       },
       firstMessage: 'Praxis Weber, Lisa am Apparat! Wie kann ich Ihnen helfen?',
       serverUrl: 'https://jdbprivzprvpfoxrfyjy.supabase.co/functions/v1/ai-booking',
