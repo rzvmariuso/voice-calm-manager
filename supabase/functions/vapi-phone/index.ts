@@ -51,7 +51,7 @@ WICHTIG: Sprich natürlich, ohne Kunstpausen. Wie eine echte Sprechstundenhilfe!
         }]
       },
       voice: {
-        provider: 'elevenlabs',
+        provider: '11labs',
         voiceId: 'EXAVITQu4vr4xnSDxMaL', // Sarah - weibliche deutsche Stimme
         model: 'eleven_multilingual_v2',
         stability: 0.9,
@@ -64,18 +64,12 @@ WICHTIG: Sprich natürlich, ohne Kunstpausen. Wie eine echte Sprechstundenhilfe!
       firstMessage: 'Praxis Weber, Lisa am Apparat! Wie kann ich Ihnen helfen?',
       serverUrl: 'https://jdbprivzprvpfoxrfyjy.supabase.co/functions/v1/ai-booking',
       endCallMessage: 'Vielen Dank für Ihren Anruf! Wir freuen uns auf Sie. Auf Wiederhören!',
-      conversationConfig: {
-        maxResponseTimeMs: 1000,
-        endCallAfterSilenceMs: 5000,
-        backgroundSound: 'off'
-      },
       recordingEnabled: true,
       transcriber: {
         provider: 'deepgram',
         model: 'nova-2-general',
         language: 'de',
         smartFormat: true,
-        punctuate: true,
         diarize: false,
         interimResults: true
       },

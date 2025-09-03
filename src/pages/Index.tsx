@@ -369,13 +369,19 @@ export default function Index() {
         <AppointmentDialog
           open={showAppointmentDialog}
           onOpenChange={setShowAppointmentDialog}
-          onSuccess={() => window.location.reload()}
+          onSuccess={() => {
+            // Trigger page refresh to update appointment list
+            window.location.reload();
+          }}
         />
         
         <PatientDialog
           open={showPatientDialog}
           onOpenChange={setShowPatientDialog}
-          onSuccess={() => window.location.reload()}
+          onSuccess={() => {
+            // Trigger page refresh to update patient list
+            window.location.reload();
+          }}
         />
       </div>
     </SidebarProvider>

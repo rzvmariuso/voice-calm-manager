@@ -75,8 +75,7 @@ export function AppointmentCard({
         description: `Termin status wurde auf "${getStatusLabel(newStatus)}" geändert.`,
       });
 
-      // Trigger a refetch of appointments
-      window.location.reload();
+      // Status update will be reflected when component re-renders
     } catch (error) {
       console.error('Error updating status:', error);
       toast({

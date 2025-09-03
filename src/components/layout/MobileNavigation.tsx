@@ -88,10 +88,6 @@ export function MobileNavigation() {
 
   const handleNavigation = (url: string) => {
     setIsOpen(false);
-    // Small delay to allow sheet animation to start before navigation
-    setTimeout(() => {
-      window.location.href = url;
-    }, 150);
   };
 
   return (
@@ -144,33 +140,34 @@ export function MobileNavigation() {
                   const isActive = currentPath === item.url;
                   const Icon = item.icon;
 
-                  return (
-                    <button
-                      key={item.url}
-                      onClick={() => handleNavigation(item.url)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-all duration-200 hover-scale",
-                        "animate-fade-in",
-                        isActive 
-                          ? 'bg-gradient-primary text-white shadow-glow font-medium' 
-                          : 'text-foreground hover:bg-accent hover:text-accent-foreground'
-                      )}
-                      style={{ animationDelay: `${index * 0.05}s` }}
-                    >
-                      <Icon className={cn(
-                        "w-5 h-5 flex-shrink-0",
-                        isActive ? 'text-white' : 'text-muted-foreground'
-                      )} />
-                      <span className="flex-1">{item.title}</span>
-                      {item.badge && (
-                        <Badge 
-                          variant={isActive ? "secondary" : "outline"} 
-                          className="text-xs"
-                        >
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </button>
+                   return (
+                     <Link
+                       key={item.url}
+                       to={item.url}
+                       onClick={() => handleNavigation(item.url)}
+                       className={cn(
+                         "w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-all duration-200 hover-scale",
+                         "animate-fade-in",
+                         isActive 
+                           ? 'bg-gradient-primary text-white shadow-glow font-medium' 
+                           : 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                       )}
+                       style={{ animationDelay: `${index * 0.05}s` }}
+                     >
+                       <Icon className={cn(
+                         "w-5 h-5 flex-shrink-0",
+                         isActive ? 'text-white' : 'text-muted-foreground'
+                       )} />
+                       <span className="flex-1">{item.title}</span>
+                       {item.badge && (
+                         <Badge 
+                           variant={isActive ? "secondary" : "outline"} 
+                           className="text-xs"
+                         >
+                           {item.badge}
+                         </Badge>
+                       )}
+                     </Link>
                   );
                 })}
               </nav>
@@ -199,14 +196,13 @@ export function MobileQuickActions() {
   return (
     <div className="fixed bottom-4 right-4 z-50 lg:hidden">
       <div className="flex flex-col gap-2">
-        <Button 
-          size="icon" 
-          className="w-12 h-12 rounded-full bg-gradient-primary shadow-glow hover:shadow-lg transition-all duration-300 hover-scale"
-          onClick={() => window.location.href = '/appointments'}
+        <Link
+          to="/appointments"
+          className="w-12 h-12 rounded-full bg-gradient-primary shadow-glow hover:shadow-lg transition-all duration-300 hover-scale flex items-center justify-center"
           aria-label="Neuer Termin"
         >
           <Calendar className="w-6 h-6 text-white" />
-        </Button>
+        </Link>
         
         <Button 
           variant="ghost"
