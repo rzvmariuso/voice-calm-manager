@@ -16,6 +16,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [resending, setResending] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -120,22 +121,10 @@ export default function Auth() {
 
     setDeleting(true);
     try {
-      const res = await fetch(
-        "https://jdbprivzprvpfoxrfyjy.supabase.co/functions/v1/admin-delete-user",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey:
-              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkYnByaXZ6cHJ2cGZveHJmeWp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3ODE0NjgsImV4cCI6MjA3MjM1NzQ2OH0.rCjuQmuWSpychlhDOdpmmtMFwsyO2ab3x36FAS0NFNU",
-            Authorization:
-              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkYnByaXZ6cHJ2cGZveHJmeWp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3ODE0NjgsImV4cCI6MjA3MjM1NzQ2OH0.rCjuQmuWSpychlhDOdpmmtMFwsyO2ab3x36FAS0NFNU",
-          },
-          body: JSON.stringify({ email }),
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Löschen fehlgeschlagen");
+      const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+        body: { email },
+      });
+      if (error) throw error;
       toast({
         title: "Account gelöscht",
         description: "Bitte erneut registrieren und E-Mail prüfen.",
@@ -148,6 +137,39 @@ export default function Auth() {
       });
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      toast({
+        title: "E-Mail erforderlich",
+        description: "Bitte geben Sie Ihre E-Mail ein.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setResending(true);
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: redirectUrl },
+      });
+      if (error) throw error;
+      toast({
+        title: "E-Mail gesendet",
+        description: "Bitte prüfen Sie Ihren Posteingang (und Spam).",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Senden fehlgeschlagen",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setResending(false);
     }
   };
 
@@ -246,6 +268,12 @@ export default function Auth() {
                   <Button type="button" variant="outline" className="w-full" onClick={handleDeleteAccount} disabled={deleting || !email}>
                     {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Account mit dieser E-Mail löschen (Test)
+                  </Button>
+                </div>
+                <div className="pt-2">
+                  <Button type="button" variant="secondary" className="w-full" onClick={handleResendConfirmation} disabled={resending || !email}>
+                    {resending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Bestätigungs-E-Mail erneut senden
                   </Button>
                 </div>
               </form>
