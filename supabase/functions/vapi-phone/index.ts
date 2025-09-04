@@ -58,8 +58,7 @@ WICHTIG: Sprich natürlich, ohne Kunstpausen. Wie eine echte Sprechstundenhilfe!
         similarityBoost: 0.95,
         style: 0.2,
         useSpeakerBoost: true,
-        optimizeStreamingLatency: 4,
-        outputFormat: 'pcm_16000'
+        optimizeStreamingLatency: 4
       },
       firstMessage: 'Praxis Weber, Lisa am Apparat! Wie kann ich Ihnen helfen?',
       serverUrl: 'https://jdbprivzprvpfoxrfyjy.supabase.co/functions/v1/ai-booking',
@@ -70,7 +69,6 @@ WICHTIG: Sprich natürlich, ohne Kunstpausen. Wie eine echte Sprechstundenhilfe!
         model: 'nova-2-general',
         language: 'de',
         smartFormat: true,
-        diarize: false,
         interimResults: true
       },
       clientMessages: ['conversation-update', 'function-call', 'hang', 'model-output', 'speech-update', 'status-update', 'transcript', 'tool-calls', 'user-interrupted'],
@@ -96,7 +94,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, practiceId, phoneNumber, message, assistantId } = await req.json();
+    const { action, practiceId, phoneNumber, message, assistantId, areaCode, country } = await req.json();
     const vapiApiKey = Deno.env.get('VAPI_API_KEY');
     
     if (!vapiApiKey) {
@@ -224,8 +222,6 @@ serve(async (req) => {
 
     } else if (action === 'buy_phone_number') {
       // Buy a new phone number through Vapi
-      const { areaCode, country = 'DE' } = await req.json();
-      
       const response = await fetch('https://api.vapi.ai/phone-number', {
         method: 'POST',
         headers: {
@@ -235,7 +231,7 @@ serve(async (req) => {
         body: JSON.stringify({
           provider: 'twilio', // Vapi uses Twilio as provider
           areaCode,
-          country
+          country: country || 'DE'
         })
       });
 
