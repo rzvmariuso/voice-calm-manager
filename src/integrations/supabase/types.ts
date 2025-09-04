@@ -74,6 +74,7 @@ export type Database = {
           patient_id: string
           practice_id: string
           service: string
+          service_id: string | null
           sms_reminder_sent: boolean | null
           status: string
           updated_at: string
@@ -89,6 +90,7 @@ export type Database = {
           patient_id: string
           practice_id: string
           service: string
+          service_id?: string | null
           sms_reminder_sent?: boolean | null
           status?: string
           updated_at?: string
@@ -104,6 +106,7 @@ export type Database = {
           patient_id?: string
           practice_id?: string
           service?: string
+          service_id?: string | null
           sms_reminder_sent?: boolean | null
           status?: string
           updated_at?: string
@@ -121,6 +124,13 @@ export type Database = {
             columns: ["practice_id"]
             isOneToOne: false
             referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "practice_services"
             referencedColumns: ["id"]
           },
         ]
@@ -259,6 +269,45 @@ export type Database = {
           },
         ]
       }
+      practice_services: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number | null
+          duration_minutes: number | null
+          id: string
+          is_active: boolean
+          name: string
+          practice_id: string
+          price: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean
+          name: string
+          practice_id: string
+          price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          practice_id?: string
+          price?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       practices: {
         Row: {
           address: string | null
@@ -273,6 +322,7 @@ export type Database = {
           name: string
           owner_id: string
           phone: string | null
+          practice_type: string
           updated_at: string
         }
         Insert: {
@@ -288,6 +338,7 @@ export type Database = {
           name: string
           owner_id: string
           phone?: string | null
+          practice_type?: string
           updated_at?: string
         }
         Update: {
@@ -303,6 +354,7 @@ export type Database = {
           name?: string
           owner_id?: string
           phone?: string | null
+          practice_type?: string
           updated_at?: string
         }
         Relationships: []
