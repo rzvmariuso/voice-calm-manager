@@ -129,7 +129,13 @@ const AppStateContext = createContext<{
 
 // Provider
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+  const [state, dispatch] = useReducer(appReducer, initialState);
+  
+  return (
+    <AppStateContext.Provider value={{ state, dispatch }}>
+      {children}
+    </AppStateContext.Provider>
+  );
 }
 
 // Hook
