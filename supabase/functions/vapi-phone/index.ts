@@ -68,8 +68,7 @@ WICHTIG: Sprich natürlich, ohne Kunstpausen. Wie eine echte Sprechstundenhilfe!
         provider: 'deepgram',
         model: 'nova-2-general',
         language: 'de',
-        smartFormat: true,
-        interimResults: true
+        smartFormat: true
       },
       clientMessages: ['conversation-update', 'function-call', 'hang', 'model-output', 'speech-update', 'status-update', 'transcript', 'tool-calls', 'user-interrupted'],
       serverMessages: ['conversation-update', 'end-of-call-report', 'function-call', 'hang', 'speech-update', 'status-update', 'tool-calls', 'transfer-update']
