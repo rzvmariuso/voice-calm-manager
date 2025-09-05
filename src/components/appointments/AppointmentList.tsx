@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { formatInBerlinTime, formatGermanDate } from "@/lib/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePractice } from "@/hooks/usePractice";
@@ -311,7 +312,7 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-primary" />
                         <span className="font-medium">
-                          {format(new Date(appointment.appointment_date), "dd. MMM yyyy", { locale: de })}
+                          {formatGermanDate(appointment.appointment_date)}
                         </span>
                       </div>
 
@@ -472,7 +473,7 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
                     {appointmentToDelete.patient.first_name} {appointmentToDelete.patient.last_name}
                   </strong>
                   <br />
-                  {format(new Date(appointmentToDelete.appointment_date), "dd. MMMM yyyy", { locale: de })} 
+                  {formatInBerlinTime(appointmentToDelete.appointment_date, "dd. MMMM yyyy")} 
                   {" um "} {appointmentToDelete.appointment_time}
                 </div>
               )}

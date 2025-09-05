@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { CalendarIcon, Clock, User, FileText, Save, X, UserPlus, Users } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { formatInBerlinTime, nowInBerlin, fromBerlinTime } from "@/lib/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePractice } from "@/hooks/usePractice";
@@ -80,7 +81,7 @@ const [patientMode, setPatientMode] = useState<'existing' | 'new'>('existing');
   
   const [formData, setFormData] = useState({
     patient_id: appointment?.patient_id || appointment?.patient?.id || "",
-    appointment_date: appointment?.appointment_date ? new Date(appointment.appointment_date) : new Date(),
+    appointment_date: appointment?.appointment_date ? new Date(appointment.appointment_date) : nowInBerlin(),
     appointment_time: appointment?.appointment_time || "",
     service: appointment?.service || "",
     duration_minutes: appointment?.duration_minutes || 30,
@@ -102,7 +103,7 @@ const [patientMode, setPatientMode] = useState<'existing' | 'new'>('existing');
     if (appointment) {
       setFormData({
         patient_id: appointment.patient_id || appointment.patient?.id || "",
-        appointment_date: appointment.appointment_date ? new Date(appointment.appointment_date) : new Date(),
+        appointment_date: appointment.appointment_date ? new Date(appointment.appointment_date) : nowInBerlin(),
         appointment_time: appointment.appointment_time || "",
         service: appointment.service || "",
         duration_minutes: appointment.duration_minutes || 30,
@@ -594,9 +595,11 @@ const loadPatients = async () => {
                     selected={formData.appointment_date}
                     onSelect={(date) => date && setFormData(prev => ({ ...prev, appointment_date: date }))}
                     disabled={(date) => {
-                      // Vergangenheit blockieren
-                      if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
-                      // Wochenenden blockieren (Samstag = 6, Sonntag = 0)
+                       // Vergangenheit blockieren
+                       const today = nowInBerlin();
+                       today.setHours(0, 0, 0, 0);
+                       if (date < today) return true;
+                       // Wochenenden blockieren (Samstag = 6, Sonntag = 0)
                       const dayOfWeek = date.getDay();
                       return dayOfWeek === 0 || dayOfWeek === 6;
                     }}

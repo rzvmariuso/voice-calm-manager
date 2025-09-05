@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Calendar, Clock, Bot, Phone } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client";
 import { usePractice } from "@/hooks/usePractice";
+import { nowInBerlin } from "@/lib/dateUtils";
 
 interface Appointment {
   id: string;
@@ -53,7 +54,7 @@ export function RecentAppointments() {
 
     const fetchRecentAppointments = async () => {
       try {
-        const today = new Date();
+        const today = nowInBerlin();
         const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
         const { data, error } = await supabase
@@ -94,7 +95,7 @@ export function RecentAppointments() {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    const today = new Date();
+    const today = nowInBerlin();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 

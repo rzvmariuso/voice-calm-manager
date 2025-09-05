@@ -33,6 +33,7 @@ import { usePractice } from "@/hooks/usePractice";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { format, subDays, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { de } from "date-fns/locale";
+import { nowInBerlin, formatInBerlinTime, toBerlinTime } from "@/lib/dateUtils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AnalyticsData {
@@ -64,7 +65,7 @@ export function Analytics() {
   }, [practice, timeRange]);
 
   const getDateRange = () => {
-    const now = new Date();
+    const now = nowInBerlin();
     switch (timeRange) {
       case '7d':
         return { start: subDays(now, 7), end: now };
@@ -139,7 +140,7 @@ export function Analytics() {
       // Monthly data for the last 6 months
       const monthlyData = [];
       for (let i = 5; i >= 0; i--) {
-        const month = subMonths(new Date(), i);
+        const month = subMonths(nowInBerlin(), i);
         const monthStart = startOfMonth(month);
         const monthEnd = endOfMonth(month);
         
@@ -163,7 +164,7 @@ export function Analytics() {
       // Weekly data for the last 7 days
       const weeklyData = [];
       for (let i = 6; i >= 0; i--) {
-        const day = subDays(new Date(), i);
+        const day = subDays(nowInBerlin(), i);
         const dayAppointments = appointments?.filter(a => {
           const appointmentDate = new Date(a.appointment_date);
           return format(appointmentDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
@@ -221,7 +222,7 @@ export function Analytics() {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `analytics-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.download = `analytics-${formatInBerlinTime(nowInBerlin(), 'yyyy-MM-dd')}.csv`;
     link.click();
     window.URL.revokeObjectURL(url);
   };

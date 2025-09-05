@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isToday, isSameMonth } from "date-fns";
 import { AppointmentWithPatient } from "@/hooks/useAppointments";
 import { AppointmentCard } from "./AppointmentCard";
+import { toBerlinTime, isTodayInBerlin } from "@/lib/dateUtils";
 
 interface MonthViewProps {
   currentDate: Date;
@@ -32,7 +33,7 @@ export function MonthView({
 
   const getAppointmentsForDay = (date: Date) => {
     return appointments.filter(appointment => 
-      isSameDay(new Date(`${appointment.appointment_date}T00:00:00`), date)
+      isSameDay(toBerlinTime(`${appointment.appointment_date}T00:00:00`), date)
     ).sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
   };
 
@@ -70,7 +71,7 @@ export function MonthView({
           {calendarDays.map((day, index) => {
             const dayAppointments = getAppointmentsForDay(day);
             const isCurrentMonth = isSameMonth(day, currentDate);
-            const isTodayDate = isToday(day);
+            const isTodayDate = isTodayInBerlin(day);
             const isWeekend = day.getDay() === 0 || day.getDay() === 6; // Sonntag oder Samstag
             
             return (

@@ -6,6 +6,7 @@ import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isToday }
 import { de } from "date-fns/locale";
 import { AppointmentWithPatient } from "@/hooks/useAppointments";
 import { AppointmentCard } from "./AppointmentCard";
+import { toBerlinTime, isTodayInBerlin } from "@/lib/dateUtils";
 
 interface WeekViewProps {
   currentDate: Date;
@@ -26,7 +27,7 @@ export function WeekView({
 
   const getAppointmentsForDay = (date: Date) => {
     return appointments.filter(appointment => 
-      isSameDay(new Date(`${appointment.appointment_date}T00:00:00`), date)
+      isSameDay(toBerlinTime(`${appointment.appointment_date}T00:00:00`), date)
     ).sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
   };
 
@@ -60,7 +61,7 @@ export function WeekView({
           {/* Day columns */}
           {weekDays.map((day, dayIndex) => {
             const dayAppointments = getAppointmentsForDay(day);
-            const isTodayDate = isToday(day);
+            const isTodayDate = isTodayInBerlin(day);
             
             return (
               <div key={dayIndex} className="space-y-2">
