@@ -1,12 +1,13 @@
-const CACHE_NAME = 'voice-calm-manager-v1';
+const CACHE_NAME = 'voice-calm-manager-v2';
+const STATIC_CACHE = 'static-cache-v2';
+const RUNTIME_CACHE = 'runtime-cache-v2';
+
 const urlsToCache = [
   '/',
   '/calendar',
   '/patients',
   '/appointments',
   '/settings',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
   '/manifest.json'
 ];
 
@@ -30,7 +31,7 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
+          if (![CACHE_NAME, STATIC_CACHE, RUNTIME_CACHE].includes(cacheName)) {
             return caches.delete(cacheName);
           }
         })
@@ -40,44 +41,79 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - serve from cache with optimized strategies
 self.addEventListener('fetch', event => {
   // Skip cross-origin requests
   if (!event.request.url.startsWith(self.location.origin)) {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Return cached version or fetch from network
-        if (response) {
-          return response;
-        }
-        
-        return fetch(event.request).then(response => {
-          // Don't cache if not a valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Cache strategy for static assets (JS, CSS, images)
+  if (
+    request.destination === 'script' || 
+    request.destination === 'style' ||
+    request.destination === 'image' ||
+    url.pathname.includes('/assets/') ||
+    url.pathname.match(/\.(js|css|woff2?|png|jpg|jpeg|gif|svg|ico)$/)
+  ) {
+    event.respondWith(
+      caches.open(STATIC_CACHE).then(cache => {
+        return cache.match(request).then(cachedResponse => {
+          if (cachedResponse) {
+            return cachedResponse;
           }
-
-          // Clone the response
-          const responseToCache = response.clone();
-
-          caches.open(CACHE_NAME)
-            .then(cache => {
-              cache.put(event.request, responseToCache);
-            });
-
-          return response;
+          
+          return fetch(request).then(response => {
+            if (response.status === 200) {
+              const responseClone = response.clone();
+              // Cache static assets for 1 year
+              const headers = new Headers(responseClone.headers);
+              headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+              
+              const cachedResponse = new Response(responseClone.body, {
+                status: responseClone.status,
+                statusText: responseClone.statusText,
+                headers: headers
+              });
+              
+              cache.put(request, cachedResponse);
+            }
+            return response;
+          });
         });
       })
-      .catch(() => {
-        // Return offline page for navigation requests
-        if (event.request.destination === 'document') {
-          return caches.match('/');
+    );
+    return;
+  }
+
+  // Default caching strategy for other requests
+  event.respondWith(
+    caches.match(request).then(response => {
+      if (response) {
+        return response;
+      }
+      
+      return fetch(request).then(response => {
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
         }
-      })
+
+        const responseToCache = response.clone();
+        
+        caches.open(RUNTIME_CACHE).then(cache => {
+          cache.put(request, responseToCache);
+        });
+
+        return response;
+      });
+    }).catch(() => {
+      if (request.destination === 'document') {
+        return caches.match('/');
+      }
+    })
   );
 });
 
