@@ -97,41 +97,47 @@ export default function Index() {
       <div className="flex min-h-screen w-full">
         <AppSidebar />
         <MobileNavigation />
-        <main className="flex-1 p-6 bg-background">
-          <div className="flex items-center justify-between mb-8">
+        <main className="flex-1 p-4 lg:p-6 bg-background overflow-x-hidden">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 lg:mb-8 space-y-4 lg:space-y-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger />
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+                <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-hero bg-clip-text text-transparent">
                   Dashboard
                 </h1>
-                <p className="text-muted-foreground">
-                  Willkommen {practice?.name} - {user?.email}
+                <p className="text-muted-foreground text-sm lg:text-base">
+                  Willkommen {practice?.name}
+                </p>
+                <p className="text-muted-foreground text-xs lg:text-sm lg:hidden">
+                  {user?.email}
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 lg:space-x-4 w-full lg:w-auto">
               {!isSubscribed ? (
-                <Link to="/billing">
-                  <Button className="button-gradient hover:scale-105 transition-all duration-300">
-                    <Crown className="w-4 h-4 mr-2" />
-                    Jetzt upgraden
+                <Link to="/billing" className="flex-1 lg:flex-none">
+                  <Button className="button-gradient hover:scale-105 transition-all duration-300 w-full lg:w-auto text-sm">
+                    <Crown className="w-4 h-4 mr-1 lg:mr-2" />
+                    <span className="hidden sm:inline">Jetzt upgraden</span>
+                    <span className="sm:hidden">Upgrade</span>
                   </Button>
                 </Link>
               ) : canAccessAI ? (
-                <Button className="button-gradient hover:scale-105 transition-all duration-300 animate-glow-pulse">
-                  <Bot className="w-4 h-4 mr-2" />
-                  KI-Agent aktivieren
+                <Button className="button-gradient hover:scale-105 transition-all duration-300 animate-glow-pulse flex-1 lg:flex-none text-sm">
+                  <Bot className="w-4 h-4 mr-1 lg:mr-2" />
+                  <span className="hidden sm:inline">KI-Agent aktivieren</span>
+                  <span className="sm:hidden">KI aktiv</span>
                 </Button>
               ) : (
-                <Link to="/billing">
-                  <Button variant="outline" className="hover:scale-105 transition-all duration-300">
-                    <Zap className="w-4 h-4 mr-2" />
-                    KI-Features freischalten
+                <Link to="/billing" className="flex-1 lg:flex-none">
+                  <Button variant="outline" className="hover:scale-105 transition-all duration-300 w-full lg:w-auto text-sm">
+                    <Zap className="w-4 h-4 mr-1 lg:mr-2" />
+                    <span className="hidden sm:inline">KI-Features freischalten</span>
+                    <span className="sm:hidden">KI unlock</span>
                   </Button>
                 </Link>
               )}
-              <Button variant="ghost" size="sm" onClick={handleSignOut} className="hover:scale-105 transition-transform duration-200">
+              <Button variant="ghost" size="sm" onClick={handleSignOut} className="hover:scale-105 transition-transform duration-200 lg:inline-flex hidden">
                 <LogOut className="mr-2 h-4 w-4" />
                 Abmelden
               </Button>
@@ -139,7 +145,7 @@ export default function Index() {
           </div>
 
           {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 mb-6 lg:mb-8 animate-fade-in">
             <div className="animate-scale-in" style={{ animationDelay: '0.1s' }}>
               <Link to="/calendar">
                 <div className="cursor-pointer hover:scale-105 transition-transform duration-200">
@@ -195,7 +201,7 @@ export default function Index() {
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 animate-fade-in" style={{ animationDelay: '0.5s' }}>
             <div className="lg:col-span-2">
               <RecentAppointments />
             </div>

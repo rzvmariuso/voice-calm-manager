@@ -157,4 +157,69 @@ All colors MUST be HSL.
     40% { content: '..'; }
     60%, 100% { content: '...'; }
   }
+  
+  /* Hide Lovable badge */
+  iframe[title="Edit in Lovable"],
+  [data-lovable-badge],
+  .lovable-badge,
+  a[href*="lovable.dev"]:has([role="img"]) {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+  }
+  
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    .container {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    
+    /* Ensure proper viewport handling */
+    body {
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Mobile grid adjustments */
+    .grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4 {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+    
+    /* Mobile card padding adjustments */
+    .card {
+      padding: 0.75rem;
+    }
+    
+    /* Mobile button adjustments */
+    .button-gradient {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    /* Extra small mobile devices */
+    .grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4 {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+    
+    .text-3xl {
+      font-size: 1.5rem;
+      line-height: 2rem;
+    }
+    
+    .p-6 {
+      padding: 1rem;
+    }
+    
+    /* Mobile navigation adjustments */
+    .lg\\:col-span-2 {
+      grid-column: span 1 / span 1;
+    }
+  }
   }
