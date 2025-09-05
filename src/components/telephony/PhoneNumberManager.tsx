@@ -5,11 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Phone, Plus, Settings, Check, X } from 'lucide-react';
-import { useUserPhoneNumbers } from '@/hooks/useUserPhoneNumbers';
+import { Switch } from '@/components/ui/switch';
+import { Phone, Plus, TestTube, Trash2, Power } from 'lucide-react';
+import { usePhoneNumbers } from '@/hooks/useUserPhoneNumbers';
 
-export const UserPhoneNumbers: React.FC = () => {
-  const { phoneNumbers, isLoading, addPhoneNumber, connectToVapi, deletePhoneNumber } = useUserPhoneNumbers();
+export const PhoneNumberManager: React.FC = () => {
+  const { phoneNumbers, isLoading, addPhoneNumber, togglePhoneNumber, testConnection, deletePhoneNumber } = usePhoneNumbers();
   const [newPhone, setNewPhone] = useState('');
   const [countryCode, setCountryCode] = useState('DE');
   const [areaCode, setAreaCode] = useState('');
@@ -26,17 +27,25 @@ export const UserPhoneNumbers: React.FC = () => {
     await deletePhoneNumber(phoneId);
   };
 
+  const handleTogglePhone = async (phoneId: string, currentActive: boolean) => {
+    await togglePhoneNumber(phoneId, !currentActive);
+  };
+
+  const handleTestConnection = async (phoneId: string) => {
+    await testConnection(phoneId);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Add Phone Number */}
+      {/* Neue Nummer hinzufügen */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
-            Telefonnummer hinzufügen
+            Neue Telefonnummer hinzufügen
           </CardTitle>
           <CardDescription>
-            Fügen Sie Ihre Telefonnummer hinzu für die Voice AI Integration
+            Tragen Sie Ihre Telefonnummer ein. Sie können diese dann mit der AI verbinden.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -76,11 +85,11 @@ export const UserPhoneNumbers: React.FC = () => {
               />
             </div>
             
-            <div className="flex items-end gap-2">
+            <div className="flex items-end">
               <Button 
                 onClick={handleAddPhone}
                 disabled={isLoading || !newPhone.trim()}
-                className="flex-1"
+                className="w-full"
               >
                 Hinzufügen
               </Button>
@@ -89,7 +98,7 @@ export const UserPhoneNumbers: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Phone Numbers List */}
+      {/* Telefonnummern verwalten */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -97,13 +106,15 @@ export const UserPhoneNumbers: React.FC = () => {
             Meine Telefonnummern
           </CardTitle>
           <CardDescription>
-            Verwalten Sie Ihre Telefonnummern für die Voice AI Integration
+            Verwalten Sie Ihre Telefonnummern und testen Sie die AI-Verbindung
           </CardDescription>
         </CardHeader>
         <CardContent>
           {phoneNumbers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Noch keine Telefonnummern vorhanden
+              <Phone className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Noch keine Telefonnummern vorhanden</p>
+              <p className="text-sm">Fügen Sie oben eine Nummer hinzu, um zu beginnen</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -120,44 +131,55 @@ export const UserPhoneNumbers: React.FC = () => {
                         <Badge variant="outline" className="text-xs">
                           {phone.country_code}
                         </Badge>
+                        {phone.area_code && (
+                          <Badge variant="secondary" className="text-xs">
+                            {phone.area_code}
+                          </Badge>
+                        )}
                         <Badge 
-                          variant={phone.provider === 'manual' ? 'secondary' : 'default'}
+                          variant={phone.is_active ? 'default' : 'secondary'}
                           className="text-xs"
                         >
-                          {phone.provider === 'manual' ? 'Eigene Nummer' : phone.provider}
+                          {phone.is_active ? 'Aktiv' : 'Inaktiv'}
                         </Badge>
-                        {phone.is_verified && (
-                          <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                            <Check className="h-3 w-3" />
-                            Verifiziert
-                          </Badge>
-                        )}
-                        {phone.is_active && (
-                          <Badge variant="default" className="text-xs flex items-center gap-1">
-                            <Settings className="h-3 w-3" />
-                            Voice AI bereit
-                          </Badge>
-                        )}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
+                    {/* Aktivieren/Deaktivieren */}
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor={`active-${phone.id}`} className="text-sm">
+                        {phone.is_active ? 'Aktiv' : 'Inaktiv'}
+                      </Label>
+                      <Switch
+                        id={`active-${phone.id}`}
+                        checked={phone.is_active}
+                        onCheckedChange={() => handleTogglePhone(phone.id, phone.is_active)}
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    {/* Test-Button */}
+                    <Button
+                      onClick={() => handleTestConnection(phone.id)}
+                      disabled={isLoading || !phone.is_active}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <TestTube className="h-4 w-4" />
+                      Test AI
+                    </Button>
+
+                    {/* Löschen-Button */}
                     <Button
                       onClick={() => handleDeletePhone(phone.id)}
                       disabled={isLoading}
                       size="sm"
                       variant="destructive"
                     >
-                      <X className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
-                    
-                    <Badge 
-                      variant={phone.is_active ? 'default' : 'secondary'}
-                      className="px-3 py-1"
-                    >
-                      {phone.is_active ? 'Aktiv' : 'Inaktiv'}
-                    </Badge>
                   </div>
                 </div>
               ))}
@@ -169,4 +191,4 @@ export const UserPhoneNumbers: React.FC = () => {
   );
 };
 
-export default UserPhoneNumbers;
+export default PhoneNumberManager;

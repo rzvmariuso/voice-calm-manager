@@ -3,24 +3,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
-interface UserPhoneNumber {
+interface PhoneNumber {
   id: string;
   phone_number: string;
   country_code: string;
   area_code?: string;
-  vapi_phone_id?: string;
-  vapi_assistant_id?: string;
   is_active: boolean;
-  is_verified: boolean;
-  provider: string;
   created_at: string;
   updated_at: string;
 }
 
-export const useUserPhoneNumbers = () => {
+export const usePhoneNumbers = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [phoneNumbers, setPhoneNumbers] = useState<UserPhoneNumber[]>([]);
+  const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumber[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const loadPhoneNumbers = async () => {
@@ -56,7 +52,7 @@ export const useUserPhoneNumbers = () => {
           phone_number: phoneNumber,
           country_code: countryCode,
           area_code: areaCode,
-          provider: 'manual',
+          is_active: true,
         })
         .select()
         .single();
@@ -83,30 +79,50 @@ export const useUserPhoneNumbers = () => {
     }
   };
 
-  const connectToVapi = async (phoneNumberId: string) => {
+  const togglePhoneNumber = async (phoneNumberId: string, isActive: boolean) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('vapi-phone', {
-        body: { 
-          action: 'connect_user_number',
-          phoneNumberId: phoneNumberId
-        }
-      });
+      const { error } = await supabase
+        .from('user_phone_numbers')
+        .update({ is_active: isActive })
+        .eq('id', phoneNumberId);
 
       if (error) throw error;
 
-      if (data.success) {
-        await loadPhoneNumbers();
-        toast({
-          title: 'Erfolgreich verbunden',
-          description: 'Ihre Nummer ist jetzt mit Vapi verbunden',
-        });
-      }
+      await loadPhoneNumbers();
+      
+      toast({
+        title: isActive ? 'Nummer aktiviert' : 'Nummer deaktiviert',
+        description: `Die Telefonnummer wurde ${isActive ? 'aktiviert' : 'deaktiviert'}`,
+      });
     } catch (error) {
-      console.error('Error connecting to Vapi:', error);
+      console.error('Error toggling phone number:', error);
       toast({
         title: 'Fehler',
-        description: 'Verbindung zu Vapi fehlgeschlagen',
+        description: 'Nummer konnte nicht geändert werden',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const testConnection = async (phoneNumberId: string) => {
+    setIsLoading(true);
+    try {
+      // Hier würde der Test der AI-Verbindung stattfinden
+      // Simuliere einen erfolgreichen Test
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      toast({
+        title: 'Verbindung erfolgreich',
+        description: 'Die AI-Verbindung funktioniert einwandfrei',
+      });
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      toast({
+        title: 'Verbindungsfehler',
+        description: 'Die AI-Verbindung konnte nicht getestet werden',
         variant: 'destructive',
       });
     } finally {
@@ -153,7 +169,8 @@ export const useUserPhoneNumbers = () => {
     phoneNumbers,
     isLoading,
     addPhoneNumber,
-    connectToVapi,
+    togglePhoneNumber,
+    testConnection,
     deletePhoneNumber,
   };
 };

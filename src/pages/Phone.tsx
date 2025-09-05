@@ -4,7 +4,7 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Phone as PhoneIcon, Smartphone, Users, MessageSquare, Settings, Activity, TrendingUp, Bot } from "lucide-react";
-import VapiInterface from "@/components/voice/VapiInterface";
+import TelephonyInterface from "@/components/telephony/TelephonyInterface";
 
 const Phone = () => {
   const [callStatus, setCallStatus] = useState('idle');
@@ -109,9 +109,9 @@ const Phone = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Vapi Interface - Takes 2 columns */}
+            {/* Telephony Interface - Takes 2 columns */}
             <div className="lg:col-span-2">
-              <VapiInterface onCallStatusChange={setCallStatus} />
+              <TelephonyInterface onCallStatusChange={setCallStatus} />
             </div>
 
             {/* System Status & Info */}
