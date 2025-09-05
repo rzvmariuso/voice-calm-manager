@@ -93,7 +93,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, practiceId, phoneNumber, message, assistantId, areaCode, country } = await req.json();
+    const { action, practiceId, phoneNumber, userPhoneId, message, assistantId, areaCode, country_code, phoneNumberId } = await req.json();
     const vapiApiKey = Deno.env.get('VAPI_API_KEY');
     
     if (!vapiApiKey) {
@@ -117,11 +117,22 @@ serve(async (req) => {
       );
 
     } else if (action === 'setup_inbound') {
-      // Create assistant and link to phone number for inbound calls
+      // Get user's phone number and set up Vapi assistant
+      const { data: userPhone } = await supabase
+        .from('user_phone_numbers')
+        .select('*')
+        .eq('id', userPhoneId)
+        .single();
+
+      if (!userPhone || !userPhone.vapi_phone_id) {
+        throw new Error('User phone number not found or not connected to Vapi');
+      }
+
+      // Create assistant
       const assistantId = await createAssistant(vapiApiKey, practiceId);
       
       // Update phone number to use this assistant for inbound calls
-      const response = await fetch(`https://api.vapi.ai/phone-number/${phoneNumber}`, {
+      const response = await fetch(`https://api.vapi.ai/phone-number/${userPhone.vapi_phone_id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${vapiApiKey}`,
@@ -138,14 +149,16 @@ serve(async (req) => {
         throw new Error(`Failed to setup inbound calls: ${error.message}`);
       }
 
-      const result = await response.json();
-      console.log('Phone number configured for inbound calls:', result);
+      // Update our database with the assistant ID
+      await supabase
+        .from('user_phone_numbers')
+        .update({ vapi_assistant_id: assistantId })
+        .eq('id', userPhoneId);
 
       return new Response(
         JSON.stringify({
           success: true,
           assistantId: assistantId,
-          phoneNumber: result,
           message: 'Inbound calls konfiguriert! Du kannst jetzt anrufen.'
         }),
         {
@@ -154,8 +167,19 @@ serve(async (req) => {
       );
 
     } else if (action === 'create_call') {
-      // Use provided assistantId or create new one
-      const callAssistantId = assistantId || await createAssistant(vapiApiKey, practiceId);
+      // Get user's phone number for the call
+      const { data: userPhone } = await supabase
+        .from('user_phone_numbers')
+        .select('*')
+        .eq('id', userPhoneId)
+        .single();
+
+      if (!userPhone || !userPhone.vapi_phone_id) {
+        throw new Error('User phone number not found or not connected to Vapi');
+      }
+
+      // Use existing assistant or create new one
+      const callAssistantId = userPhone.vapi_assistant_id || await createAssistant(vapiApiKey, practiceId);
       
       // Create outbound call with Vapi
       const response = await fetch('https://api.vapi.ai/call', {
@@ -165,9 +189,9 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          phoneNumberId: phoneNumber,
+          phoneNumberId: userPhone.vapi_phone_id,
           customer: {
-            number: '+18048081248' // Test number - needs to be E.164 format
+            number: '+4930123456789' // Test number for Germany - needs to be E.164 format
           },
           assistantId: callAssistantId
         })
@@ -228,9 +252,9 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          provider: 'twilio', // Vapi uses Twilio as provider
-          areaCode,
-          country: country || 'DE'
+          ...(country_code === 'DE' && { country: 'DE' }),
+          ...(country_code === 'US' && { country: 'US' }),
+          ...(areaCode && { areaCode }),
         })
       });
 
@@ -245,6 +269,46 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           phoneNumber: result
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+
+    } else if (action === 'connect_user_number') {
+      // Connect user's existing phone number to Vapi (if possible)
+      // This would require the user to have a Twilio account or similar setup
+      // For now, we'll just update the database to mark it as connected
+      
+      const { data: userPhone } = await supabase
+        .from('user_phone_numbers')
+        .select('*')
+        .eq('id', phoneNumberId)
+        .single();
+
+      if (!userPhone) {
+        throw new Error('Phone number not found');
+      }
+
+      // In a real implementation, you would need to:
+      // 1. Verify ownership of the phone number
+      // 2. Set up webhooks/forwarding to Vapi
+      // 3. Configure the number with a telecom provider
+      
+      // For now, we'll simulate the connection
+      await supabase
+        .from('user_phone_numbers')
+        .update({ 
+          is_verified: true,
+          is_active: true,
+          vapi_phone_id: `simulated_${userPhone.id}` // In real implementation, this would be the actual Vapi phone ID
+        })
+        .eq('id', phoneNumberId);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Nummer erfolgreich verbunden (Simulation)'
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

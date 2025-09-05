@@ -6,6 +6,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { Phone, PhoneCall, PhoneOff, User, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePractice } from '@/hooks/usePractice';
+import { useUserPhoneNumbers } from '@/hooks/useUserPhoneNumbers';
+import UserPhoneNumbers from './UserPhoneNumbers';
 
 interface VapiInterfaceProps {
   onCallStatusChange?: (status: string) => void;
@@ -14,100 +16,35 @@ interface VapiInterfaceProps {
 export const VapiInterface: React.FC<VapiInterfaceProps> = ({ onCallStatusChange }) => {
   const { toast } = useToast();
   const { practice } = usePractice();
+  const { phoneNumbers } = useUserPhoneNumbers();
   const [isLoading, setIsLoading] = useState(false);
-  const [phoneNumbers, setPhoneNumbers] = useState<any[]>([]);
   const [activeCall, setActiveCall] = useState<string | null>(null);
   const [callStatus, setCallStatus] = useState<string>('idle');
 
-  // Load available phone numbers
-  useEffect(() => {
-    loadPhoneNumbers();
-  }, []);
+  // Get Vapi-connected phone numbers for calls
+  const vapiPhoneNumbers = phoneNumbers.filter(phone => phone.vapi_phone_id && phone.is_active);
 
-  const loadPhoneNumbers = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('vapi-phone', {
-        body: { action: 'get_phone_numbers' }
-      });
 
-      if (error) throw error;
-
-      if (data.success) {
-        setPhoneNumbers(data.phoneNumbers || []);
-      }
-    } catch (error) {
-      console.error('Error loading phone numbers:', error);
-      toast({
-        title: "Fehler",
-        description: "Telefonnummern konnten nicht geladen werden",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const buyPhoneNumber = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('vapi-phone', {
-        body: { 
-          action: 'buy_phone_number',
-          areaCode: '212', // New York area code for US numbers
-          country: 'US'
-        }
-      });
-
-      if (error) throw error;
-
-      if (data.success) {
-        toast({
-          title: "Telefonnummer erworben",
-          description: `Neue Nummer: ${data.phoneNumber.number}`,
-        });
-        await loadPhoneNumbers();
-      }
-    } catch (error) {
-      console.error('Error buying phone number:', error);
-      toast({
-        title: "Fehler",
-        description: "Telefonnummer konnte nicht erworben werden",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const setupInboundCalls = async (phoneNumberId: string) => {
+  const setupInboundCalls = async (userPhoneId: string) => {
     if (!practice) return;
 
     setIsLoading(true);
     try {
-      console.log('Setting up inbound calls for phoneNumber:', phoneNumberId);
-      
       const { data, error } = await supabase.functions.invoke('vapi-phone', {
         body: { 
           action: 'setup_inbound',
           practiceId: practice.id,
-          phoneNumber: phoneNumberId
+          userPhoneId: userPhoneId
         }
       });
 
-      console.log('Vapi response:', { data, error });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       if (data && data.success) {
         toast({
           title: "Inbound Calls konfiguriert!",
           description: "Du kannst jetzt die Nummer anrufen!",
         });
-      } else if (data && data.error) {
-        throw new Error(data.error);
-      } else {
-        throw new Error('Unbekannte Antwort vom Server');
       }
     } catch (error) {
       console.error('Error setting up inbound calls:', error);
@@ -121,7 +58,7 @@ export const VapiInterface: React.FC<VapiInterfaceProps> = ({ onCallStatusChange
     }
   };
 
-  const createTestCall = async (phoneNumberId: string) => {
+  const createTestCall = async (userPhoneId: string) => {
     if (!practice) return;
 
     setIsLoading(true);
@@ -130,7 +67,7 @@ export const VapiInterface: React.FC<VapiInterfaceProps> = ({ onCallStatusChange
         body: { 
           action: 'create_call',
           practiceId: practice.id,
-          phoneNumber: phoneNumberId
+          userPhoneId: userPhoneId
         }
       });
 
@@ -179,7 +116,7 @@ export const VapiInterface: React.FC<VapiInterfaceProps> = ({ onCallStatusChange
             Vapi Voice Interface
           </CardTitle>
           <CardDescription>
-            Vapi Voice AI über Twilio - Jetzt mit US-Nummer zum Testen
+            Ihre mit Vapi verbundenen Nummern - bereit für Voice AI Anrufe
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -210,44 +147,21 @@ export const VapiInterface: React.FC<VapiInterfaceProps> = ({ onCallStatusChange
         </CardContent>
       </Card>
 
-      {/* Phone Numbers */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Telefonnummern verwalten
-          </CardTitle>
-          <CardDescription>
-            Verfügbare Telefonnummern für eingehende Anrufe
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {phoneNumbers.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">
-                Noch keine Telefonnummern gefunden
-              </p>
-              <Button 
-                onClick={loadPhoneNumbers}
-                disabled={isLoading}
-                className="flex items-center gap-2 mr-2"
-              >
-                <Phone className="h-4 w-4" />
-                Nummern neu laden
-              </Button>
-              <Button 
-                onClick={buyPhoneNumber}
-                disabled={isLoading}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Phone className="h-4 w-4" />
-                {isLoading ? 'Wird erworben...' : 'US-Nummer hinzufügen'}
-              </Button>
-            </div>
-          ) : (
+      {/* Active Vapi Numbers for Testing */}
+      {vapiPhoneNumbers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Test-Anrufe
+            </CardTitle>
+            <CardDescription>
+              Testen Sie Ihre Vapi-verbundenen Nummern
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-3">
-              {phoneNumbers.map((phoneNumber) => (
+              {vapiPhoneNumbers.map((phoneNumber) => (
                 <div 
                   key={phoneNumber.id}
                   className="flex items-center justify-between p-3 border rounded-lg"
@@ -255,9 +169,9 @@ export const VapiInterface: React.FC<VapiInterfaceProps> = ({ onCallStatusChange
                   <div className="flex items-center gap-3">
                     <PhoneCall className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="font-medium">{phoneNumber.number}</p>
+                      <p className="font-medium">{phoneNumber.phone_number}</p>
                       <p className="text-sm text-muted-foreground">
-                        {phoneNumber.provider} • {phoneNumber.country}
+                        {phoneNumber.provider} • {phoneNumber.country_code}
                       </p>
                     </div>
                   </div>
@@ -284,20 +198,13 @@ export const VapiInterface: React.FC<VapiInterfaceProps> = ({ onCallStatusChange
                   </div>
                 </div>
               ))}
-              
-              <Button 
-                onClick={buyPhoneNumber}
-                disabled={isLoading}
-                variant="outline"
-                className="w-full flex items-center gap-2"
-              >
-                <Phone className="h-4 w-4" />
-                Weitere Nummer hinzufügen
-              </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* User Phone Number Management */}
+      <UserPhoneNumbers />
 
       {/* Features Overview */}
       <Card>
