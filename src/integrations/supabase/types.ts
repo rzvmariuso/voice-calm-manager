@@ -548,6 +548,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_phone_numbers: {
+        Row: {
+          area_code: string | null
+          country_code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_verified: boolean
+          phone_number: string
+          provider: string | null
+          updated_at: string
+          user_id: string
+          vapi_assistant_id: string | null
+          vapi_phone_id: string | null
+        }
+        Insert: {
+          area_code?: string | null
+          country_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_verified?: boolean
+          phone_number: string
+          provider?: string | null
+          updated_at?: string
+          user_id: string
+          vapi_assistant_id?: string | null
+          vapi_phone_id?: string | null
+        }
+        Update: {
+          area_code?: string | null
+          country_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_verified?: boolean
+          phone_number?: string
+          provider?: string | null
+          updated_at?: string
+          user_id?: string
+          vapi_assistant_id?: string | null
+          vapi_phone_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
