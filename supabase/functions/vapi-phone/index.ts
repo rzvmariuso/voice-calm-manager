@@ -93,7 +93,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, practiceId, phoneNumber, userPhoneId, message, assistantId, areaCode, country_code, phoneNumberId } = await req.json();
+    const { action, practiceId, phoneNumber, userPhoneId, message, assistantId, areaCode, countryCode, phoneNumberId } = await req.json();
     const vapiApiKey = Deno.env.get('VAPI_API_KEY');
     
     if (!vapiApiKey) {
@@ -252,9 +252,9 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...(country_code === 'DE' && { country: 'DE' }),
-          ...(country_code === 'US' && { country: 'US' }),
-          ...(areaCode && { areaCode }),
+          provider: 'vapi',
+          ...(countryCode === 'DE' && { country: 'DE' }),
+          ...(countryCode === 'US' && { country: 'US' }),
         })
       });
 
@@ -265,10 +265,28 @@ serve(async (req) => {
 
       const result = await response.json();
 
+      // Store the purchased number in our database
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        await supabase
+          .from('user_phone_numbers')
+          .insert({
+            user_id: user.id,
+            phone_number: result.number,
+            country_code: countryCode,
+            provider: 'vapi',
+            vapi_phone_id: result.id,
+            is_active: true,
+            is_verified: true
+          });
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
-          phoneNumber: result
+          phoneNumber: result,
+          message: 'Vapi-Nummer erfolgreich erworben!'
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

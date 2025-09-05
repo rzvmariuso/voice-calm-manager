@@ -114,6 +114,68 @@ export const useUserPhoneNumbers = () => {
     }
   };
 
+  const buyVapiNumber = async (countryCode: string = 'DE', areaCode?: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('vapi-phone', {
+        body: { 
+          action: 'buy_phone_number',
+          countryCode: countryCode
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        await loadPhoneNumbers();
+        toast({
+          title: 'Vapi-Nummer erworben',
+          description: data.message || 'Neue Nummer wurde erfolgreich erworben',
+        });
+      }
+    } catch (error) {
+      console.error('Error buying Vapi number:', error);
+      toast({
+        title: 'Fehler',
+        description: 'Vapi-Nummer konnte nicht erworben werden',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const testVapiConnection = async (phoneNumberId: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('vapi-phone', {
+        body: { 
+          action: 'create_call',
+          userPhoneId: phoneNumberId,
+          practiceId: 'test-practice-id'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: 'Vapi-Test erfolgreich',
+          description: `Test-Anruf wurde gestartet. Call ID: ${data.callId}`,
+        });
+      }
+    } catch (error) {
+      console.error('Error testing Vapi:', error);
+      toast({
+        title: 'Fehler',
+        description: 'Vapi-Test fehlgeschlagen',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const deletePhoneNumber = async (phoneNumberId: string) => {
     try {
       setIsLoading(true);
@@ -155,5 +217,7 @@ export const useUserPhoneNumbers = () => {
     addPhoneNumber,
     connectToVapi,
     deletePhoneNumber,
+    buyVapiNumber,
+    testVapiConnection,
   };
 };

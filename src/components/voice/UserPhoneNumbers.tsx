@@ -9,7 +9,7 @@ import { Phone, Plus, Settings, Check, X } from 'lucide-react';
 import { useUserPhoneNumbers } from '@/hooks/useUserPhoneNumbers';
 
 export const UserPhoneNumbers: React.FC = () => {
-  const { phoneNumbers, isLoading, addPhoneNumber, connectToVapi, deletePhoneNumber } = useUserPhoneNumbers();
+  const { phoneNumbers, isLoading, addPhoneNumber, connectToVapi, deletePhoneNumber, buyVapiNumber, testVapiConnection } = useUserPhoneNumbers();
   const [newPhone, setNewPhone] = useState('');
   const [countryCode, setCountryCode] = useState('DE');
   const [areaCode, setAreaCode] = useState('');
@@ -19,6 +19,11 @@ export const UserPhoneNumbers: React.FC = () => {
     
     await addPhoneNumber(newPhone, countryCode, areaCode || undefined);
     setNewPhone('');
+    setAreaCode('');
+  };
+
+  const handleBuyVapiNumber = async () => {
+    await buyVapiNumber(countryCode, areaCode || undefined);
     setAreaCode('');
   };
 
@@ -87,6 +92,23 @@ export const UserPhoneNumbers: React.FC = () => {
             </div>
           </div>
           
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Oder neue Vapi-Nummer kaufen</h4>
+                <p className="text-sm text-muted-foreground">
+                  Automatisch konfiguriert für Voice AI
+                </p>
+              </div>
+              <Button 
+                onClick={handleBuyVapiNumber}
+                disabled={isLoading}
+                variant="outline"
+              >
+                Vapi-Nummer kaufen
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -144,6 +166,28 @@ export const UserPhoneNumbers: React.FC = () => {
                   </div>
                   
                   <div className="flex gap-2">
+                    {!phone.vapi_phone_id && phone.provider !== 'vapi' && (
+                      <Button
+                        onClick={() => connectToVapi(phone.id)}
+                        disabled={isLoading}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Mit Vapi verbinden
+                      </Button>
+                    )}
+                    
+                    {phone.vapi_phone_id && (
+                      <Button
+                        onClick={() => testVapiConnection(phone.id)}
+                        disabled={isLoading}
+                        size="sm"
+                        variant="default"
+                      >
+                        Vapi testen
+                      </Button>
+                    )}
+                    
                     <Button
                       onClick={() => handleDeletePhone(phone.id)}
                       disabled={isLoading}
