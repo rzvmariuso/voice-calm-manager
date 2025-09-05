@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserPhoneNumber {
   id: string;
@@ -56,6 +56,7 @@ export const useUserPhoneNumbers = () => {
           phone_number: phoneNumber,
           country_code: countryCode,
           area_code: areaCode,
+          provider: 'manual',
         })
         .select()
         .single();
@@ -113,49 +114,29 @@ export const useUserPhoneNumbers = () => {
     }
   };
 
-  const buyVapiNumber = async (countryCode: string = 'DE', areaCode?: string) => {
-    if (!user) return;
-
-    setIsLoading(true);
+  const deletePhoneNumber = async (phoneNumberId: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('vapi-phone', {
-        body: { 
-          action: 'buy_phone_number',
-          country_code: countryCode,
-          area_code: areaCode
-        }
-      });
+      setIsLoading(true);
+      
+      const { error } = await supabase
+        .from('user_phone_numbers')
+        .delete()
+        .eq('id', phoneNumberId);
 
       if (error) throw error;
 
-      if (data.success && data.phoneNumber) {
-        // Store the Vapi phone number in our database
-        await supabase
-          .from('user_phone_numbers')
-          .insert({
-            user_id: user.id,
-            phone_number: data.phoneNumber.number,
-            country_code: countryCode,
-            area_code: areaCode,
-            vapi_phone_id: data.phoneNumber.id,
-            provider: 'vapi',
-            is_active: true,
-            is_verified: true,
-          });
-
-        await loadPhoneNumbers();
-        
-        toast({
-          title: 'Vapi-Nummer erworben',
-          description: `Neue Nummer: ${data.phoneNumber.number}`,
-        });
-      }
-    } catch (error) {
-      console.error('Error buying Vapi number:', error);
       toast({
-        title: 'Fehler',
-        description: 'Vapi-Nummer konnte nicht erworben werden',
-        variant: 'destructive',
+        title: "Telefonnummer gelöscht",
+        description: "Die Telefonnummer wurde erfolgreich entfernt.",
+      });
+      
+      await loadPhoneNumbers();
+    } catch (error) {
+      console.error('Error deleting phone number:', error);
+      toast({
+        title: "Fehler",
+        description: "Die Telefonnummer konnte nicht gelöscht werden.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -171,9 +152,8 @@ export const useUserPhoneNumbers = () => {
   return {
     phoneNumbers,
     isLoading,
-    loadPhoneNumbers,
     addPhoneNumber,
     connectToVapi,
-    buyVapiNumber,
+    deletePhoneNumber,
   };
 };
