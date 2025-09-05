@@ -1,10 +1,16 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Create assistant in Vapi dashboard
 async function createAssistant(vapiApiKey: string, practiceId: string): Promise<string> {
@@ -253,23 +259,24 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           provider: 'vapi',
-          ...(countryCode === 'DE' && { country: 'DE' }),
-          ...(countryCode === 'US' && { country: 'US' }),
+          ...(countryCode && { country: countryCode }),
         })
       });
 
       if (!response.ok) {
         const error = await response.json();
+        console.error('Vapi buy number error:', error);
         throw new Error(`Telefonnummer konnte nicht erworben werden: ${error.message}`);
       }
 
       const result = await response.json();
+      console.log('Vapi number purchased:', result);
 
       // Store the purchased number in our database
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        await supabase
+        const { error: insertError } = await supabase
           .from('user_phone_numbers')
           .insert({
             user_id: user.id,
@@ -280,6 +287,10 @@ serve(async (req) => {
             is_active: true,
             is_verified: true
           });
+
+        if (insertError) {
+          console.error('Database insert error:', insertError);
+        }
       }
 
       return new Response(
