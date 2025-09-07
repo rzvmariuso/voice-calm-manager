@@ -20,21 +20,25 @@ serve(async (req) => {
       throw new Error('Keine Autorisierung gefunden');
     }
 
-    // Initialize Supabase client
+    // Initialize Supabase client for JWT verification (with anon key)
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     // Verify JWT and get user
     const jwt = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(jwt);
 
     if (authError || !user) {
+      console.error('Auth error:', authError);
       throw new Error('Ungültiger Token');
     }
 
-    // Get user's practice with AI configuration
-    const { data: practice, error: practiceError } = await supabase
+    // Get user's practice with AI configuration (using service key for DB access)
+    const { data: practice, error: practiceError } = await supabaseService
       .from('practices')
       .select('ai_prompt, ai_voice_settings')
       .eq('owner_id', user.id)
