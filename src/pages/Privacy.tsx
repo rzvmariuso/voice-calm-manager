@@ -26,7 +26,7 @@ export default function Privacy() {
               <Shield className="w-8 h-8 text-primary" />
               <div>
                 <CardTitle className="text-3xl">Datenschutzerklärung</CardTitle>
-                <CardDescription>DSGVO-konforme Datenverarbeitung bei TerminAgent</CardDescription>
+                <CardDescription>DSGVO-konforme Datenverarbeitung bei Voxcal</CardDescription>
               </div>
             </div>
           </CardHeader>

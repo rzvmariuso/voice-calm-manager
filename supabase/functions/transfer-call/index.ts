@@ -23,6 +23,26 @@ serve(async (req) => {
 
     console.log(`Transfer request - Reason: ${reason}, Priority: ${priority}`);
 
+    // Check business hours before creating transfer
+    const { data: withinHours, error: hoursError } = await supabase.rpc('is_within_business_hours', {
+      _practice_id: practiceId
+    });
+
+    if (hoursError) {
+      console.error('Business hours check failed:', hoursError);
+    }
+
+    if (withinHours === false) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          outside_business_hours: true,
+          message: 'Unsere Mitarbeiter sind derzeit außerhalb der Sprechzeiten. Bitte nutzen Sie die KI-Buchung oder hinterlassen Sie eine Nachricht. Wir melden uns schnellstmöglich.'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
     // Create transfer request in database
     const { data: transferRequest, error: transferError } = await supabase
       .from('data_requests')

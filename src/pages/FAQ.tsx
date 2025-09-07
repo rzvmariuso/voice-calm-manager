@@ -61,10 +61,6 @@ const faqData = [
         question: "Was passiert mit erfolgreichen Buchungen?",
         answer: "Erfolgreich gebuchte Termine erscheinen automatisch in Ihrer Terminliste mit dem 'KI' Badge. Sie können diese wie normale Termine verwalten, bestätigen oder bearbeiten."
       },
-      {
-        question: "Wie teste ich die AI-Booking Funktion?",
-        answer: "Nutzen Sie die Test-Buttons auf der KI-Agent Seite. Sie können sowohl erfolgreiche als auch fehlgeschlagene Buchungen simulieren, um zu sehen, wie das System reagiert."
-      }
     ]
   },
   {
@@ -174,8 +170,13 @@ export default function FAQ() {
                 FAQ & Tutorials
               </h1>
               <p className="text-muted-foreground">
-                Häufig gestellte Fragen und Anleitungen für TerminAgent
+                Häufig gestellte Fragen und Anleitungen für Voxcal
               </p>
+              <div className="mt-2 text-sm">
+                <a href="/privacy" className="text-primary hover:underline">Datenschutzerklärung</a>
+                <span className="text-muted-foreground mx-2">•</span>
+                <a href="/imprint" className="text-primary hover:underline">Impressum</a>
+              </div>
             </div>
           </div>
 

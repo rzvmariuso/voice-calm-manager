@@ -178,11 +178,11 @@ export default function Auth() {
       <Card className="w-full max-w-md shadow-elegant">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-primary rounded-xl flex items-center justify-center">
-              <Bot className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 bg-gradient-primary rounded-xl flex items-center justify-center overflow-hidden">
+              <img src="/lovable-uploads/f8bf1ba1-4dee-42dd-9c1d-543ca3de4a53.png" alt="Voxcal Logo" className="w-12 h-12 object-contain" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">TerminAgent</CardTitle>
+          <CardTitle className="text-2xl font-bold">Voxcal</CardTitle>
           <CardDescription>
             AI-gestützte Terminbuchung für Ihre Praxis
           </CardDescription>

@@ -769,12 +769,6 @@ export default function Settings() {
             >
               AGB
             </Link>
-            <Link 
-              to="/faq" 
-              className="hover:text-primary transition-colors hover:underline"
-            >
-              FAQ
-            </Link>
           </div>
           <div className="text-center mt-4 text-xs text-muted-foreground">
             © 2024 Voxcal. Alle Rechte vorbehalten.

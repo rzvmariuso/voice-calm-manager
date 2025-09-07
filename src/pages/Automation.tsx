@@ -9,9 +9,7 @@ import {
   Webhook, 
   Zap,
   TestTube,
-  Link,
-  Settings,
-  Activity
+  Settings
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
@@ -197,31 +195,6 @@ export default function Automation() {
                   </Button>
                 </div>
 
-                <div className="border-t pt-4">
-                  <h4 className="font-medium mb-2 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-primary" />
-                    Verfügbare Workflows
-                  </h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
-                      <span className="text-sm">SMS Erinnerungen</span>
-                      <Badge variant="outline" className="text-xs">
-                        <Link className="w-3 h-3 mr-1" />
-                        <a href="/n8n-sms-reminder-simple.json" download className="hover:underline">
-                          Workflow
-                        </a>
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
-                      <span className="text-sm">Email Bestätigungen</span>
-                      <Badge variant="outline" className="text-xs">Geplant</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
-                      <span className="text-sm">Kalender Sync</span>
-                      <Badge variant="outline" className="text-xs">Geplant</Badge>
-                    </div>
-                  </div>
-                </div>
               </CardContent>
             </Card>
 

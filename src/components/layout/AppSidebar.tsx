@@ -91,7 +91,7 @@ export function AppSidebar() {
         <Link to="/" className="flex items-center gap-3 group hover:no-underline">
           <div className="w-10 h-10 bg-gradient-primary rounded-lg overflow-hidden hover:shadow-glow transition-all duration-300 group-hover:scale-110">
             <img 
-              src="/src/assets/voxcal-logo.png" 
+              src="/lovable-uploads/f8bf1ba1-4dee-42dd-9c1d-543ca3de4a53.png" 
               alt="Voxcal Logo"
               className="w-full h-full object-contain p-1"
             />

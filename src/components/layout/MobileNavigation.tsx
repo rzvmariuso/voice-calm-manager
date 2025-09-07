@@ -112,12 +112,12 @@ export function MobileNavigation() {
             <SheetHeader className="border-b p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-                    <Bot className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 bg-gradient-primary rounded-lg overflow-hidden flex items-center justify-center">
+                    <img src="/lovable-uploads/f8bf1ba1-4dee-42dd-9c1d-543ca3de4a53.png" alt="Voxcal Logo" className="w-8 h-8 object-contain" />
                   </div>
                   <div>
                     <SheetTitle className="font-bold text-lg">
-                      TerminAgent
+                      Voxcal
                     </SheetTitle>
                     <p className="text-sm text-muted-foreground">KI-Terminbuchung</p>
                   </div>
@@ -177,7 +177,7 @@ export function MobileNavigation() {
             <div className="border-t p-4">
               <div className="text-center text-xs text-muted-foreground">
                 <p>Version 1.0.0</p>
-                <p className="mt-1">© 2024 TerminAgent</p>
+                <p className="mt-1">© 2024 Voxcal</p>
               </div>
             </div>
           </div>
