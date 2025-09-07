@@ -131,7 +131,7 @@ export default function Automation() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="max-w-3xl">
             {/* n8n Automation */}
             <Card className="shadow-soft">
               <CardHeader>
@@ -225,63 +225,6 @@ export default function Automation() {
               </CardContent>
             </Card>
 
-            {/* Future Integrations */}
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-primary" />
-                  Weitere Integrationen
-                  <Badge variant="outline" className="border-muted text-muted-foreground">
-                    Bald verfügbar
-                  </Badge>
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Geplante Automatisierungen und Integrationen
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 border rounded-lg opacity-50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">ZP</span>
-                      </div>
-                      <div>
-                        <p className="font-medium">Zapier</p>
-                        <p className="text-xs text-muted-foreground">1000+ App Integrationen</p>
-                      </div>
-                    </div>
-                    <Badge variant="outline">Bald</Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 border rounded-lg opacity-50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">WH</span>
-                      </div>
-                      <div>
-                        <p className="font-medium">WhatsApp Business</p>
-                        <p className="text-xs text-muted-foreground">Nachrichten & Erinnerungen</p>
-                      </div>
-                    </div>
-                    <Badge variant="outline">Bald</Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 border rounded-lg opacity-50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-purple-500 rounded flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">MS</span>
-                      </div>
-                      <div>
-                        <p className="font-medium">Microsoft 365</p>
-                        <p className="text-xs text-muted-foreground">Outlook Kalender Sync</p>
-                      </div>
-                    </div>
-                    <Badge variant="outline">Bald</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </main>
       </div>

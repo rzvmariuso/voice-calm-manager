@@ -89,14 +89,18 @@ export function AppSidebar() {
     <Sidebar className="animate-slide-in-right hidden lg:flex">
       <SidebarHeader className="border-b border-sidebar-border p-6">
         <Link to="/" className="flex items-center gap-3 group hover:no-underline">
-          <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center hover:shadow-glow transition-all duration-300 group-hover:scale-110">
-            <Bot className="w-6 h-6 text-white animate-bounce-gentle" />
+          <div className="w-10 h-10 bg-gradient-primary rounded-lg overflow-hidden hover:shadow-glow transition-all duration-300 group-hover:scale-110">
+            <img 
+              src="/src/assets/voxcal-logo.png" 
+              alt="Voxcal Logo"
+              className="w-full h-full object-contain p-1"
+            />
           </div>
           <div>
             <h2 className="font-bold text-lg text-sidebar-foreground group-hover:text-primary transition-colors duration-200">
-              TerminAgent
+              Voxcal
             </h2>
-            <p className="text-sm text-sidebar-foreground/70">KI-Terminbuchung</p>
+            <p className="text-sm text-sidebar-foreground/70">Stimme & Kalender</p>
           </div>
         </Link>
       </SidebarHeader>

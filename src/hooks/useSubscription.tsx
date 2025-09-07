@@ -68,10 +68,16 @@ export function useSubscription() {
 
       if (error) throw error;
       
-      // Type cast the features from Json to string[]
+      // Map data to SubscriptionPlan format
       const typedPlans: SubscriptionPlan[] = (data || []).map(plan => ({
-        ...plan,
-        features: Array.isArray(plan.features) ? plan.features as string[] : []
+        id: plan.id,
+        name: plan.name,
+        price_monthly: plan.price_monthly,
+        price_yearly: plan.price_yearly,
+        features: [], // Features not available in public_pricing table
+        max_patients: plan.max_patients,
+        max_practices: plan.max_practices,
+        ai_features_enabled: plan.ai_features_enabled
       }));
       
       setPlans(typedPlans);

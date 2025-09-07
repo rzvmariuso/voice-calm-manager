@@ -148,27 +148,27 @@ export default function Settings() {
 
       switch (service) {
         case 'googleCalendar':
-          apiKey = settings.googleCalendar.apiKey;
+          apiKey = settings.calendar.googleApiKey;
           if (!apiKey || !apiKey.startsWith('AIza') || apiKey.length < 30) {
             validationError = 'Invalid Google Calendar API key format';
           }
           break;
         case 'vapi':
-          apiKey = settings.vapi.apiKey;
+          apiKey = settings.ai.vapiApiKey;
           if (!apiKey || apiKey.length < 20) {
             validationError = 'Invalid Vapi API key format';
           }
           break;
         case 'twilio':
-          apiKey = settings.twilio.authToken;
+          apiKey = settings.phone.twilioAuthToken;
           if (!apiKey || apiKey.length < 30) {
             validationError = 'Invalid Twilio Auth Token format';
           }
           break;
         case 'openai':
-          apiKey = settings.ai.openaiApiKey;
-          if (!apiKey || !apiKey.startsWith('sk-') || apiKey.length < 40) {
-            validationError = 'Invalid OpenAI API key format';
+          apiKey = settings.ai.vapiApiKey; // Using Vapi key instead of separate OpenAI key
+          if (!apiKey || apiKey.length < 20) {
+            validationError = 'Invalid API key format';
           }
           break;
       }
@@ -745,6 +745,39 @@ export default function Settings() {
             </TabsContent>
           </Tabs>
         </main>
+
+        {/* Legal Links Footer */}
+        <div className="border-t bg-muted/20 p-6">
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+            <Link 
+              to="/imprint" 
+              className="hover:text-primary transition-colors hover:underline"
+            >
+              Impressum
+            </Link>
+            <Link 
+              to="/privacy" 
+              className="hover:text-primary transition-colors hover:underline"
+            >
+              Datenschutzerklärung
+            </Link>
+            <Link 
+              to="/terms" 
+              className="hover:text-primary transition-colors hover:underline"
+            >
+              AGB
+            </Link>
+            <Link 
+              to="/faq" 
+              className="hover:text-primary transition-colors hover:underline"
+            >
+              FAQ
+            </Link>
+          </div>
+          <div className="text-center mt-4 text-xs text-muted-foreground">
+            © 2024 Voxcal. Alle Rechte vorbehalten.
+          </div>
+        </div>
       </div>
     </SidebarProvider>
   )

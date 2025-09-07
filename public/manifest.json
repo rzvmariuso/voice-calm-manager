@@ -1,7 +1,7 @@
 {
-  "name": "Voice Calm Manager - Praxis Management",
-  "short_name": "Voice Calm",
-  "description": "Moderne Praxis-Management-App für Terminverwaltung und Patientenbetreuung",
+  "name": "Voxcal - Intelligente Terminbuchung",
+  "short_name": "Voxcal",
+  "description": "KI-gestützte Terminbuchung per Telefon für Praxen",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
