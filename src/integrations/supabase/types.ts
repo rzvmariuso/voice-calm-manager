@@ -714,6 +714,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_within_business_hours: {
+        Args: { _current_time?: string; _practice_id: string }
+        Returns: boolean
+      }
       log_admin_action: {
         Args: {
           _action: string

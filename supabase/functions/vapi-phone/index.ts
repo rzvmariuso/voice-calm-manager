@@ -573,6 +573,78 @@ serve(async (req) => {
         }
       );
 
+    } else if (action === 'transfer_call') {
+      // Transfer call to human - with business hours validation
+      const { reason, priority, callId, practiceId } = requestBody;
+      
+      if (!practiceId) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Practice ID is required for transfer' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      try {
+        // Check if practice is within business hours before transferring
+        const { data: withinHours, error: hoursError } = await supabase.rpc('is_within_business_hours', {
+          _practice_id: practiceId
+        });
+        
+        if (hoursError) {
+          console.error('Error checking business hours:', hoursError);
+          // Continue with transfer even if hours check fails - don't block transfers on technical issues
+        } else if (withinHours === false) {
+          // Practice is closed - log the transfer request but don't actually transfer
+          await supabase.from('data_requests').insert({
+            practice_id: practiceId,
+            request_type: 'human_transfer_after_hours',
+            requested_by_email: 'system@voxcal.ai',
+            notes: `Transfer requested outside business hours. Reason: ${reason || 'No reason provided'}. Priority: ${priority || 'normal'}. Call ID: ${callId || 'unknown'}`
+          });
+          
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              message: 'Transfer request logged - practice is currently closed',
+              withinBusinessHours: false
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        // Practice is open - proceed with transfer
+        const { data, error } = await supabase.from('data_requests').insert({
+          practice_id: practiceId,
+          request_type: 'human_transfer',
+          requested_by_email: 'system@voxcal.ai',
+          notes: `Reason: ${reason || 'No reason provided'}. Priority: ${priority || 'normal'}. Call ID: ${callId || 'unknown'}`
+        });
+
+        if (error) throw error;
+
+        // TODO: In a real implementation, you would:
+        // 1. Notify available staff members
+        // 2. Add the call to a queue
+        // 3. Route the call to an available agent
+        
+        console.log('Call transfer requested:', { reason, priority, practiceId, withinBusinessHours: true });
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'Transfer request created successfully',
+            withinBusinessHours: true 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (error) {
+        console.error('Error processing transfer request:', error);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Failed to process transfer request' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
     }
 
     return new Response(

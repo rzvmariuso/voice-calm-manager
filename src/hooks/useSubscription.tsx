@@ -68,13 +68,13 @@ export function useSubscription() {
 
       if (error) throw error;
       
-      // Map data to SubscriptionPlan format
+      // Map data to SubscriptionPlan format  
       const typedPlans: SubscriptionPlan[] = (data || []).map(plan => ({
         id: plan.id,
         name: plan.name,
         price_monthly: plan.price_monthly,
         price_yearly: plan.price_yearly,
-        features: [], // Features not available in public_pricing table
+        features: [], // Features not stored in public_pricing table
         max_patients: plan.max_patients,
         max_practices: plan.max_practices,
         ai_features_enabled: plan.ai_features_enabled
