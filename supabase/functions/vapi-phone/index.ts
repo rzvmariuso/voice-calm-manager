@@ -12,6 +12,70 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Helper function to validate input
+function validateInput(data: any, requiredFields: string[]): string | null {
+  if (!data || typeof data !== 'object') {
+    return 'Invalid request body';
+  }
+  
+  for (const field of requiredFields) {
+    if (!data[field] || (typeof data[field] === 'string' && data[field].trim() === '')) {
+      return `Missing required field: ${field}`;
+    }
+  }
+  
+  return null;
+}
+
+// Helper function to sanitize input
+function sanitizeString(input: string): string {
+  if (typeof input !== 'string') return '';
+  return input.trim().slice(0, 500); // Limit length and trim
+}
+
+// Rate limiting helper (simple in-memory, should use Redis in production)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const RATE_LIMIT_MAX = 20; // 20 requests per minute for vapi operations
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  const limit = rateLimitMap.get(identifier);
+  
+  if (!limit || now > limit.resetTime) {
+    rateLimitMap.set(identifier, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  
+  if (limit.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+  
+  limit.count++;
+  return true;
+}
+
+// Helper function to log admin actions
+async function logAdminAction(action: string, resourceType: string, resourceId?: string, userId?: string) {
+  try {
+    await supabase.rpc('log_admin_action', {
+      _action: action,
+      _resource_type: resourceType,
+      _resource_id: resourceId || null,
+      _old_values: null,
+      _new_values: null
+    });
+  } catch (error) {
+    console.error('Failed to log admin action:', error);
+  }
+}
+
+// Validate phone number format
+function validatePhoneNumber(phoneNumber: string): boolean {
+  const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+  return phoneRegex.test(phoneNumber);
+}
+
 // Create assistant in Vapi dashboard
 async function createAssistant(vapiApiKey: string, practiceId: string): Promise<string> {
   const response = await fetch('https://api.vapi.ai/assistant', {
@@ -99,18 +163,81 @@ serve(async (req) => {
   }
 
   try {
-    const { action, practiceId, phoneNumber, userPhoneId, message, assistantId, areaCode, countryCode, phoneNumberId } = await req.json();
+    // Get JWT token and user info for authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify JWT token
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Rate limiting based on user ID
+    const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
+    const rateLimitId = `${user.id}-${clientIP}`;
+    
+    if (!checkRateLimit(rateLimitId)) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const requestBody = await req.json();
+    const { action, practiceId, phoneNumber, userPhoneId, message, assistantId, areaCode, countryCode, phoneNumberId } = requestBody;
+    
     const vapiApiKey = Deno.env.get('VAPI_API_KEY');
     
     if (!vapiApiKey) {
-      throw new Error('VAPI API Key nicht konfiguriert');
+      return new Response(
+        JSON.stringify({ error: 'VAPI API Key not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log(`Vapi request: ${action} for practice ${practiceId}`);
+    console.log(`Vapi request: ${action} for user ${user.id} practice ${practiceId}`);
 
     if (action === 'create_assistant') {
+      const validation = validateInput(requestBody, ['practiceId']);
+      if (validation) {
+        return new Response(
+          JSON.stringify({ error: validation }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify user owns the practice
+      const { data: practice, error: practiceError } = await supabase
+        .from('practices')
+        .select('id')
+        .eq('id', practiceId)
+        .eq('owner_id', user.id)
+        .single();
+
+      if (practiceError || !practice) {
+        return new Response(
+          JSON.stringify({ error: "Practice not found or access denied" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const sanitizedPracticeId = sanitizeString(practiceId);
+      
       // Create assistant in Vapi dashboard
-      const newAssistantId = await createAssistant(vapiApiKey, practiceId);
+      const newAssistantId = await createAssistant(vapiApiKey, sanitizedPracticeId);
+      
+      await logAdminAction('create_assistant', 'vapi_assistant', newAssistantId, user.id);
       
       return new Response(
         JSON.stringify({
@@ -123,19 +250,46 @@ serve(async (req) => {
       );
 
     } else if (action === 'setup_inbound') {
-      // Get user's phone number and set up Vapi assistant
+      const validation = validateInput(requestBody, ['practiceId', 'userPhoneId']);
+      if (validation) {
+        return new Response(
+          JSON.stringify({ error: validation }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify user owns the practice
+      const { data: practice, error: practiceError } = await supabase
+        .from('practices')
+        .select('id')
+        .eq('id', practiceId)
+        .eq('owner_id', user.id)
+        .single();
+
+      if (practiceError || !practice) {
+        return new Response(
+          JSON.stringify({ error: "Practice not found or access denied" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get user's phone number and verify ownership
       const { data: userPhone } = await supabase
         .from('user_phone_numbers')
         .select('*')
         .eq('id', userPhoneId)
+        .eq('user_id', user.id)
         .single();
 
       if (!userPhone || !userPhone.vapi_phone_id) {
-        throw new Error('User phone number not found or not connected to Vapi');
+        return new Response(
+          JSON.stringify({ error: 'User phone number not found or not connected to Vapi' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       // Create assistant
-      const assistantId = await createAssistant(vapiApiKey, practiceId);
+      const assistantId = await createAssistant(vapiApiKey, sanitizeString(practiceId));
       
       // Update phone number to use this assistant for inbound calls
       const response = await fetch(`https://api.vapi.ai/phone-number/${userPhone.vapi_phone_id}`, {
@@ -152,14 +306,20 @@ serve(async (req) => {
       if (!response.ok) {
         const error = await response.json();
         console.error('Phone number update error:', error);
-        throw new Error(`Failed to setup inbound calls: ${error.message}`);
+        return new Response(
+          JSON.stringify({ error: `Failed to setup inbound calls: ${error.message}` }),
+          { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       // Update our database with the assistant ID
       await supabase
         .from('user_phone_numbers')
         .update({ vapi_assistant_id: assistantId })
-        .eq('id', userPhoneId);
+        .eq('id', userPhoneId)
+        .eq('user_id', user.id);
+
+      await logAdminAction('setup_inbound', 'phone_configuration', userPhoneId, user.id);
 
       return new Response(
         JSON.stringify({
@@ -173,19 +333,63 @@ serve(async (req) => {
       );
 
     } else if (action === 'create_call') {
-      // Get user's phone number for the call
+      const validation = validateInput(requestBody, ['practiceId', 'userPhoneId']);
+      if (validation) {
+        return new Response(
+          JSON.stringify({ error: validation }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get target phone number from request (should be provided by user)
+      const targetNumber = requestBody.targetNumber;
+      if (!targetNumber) {
+        return new Response(
+          JSON.stringify({ error: 'Target phone number is required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Validate target phone number format
+      if (!validatePhoneNumber(targetNumber)) {
+        return new Response(
+          JSON.stringify({ error: "Invalid target phone number format" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify user owns the practice
+      const { data: practice, error: practiceError } = await supabase
+        .from('practices')
+        .select('id')
+        .eq('id', practiceId)
+        .eq('owner_id', user.id)
+        .single();
+
+      if (practiceError || !practice) {
+        return new Response(
+          JSON.stringify({ error: "Practice not found or access denied" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get user's phone number and verify ownership
       const { data: userPhone } = await supabase
         .from('user_phone_numbers')
         .select('*')
         .eq('id', userPhoneId)
+        .eq('user_id', user.id)
         .single();
 
       if (!userPhone || !userPhone.vapi_phone_id) {
-        throw new Error('User phone number not found or not connected to Vapi');
+        return new Response(
+          JSON.stringify({ error: 'User phone number not found or not connected to Vapi' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       // Use existing assistant or create new one
-      const callAssistantId = userPhone.vapi_assistant_id || await createAssistant(vapiApiKey, practiceId);
+      const callAssistantId = userPhone.vapi_assistant_id || await createAssistant(vapiApiKey, sanitizeString(practiceId));
       
       // Create outbound call with Vapi
       const response = await fetch('https://api.vapi.ai/call', {
@@ -197,7 +401,7 @@ serve(async (req) => {
         body: JSON.stringify({
           phoneNumberId: userPhone.vapi_phone_id,
           customer: {
-            number: '+4930123456789' // Test number for Germany - needs to be E.164 format
+            number: sanitizeString(targetNumber)
           },
           assistantId: callAssistantId
         })
@@ -206,11 +410,16 @@ serve(async (req) => {
       if (!response.ok) {
         const error = await response.json();
         console.error('Vapi API Error:', error);
-        throw new Error(`Vapi Error: ${error.message}`);
+        return new Response(
+          JSON.stringify({ error: `Vapi Error: ${error.message}` }),
+          { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       const result = await response.json();
       console.log('Vapi call created:', result.id);
+
+      await logAdminAction('create_call', 'vapi_call', result.id, user.id);
 
       return new Response(
         JSON.stringify({
@@ -234,7 +443,10 @@ serve(async (req) => {
       });
 
       if (!response.ok) {
-        throw new Error('Fehler beim Abrufen der Telefonnummern');
+        return new Response(
+          JSON.stringify({ error: 'Fehler beim Abrufen der Telefonnummern' }),
+          { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       const phoneNumbers = await response.json();
@@ -259,39 +471,44 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           provider: 'vapi',
-          ...(countryCode && { country: countryCode }),
+          ...(countryCode && { country: sanitizeString(countryCode) }),
         })
       });
 
       if (!response.ok) {
         const error = await response.json();
         console.error('Vapi buy number error:', error);
-        throw new Error(`Telefonnummer konnte nicht erworben werden: ${error.message}`);
+        return new Response(
+          JSON.stringify({ error: `Telefonnummer konnte nicht erworben werden: ${error.message}` }),
+          { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       const result = await response.json();
       console.log('Vapi number purchased:', result);
 
       // Store the purchased number in our database
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        const { error: insertError } = await supabase
-          .from('user_phone_numbers')
-          .insert({
-            user_id: user.id,
-            phone_number: result.number,
-            country_code: countryCode,
-            provider: 'vapi',
-            vapi_phone_id: result.id,
-            is_active: true,
-            is_verified: true
-          });
+      const { error: insertError } = await supabase
+        .from('user_phone_numbers')
+        .insert({
+          user_id: user.id,
+          phone_number: result.number,
+          country_code: sanitizeString(countryCode || 'US'),
+          provider: 'vapi',
+          vapi_phone_id: result.id,
+          is_active: true,
+          is_verified: true
+        });
 
-        if (insertError) {
-          console.error('Database insert error:', insertError);
-        }
+      if (insertError) {
+        console.error('Database insert error:', insertError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to save phone number to database' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
+
+      await logAdminAction('buy_phone_number', 'phone_number', result.id, user.id);
 
       return new Response(
         JSON.stringify({
@@ -305,18 +522,27 @@ serve(async (req) => {
       );
 
     } else if (action === 'connect_user_number') {
-      // Connect user's existing phone number to Vapi (if possible)
-      // This would require the user to have a Twilio account or similar setup
-      // For now, we'll just update the database to mark it as connected
-      
+      const validation = validateInput(requestBody, ['phoneNumberId']);
+      if (validation) {
+        return new Response(
+          JSON.stringify({ error: validation }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get user's phone number and verify ownership
       const { data: userPhone } = await supabase
         .from('user_phone_numbers')
         .select('*')
         .eq('id', phoneNumberId)
+        .eq('user_id', user.id)
         .single();
 
       if (!userPhone) {
-        throw new Error('Phone number not found');
+        return new Response(
+          JSON.stringify({ error: 'Phone number not found or access denied' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       // In a real implementation, you would need to:
@@ -332,7 +558,10 @@ serve(async (req) => {
           is_active: true,
           vapi_phone_id: `simulated_${userPhone.id}` // In real implementation, this would be the actual Vapi phone ID
         })
-        .eq('id', phoneNumberId);
+        .eq('id', phoneNumberId)
+        .eq('user_id', user.id);
+
+      await logAdminAction('connect_user_number', 'phone_number', phoneNumberId, user.id);
 
       return new Response(
         JSON.stringify({
@@ -346,13 +575,16 @@ serve(async (req) => {
 
     }
 
-    throw new Error('Unbekannte Aktion');
+    return new Response(
+      JSON.stringify({ error: 'Unknown action' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('Error in vapi-phone function:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error.message || 'Internal server error',
         success: false
       }),
       {

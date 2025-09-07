@@ -142,17 +142,57 @@ export default function Settings() {
     
     setIsLoading(true);
     try {
-      // Simulate API test for different services
+      // Secure API key validation
+      let apiKey = '';
+      let validationError = '';
+
+      switch (service) {
+        case 'googleCalendar':
+          apiKey = settings.googleCalendar.apiKey;
+          if (!apiKey || !apiKey.startsWith('AIza') || apiKey.length < 30) {
+            validationError = 'Invalid Google Calendar API key format';
+          }
+          break;
+        case 'vapi':
+          apiKey = settings.vapi.apiKey;
+          if (!apiKey || apiKey.length < 20) {
+            validationError = 'Invalid Vapi API key format';
+          }
+          break;
+        case 'twilio':
+          apiKey = settings.twilio.authToken;
+          if (!apiKey || apiKey.length < 30) {
+            validationError = 'Invalid Twilio Auth Token format';
+          }
+          break;
+        case 'openai':
+          apiKey = settings.ai.openaiApiKey;
+          if (!apiKey || !apiKey.startsWith('sk-') || apiKey.length < 40) {
+            validationError = 'Invalid OpenAI API key format';
+          }
+          break;
+      }
+
+      if (validationError) {
+        toast({
+          title: "Validation Error",
+          description: validationError,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Simulate API test for different services (secure - no actual API calls with keys)
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast({
-        title: "Verbindung erfolgreich",
-        description: `${service} ist erreichbar und konfiguriert.`,
+        title: "Connection Test",
+        description: `${service} API key format is valid. Connection test simulated successfully.`,
       });
     } catch (error) {
       toast({
-        title: "Verbindung fehlgeschlagen",
-        description: `${service} konnte nicht erreicht werden.`,
+        title: "Connection Failed",
+        description: `Failed to test ${service} connection.`,
         variant: "destructive"
       });
     } finally {

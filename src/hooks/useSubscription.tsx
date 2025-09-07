@@ -62,7 +62,7 @@ export function useSubscription() {
   const loadPlans = useCallback(async () => {
     try {
       const { data, error } = await supabase
-        .from('subscription_plans')
+        .from('public_pricing')
         .select('*')
         .order('price_monthly', { ascending: true });
 

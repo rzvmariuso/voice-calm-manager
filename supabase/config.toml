@@ -11,10 +11,10 @@ max_rows = 1000
 verify_jwt = false
 
 [functions.vapi-phone]
-verify_jwt = false
+verify_jwt = true
 
 [functions.transfer-call]
 verify_jwt = false
 
 [functions.admin-delete-user]
-verify_jwt = false
+verify_jwt = true
