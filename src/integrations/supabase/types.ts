@@ -135,6 +135,45 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       data_requests: {
         Row: {
           completed_at: string | null
@@ -593,18 +632,101 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      public_pricing: {
+        Row: {
+          ai_features_enabled: boolean | null
+          has_advanced_analytics: boolean | null
+          has_custom_branding: boolean | null
+          has_premium_support: boolean | null
+          id: string | null
+          max_patients: number | null
+          max_practices: number | null
+          name: string | null
+          price_monthly: number | null
+          price_yearly: number | null
+        }
+        Insert: {
+          ai_features_enabled?: boolean | null
+          has_advanced_analytics?: never
+          has_custom_branding?: never
+          has_premium_support?: never
+          id?: string | null
+          max_patients?: number | null
+          max_practices?: number | null
+          name?: string | null
+          price_monthly?: number | null
+          price_yearly?: number | null
+        }
+        Update: {
+          ai_features_enabled?: boolean | null
+          has_advanced_analytics?: never
+          has_custom_branding?: never
+          has_premium_support?: never
+          id?: string | null
+          max_patients?: number | null
+          max_practices?: number | null
+          name?: string | null
+          price_monthly?: number | null
+          price_yearly?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_expired_patient_data: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      log_admin_action: {
+        Args: {
+          _action: string
+          _new_values?: Json
+          _old_values?: Json
+          _resource_id?: string
+          _resource_type: string
+        }
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -731,6 +853,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
