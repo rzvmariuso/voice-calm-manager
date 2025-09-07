@@ -179,9 +179,9 @@ export function useAppState() {
   const updatePreferences = (preferences: Partial<AppState['user']['preferences']>) => {
     dispatch({ type: 'UPDATE_USER_PREFERENCES', payload: preferences });
     // Persist to localStorage
-    const current = localStorage.getItem('terminagent-preferences');
+    const current = localStorage.getItem('voxcal-preferences');
     const existing = current ? JSON.parse(current) : {};
-    localStorage.setItem('terminagent-preferences', JSON.stringify({
+    localStorage.setItem('voxcal-preferences', JSON.stringify({
       ...existing,
       ...preferences
     }));
@@ -189,7 +189,7 @@ export function useAppState() {
 
   const setTheme = (theme: AppState['user']['theme']) => {
     dispatch({ type: 'SET_THEME', payload: theme });
-    localStorage.setItem('terminagent-theme', theme);
+    localStorage.setItem('voxcal-theme', theme);
   };
 
   const cacheSet = (key: string, value: any) => {
