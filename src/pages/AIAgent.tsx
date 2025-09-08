@@ -323,13 +323,6 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
     }
   }
 
-  const stats = {
-    totalCalls: stats.totalCalls || 0,
-    successfulBookings: stats.successfulBookings || 0,
-    successRate: stats.successRate || 0,
-    avgCallDuration: stats.avgCallDuration || "0:00"
-  }
-
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
