@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Home, AlertTriangle } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const NotFound = () => {
   const location = useLocation();
@@ -36,10 +37,10 @@ const NotFound = () => {
           </p>
           
           <Button asChild className="bg-gradient-primary text-white shadow-glow">
-            <a href="/" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2">
               <Home className="w-4 h-4" />
               Zurück zum Dashboard
-            </a>
+            </Link>
           </Button>
           
           <p className="text-xs text-muted-foreground mt-6">

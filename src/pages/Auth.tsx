@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,6 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [privacyConsent, setPrivacyConsent] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [resending, setResending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
@@ -106,38 +105,6 @@ export default function Auth() {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    if (!email) {
-      toast({
-        title: "E-Mail erforderlich",
-        description: "Bitte geben Sie die E-Mail ein, die gelöscht werden soll.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!window.confirm(`Account für ${email} wirklich löschen?`)) return;
-
-    setDeleting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("admin-delete-user", {
-        body: { email },
-      });
-      if (error) throw error;
-      toast({
-        title: "Account gelöscht",
-        description: "Bitte erneut registrieren und E-Mail prüfen.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Fehler beim Löschen",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -294,9 +261,9 @@ export default function Auth() {
                   />
                   <Label htmlFor="privacy" className="text-sm">
                     Ich stimme der{" "}
-                    <a href="/privacy" className="text-primary hover:underline">
+                    <Link to="/privacy" className="text-primary hover:underline">
                       Datenschutzerklärung
-                    </a>{" "}
+                    </Link>{" "}
                     zu (DSGVO-konform)
                   </Label>
                 </div>
@@ -304,12 +271,6 @@ export default function Auth() {
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Registrieren
                 </Button>
-                <div className="pt-2">
-                  <Button type="button" variant="outline" className="w-full" onClick={handleDeleteAccount} disabled={deleting || !email}>
-                    {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Account mit dieser E-Mail löschen (Test)
-                  </Button>
-                </div>
                 <div className="pt-2">
                   <Button type="button" variant="secondary" className="w-full" onClick={handleResendConfirmation} disabled={resending || !email}>
                     {resending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { CalendarIcon, Clock, User, FileText, Save, X, UserPlus, Users } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { Link } from "react-router-dom";
 import { formatInBerlinTime, nowInBerlin, fromBerlinTime } from "@/lib/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -521,9 +522,9 @@ const loadPatients = async () => {
                       />
                       <Label htmlFor="privacy-consent" className="text-sm leading-relaxed">
                         Ich stimme der Verarbeitung meiner personenbezogenen Daten gemäß der{" "}
-                        <a href="/privacy" target="_blank" className="text-primary hover:underline">
+                        <Link to="/privacy" target="_blank" className="text-primary hover:underline">
                           Datenschutzerklärung
-                        </a>{" "}
+                        </Link>{" "}
                         zu. *
                       </Label>
                     </div>

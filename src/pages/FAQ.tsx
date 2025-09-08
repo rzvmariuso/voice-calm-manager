@@ -15,6 +15,7 @@ import {
   Zap,
   Shield
 } from "lucide-react"
+import { Link } from "react-router-dom";
 import {
   Accordion,
   AccordionContent,
@@ -173,9 +174,9 @@ export default function FAQ() {
                 Häufig gestellte Fragen und Anleitungen für Voxcal
               </p>
               <div className="mt-2 text-sm">
-                <a href="/privacy" className="text-primary hover:underline">Datenschutzerklärung</a>
+                <Link to="/privacy" className="text-primary hover:underline">Datenschutzerklärung</Link>
                 <span className="text-muted-foreground mx-2">•</span>
-                <a href="/imprint" className="text-primary hover:underline">Impressum</a>
+                <Link to="/imprint" className="text-primary hover:underline">Impressum</Link>
               </div>
             </div>
           </div>

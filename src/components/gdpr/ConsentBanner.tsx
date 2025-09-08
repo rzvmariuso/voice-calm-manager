@@ -11,6 +11,7 @@ import {
   Check,
   Info
 } from "lucide-react"
+import { Link } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -277,14 +278,12 @@ export function ConsentBanner() {
                 <Info className="w-3 h-3" />
                 Weitere Informationen in unserer
               </span>
-              <a 
-                href="/data-protection" 
+              <Link
+                to="/data-protection" 
                 className="text-primary hover:underline font-medium"
-                target="_blank"
-                rel="noopener noreferrer"
               >
                 Datenschutzerklärung
-              </a>
+              </Link>
             </div>
           </div>
         </CardContent>
