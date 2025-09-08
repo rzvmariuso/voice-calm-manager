@@ -728,6 +728,10 @@ export type Database = {
         }
         Returns: string
       }
+      user_owns_practice: {
+        Args: { _practice_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
