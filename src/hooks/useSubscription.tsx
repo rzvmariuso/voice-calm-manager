@@ -30,7 +30,7 @@ export function useSubscription() {
 
   const checkSubscription = useCallback(async () => {
     if (!user || !session) {
-      setSubscription(null);
+      setSubscription({ subscribed: false, subscription_tier: null, subscription_end: null });
       return;
     }
 
@@ -42,27 +42,26 @@ export function useSubscription() {
       
       if (error) {
         console.error('Subscription check error:', error);
-        throw error;
+        // Set default unsubscribed state instead of showing error
+        setSubscription({ subscribed: false, subscription_tier: null, subscription_end: null });
+        return;
       }
 
       console.log('Subscription data received:', data);
-      setSubscription(data);
+      setSubscription(data || { subscribed: false, subscription_tier: null, subscription_end: null });
     } catch (error) {
       console.error('Error checking subscription:', error);
-      toast({
-        title: "Subscription Status Error",
-        description: "Could not verify subscription status",
-        variant: "destructive",
-      });
+      // Set default unsubscribed state on any error
+      setSubscription({ subscribed: false, subscription_tier: null, subscription_end: null });
     } finally {
       setRefreshing(false);
     }
-  }, [user, session, toast]);
+  }, [user, session]);
 
   const loadPlans = useCallback(async () => {
     try {
       const { data, error } = await supabase
-        .from('public_pricing')
+        .from('subscription_plans')
         .select('*')
         .order('price_monthly', { ascending: true });
 
@@ -74,7 +73,7 @@ export function useSubscription() {
         name: plan.name,
         price_monthly: plan.price_monthly,
         price_yearly: plan.price_yearly,
-        features: [], // Features not stored in public_pricing table
+        features: Array.isArray(plan.features) ? plan.features as string[] : [],
         max_patients: plan.max_patients,
         max_practices: plan.max_practices,
         ai_features_enabled: plan.ai_features_enabled
@@ -83,13 +82,10 @@ export function useSubscription() {
       setPlans(typedPlans);
     } catch (error) {
       console.error('Error loading subscription plans:', error);
-      toast({
-        title: "Error",
-        description: "Could not load subscription plans",
-        variant: "destructive",
-      });
+      // Set empty plans array instead of showing error
+      setPlans([]);
     }
-  }, [toast]);
+  }, []);
 
   const createCheckout = useCallback(async (planId: string, billingPeriod: 'monthly' | 'yearly') => {
     if (!user || !session) {

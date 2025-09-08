@@ -14,38 +14,84 @@ serve(async (req) => {
   }
 
   try {
-    // Get user from JWT token
-    const authHeader = req.headers.get('authorization');
+    // Get the authorization header
+    const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      throw new Error('Keine Autorisierung gefunden');
+      return new Response(JSON.stringify({ 
+        error: "No authorization header provided",
+        success: false 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Initialize Supabase client with service role key
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
 
     // Verify JWT and get user
-    const jwt = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
-
-    if (authError || !user) {
-      throw new Error('Ungültiger Token');
+    const jwt = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(jwt);
+    
+    if (userError || !userData.user) {
+      return new Response(JSON.stringify({ 
+        error: `Authentication failed: ${userError?.message || "User not found"}`,
+        success: false 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
     }
 
-    // Get user's practice with n8n configuration
-    const { data: practice, error: practiceError } = await supabase
-      .from('practices')
-      .select('*')
-      .eq('owner_id', user.id)
-      .single();
+    // Get user's practice and n8n configuration
+    const { data: practice, error: practiceError } = await supabaseClient
+      .from("practices")
+      .select("n8n_webhook_url, n8n_enabled, name, email, phone")
+      .eq("owner_id", userData.user.id)
+      .maybeSingle();
 
-    if (practiceError || !practice) {
-      throw new Error('Praxis nicht gefunden');
+    if (practiceError) {
+      return new Response(JSON.stringify({ 
+        error: `Database error: ${practiceError.message}`,
+        success: false 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
     }
 
-    if (!practice.n8n_webhook_url || !practice.n8n_enabled) {
-      throw new Error('n8n Webhook nicht konfiguriert');
+    if (!practice) {
+      return new Response(JSON.stringify({ 
+        error: "Practice not found. Please set up your practice first.",
+        success: false 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 404,
+      });
+    }
+
+    if (!practice.n8n_enabled) {
+      return new Response(JSON.stringify({ 
+        error: "n8n automation is not enabled. Please enable it first.",
+        success: false 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+
+    if (!practice.n8n_webhook_url) {
+      return new Response(JSON.stringify({ 
+        error: "n8n webhook URL is not configured. Please set up your webhook URL first.",
+        success: false 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
 
     // Send test data to n8n webhook
@@ -86,7 +132,13 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('n8n webhook error:', response.status, errorText);
-      throw new Error(`n8n Webhook Fehler: ${response.status} - ${errorText}`);
+      return new Response(JSON.stringify({ 
+        error: `n8n Webhook Fehler: ${response.status} - ${errorText}`,
+        success: false 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
 
     const responseData = await response.text();
@@ -107,7 +159,7 @@ serve(async (req) => {
     console.error('Error in test-n8n-webhook function:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error.message || "An unexpected error occurred",
         success: false
       }),
       {

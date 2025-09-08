@@ -75,10 +75,19 @@ export default function Automation() {
   }
 
   const testN8nWebhook = async () => {
-    if (!n8nWebhookUrl || !n8nEnabled) {
+    if (!n8nEnabled) {
       toast({
         title: "Fehler",
-        description: "Bitte konfigurieren Sie zuerst Ihre n8n Webhook URL",
+        description: "Bitte aktivieren Sie n8n Automation zuerst",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!n8nWebhookUrl?.trim()) {
+      toast({
+        title: "Fehler", 
+        description: "Bitte geben Sie eine Webhook URL ein",
         variant: "destructive"
       })
       return
@@ -88,21 +97,30 @@ export default function Automation() {
       setIsTestingWebhook(true)
       const { data, error } = await supabase.functions.invoke('test-n8n-webhook')
       
-      if (error) throw error
-      
-      if (data.success) {
+      if (error) {
+        console.error('Error testing n8n webhook:', error)
+        toast({
+          title: "Test fehlgeschlagen",
+          description: error.message || "Webhook konnte nicht ausgelöst werden",
+          variant: "destructive"
+        })
+      } else if (data?.error) {
+        toast({
+          title: "Test fehlgeschlagen", 
+          description: data.error,
+          variant: "destructive"
+        })
+      } else {
         toast({
           title: "Test erfolgreich",
           description: "n8n Webhook wurde erfolgreich ausgelöst",
         })
-      } else {
-        throw new Error(data.error || 'Test fehlgeschlagen')
       }
     } catch (error) {
-      console.error('Error testing n8n webhook:', error)
+      console.error('Error testing webhook:', error)
       toast({
         title: "Test fehlgeschlagen",
-        description: error.message || "Webhook konnte nicht ausgelöst werden",
+        description: "Ein unerwarteter Fehler ist aufgetreten",
         variant: "destructive"
       })
     } finally {

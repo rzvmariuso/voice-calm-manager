@@ -24,33 +24,56 @@ serve(async (req) => {
 
   try {
     logStep("Function started");
-    
+
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    logStep("Stripe key verified");
+
+    // Parse request body
     const { planId, billingPeriod } = await req.json();
     logStep("Request data received", { planId, billingPeriod });
 
-    const authHeader = req.headers.get("Authorization")!;
-    const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    const user = data.user;
+    if (!planId || !billingPeriod) {
+      throw new Error("Missing required parameters: planId and billingPeriod");
+    }
+
+    // Create Supabase client using the service role key for database access
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("No authorization header provided");
     
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Get subscription plan details
     const { data: plan, error: planError } = await supabaseClient
-      .from('subscription_plans')
-      .select('*')
-      .eq('id', planId)
-      .single();
-
-    if (planError || !plan) {
-      throw new Error(`Subscription plan not found: ${planError?.message}`);
+      .from("subscription_plans")
+      .select("*")
+      .eq("id", planId)
+      .maybeSingle();
+    
+    if (planError) {
+      logStep("Database error fetching plan", { error: planError });
+      throw new Error(`Database error: ${planError.message}`);
     }
-    logStep("Plan found", { planName: plan.name, planId });
+    
+    if (!plan) {
+      logStep("Plan not found", { planId });
+      throw new Error(`Subscription plan not found for ID: ${planId}`);
+    }
+    logStep("Plan found", { planName: plan.name, planId: plan.id });
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
-      apiVersion: "2023-10-16" 
-    });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
     // Check for existing customer
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
