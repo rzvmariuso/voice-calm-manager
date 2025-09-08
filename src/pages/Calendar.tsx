@@ -290,124 +290,98 @@ const handleAppointmentDrop = async (appointmentId: string, newDate: string) => 
               </div>
 
               {/* Sidebar */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Today's Appointments */}
-                <Card className="shadow-elegant hover-glow animate-fade-in">
-                  <CardHeader className="bg-gradient-subtle rounded-t-lg">
-                    <CardTitle className="text-xl flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                        <CalendarIcon className="w-4 h-4 text-white" />
-                      </div>
+                <Card className="border">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <CalendarIcon className="w-4 h-4 text-primary" />
                       <div>
-                        <h3 className="font-bold text-gradient">Heute</h3>
-                        <p className="text-sm text-muted-foreground font-normal">
-                          {format(new Date(), 'EEEE, dd. MMMM yyyy', { locale: de })}
+                        <h3 className="font-medium">Heute</h3>
+                        <p className="text-xs text-muted-foreground font-normal">
+                          {format(new Date(), 'EEE, dd.MM.yyyy', { locale: de })}
                         </p>
                       </div>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6">
+                  <CardContent className="p-3">
                     {(() => {
                       const todayAppointments = getTodaysAppointments();
                       if (todayAppointments.length === 0) {
                         return (
-                          <div className="text-center py-8">
-                            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-accent rounded-2xl flex items-center justify-center">
-                              <CalendarIcon className="w-8 h-8 text-accent-foreground/60" />
-                            </div>
-                            <h4 className="font-semibold text-foreground mb-2">Keine Termine heute</h4>
-                            <p className="text-sm text-muted-foreground mb-4">
-                              Ein ruhiger Tag - perfekt für Planung!
-                            </p>
+                          <div className="text-center py-6">
+                            <CalendarIcon className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
+                            <p className="text-sm text-muted-foreground mb-3">Keine Termine heute</p>
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="hover-scale border-primary/30 hover:border-primary hover:bg-primary/5"
+                              className="h-7 text-xs"
                               onClick={() => handleNewAppointment(new Date())}
                             >
-                              <CalendarIcon className="w-4 h-4 mr-2" />
-                              Termin hinzufügen
+                              <CalendarIcon className="w-3 h-3 mr-1" />
+                              Hinzufügen
                             </Button>
                           </div>
                         );
                       }
                       
                       return (
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between mb-4">
-                            <span className="text-sm font-medium text-muted-foreground">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs text-muted-foreground">
                               {todayAppointments.length} {todayAppointments.length === 1 ? 'Termin' : 'Termine'}
                             </span>
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="text-xs hover-scale"
+                              className="h-6 text-xs p-1"
                               onClick={() => handleNewAppointment(new Date())}
                             >
                               + Hinzufügen
                             </Button>
                           </div>
                           
-                          {todayAppointments.map((appointment, index) => (
+                          {todayAppointments.map((appointment) => (
                             <div 
                               key={appointment.id} 
-                              className="group p-4 bg-gradient-subtle rounded-xl hover:shadow-soft transition-all duration-300 cursor-pointer hover:scale-[1.02] animate-fade-in border border-border/40"
+                              className="group p-2 border rounded hover:bg-muted/20 transition-colors cursor-pointer"
                               onClick={() => handleEditAppointment(appointment)}
-                              style={{ animationDelay: `${index * 100}ms` }}
                             >
-                              <div className="flex items-start justify-between mb-3">
-                                <div className="flex items-center gap-3">
+                              <div className="flex items-start justify-between mb-1">
+                                <div className="flex items-center gap-2">
                                   <div className={`
-                                    w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm
-                                    ${appointment.ai_booked ? 'bg-gradient-primary shadow-glow' : 'bg-gradient-secondary'}
+                                    w-6 h-6 rounded flex items-center justify-center text-xs font-medium
+                                    ${appointment.ai_booked ? 'bg-primary/10 text-primary' : 'bg-muted'}
                                   `}>
                                     {appointment.ai_booked ? (
-                                      <Bot className="w-5 h-5" />
+                                      <Bot className="w-3 h-3" />
                                     ) : (
-                                      <Clock className="w-5 h-5" />
+                                      <Clock className="w-3 h-3" />
                                     )}
                                   </div>
                                   <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="font-bold text-lg text-foreground">
+                                    <div className="flex items-center gap-1 mb-0.5">
+                                      <span className="text-sm font-medium">
                                         {appointment.appointment_time}
                                       </span>
                                       <Badge 
-                                        variant={appointment.status === 'confirmed' ? 'default' : 'secondary'}
-                                        className={`text-xs ${
-                                          appointment.status === 'confirmed' 
-                                            ? 'bg-success text-white' 
-                                            : appointment.status === 'pending'
-                                              ? 'bg-warning text-white'
-                                              : appointment.status === 'completed'
-                                                ? 'bg-accent'
-                                                : 'bg-destructive text-white'
-                                        }`}
+                                        variant="secondary"
+                                        className="text-xs h-4 px-1"
                                       >
-                                        {appointment.status === 'confirmed' ? '✅ Bestätigt' : 
-                                         appointment.status === 'pending' ? '⏳ Wartend' :
-                                         appointment.status === 'completed' ? '🏁 Fertig' : '❌ Abgesagt'}
+                                        {appointment.status === 'confirmed' ? 'OK' : 
+                                         appointment.status === 'pending' ? 'Warten' :
+                                         appointment.status === 'completed' ? 'Fertig' : 'Abgesagt'}
                                       </Badge>
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                      <User className="w-3 h-3" />
-                                      <span className="font-medium">
-                                        {appointment.patient.first_name} {appointment.patient.last_name}
-                                      </span>
+                                    <div className="text-xs text-muted-foreground">
+                                      {appointment.patient.first_name} {appointment.patient.last_name}
                                     </div>
                                   </div>
                                 </div>
-                                
-                                {appointment.ai_booked && (
-                                  <Badge variant="outline" className="border-primary text-primary bg-primary/5">
-                                    🤖 KI
-                                  </Badge>
-                                )}
                               </div>
                               
-                              <div className="flex items-center justify-between text-xs text-muted-foreground bg-accent/20 rounded-lg p-2">
-                                <span className="font-medium">{appointment.service}</span>
-                                <span>{appointment.duration_minutes || 30} Min</span>
+                              <div className="text-xs text-muted-foreground bg-muted/30 rounded px-2 py-1">
+                                {appointment.service} • {appointment.duration_minutes || 30} Min
                               </div>
                             </div>
                           ))}
@@ -418,34 +392,70 @@ const handleAppointmentDrop = async (appointmentId: string, newDate: string) => 
                 </Card>
 
                 {/* Enhanced Statistics */}
-                <Card className="shadow-elegant hover-glow animate-fade-in">
-                  <CardHeader className="bg-gradient-subtle rounded-t-lg">
-                    <CardTitle className="text-xl flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-secondary rounded-lg flex items-center justify-center">
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-gradient">Statistiken</h3>
-                        <p className="text-sm text-muted-foreground font-normal">
-                          {viewMode === 'month' ? 'Monatsübersicht' : 'Wochenübersicht'}
-                        </p>
-                      </div>
+                <Card className="border">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-primary" />
+                      <h3 className="font-medium">Statistiken</h3>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="space-y-6">
-                      {/* Main Stats */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-gradient-primary/10 rounded-xl p-4 text-center border border-primary/20">
-                          <div className="text-2xl font-bold text-primary mb-1">
-                            {appointmentStats.total}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {viewMode === 'month' ? 'Termine im Monat' : 'Termine in der Woche'}
-                          </div>
+                  <CardContent className="p-3">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="text-center p-2 bg-muted/20 rounded">
+                        <div className="text-lg font-medium">{appointmentStats.total}</div>
+                        <div className="text-muted-foreground">Gesamt</div>
+                      </div>
+                      <div className="text-center p-2 bg-primary/10 rounded">
+                        <div className="text-lg font-medium text-primary">{appointmentStats.aiBookings}</div>
+                        <div className="text-muted-foreground">KI-Termine</div>
+                      </div>
+                      <div className="text-center p-2 bg-muted/20 rounded">
+                        <div className="text-lg font-medium">{appointmentStats.thisWeek}</div>
+                        <div className="text-muted-foreground">Diese Woche</div>
+                      </div>
+                      <div className="text-center p-2 bg-muted/20 rounded">
+                        <div className="text-lg font-medium">
+                          {appointmentStats.total > 0 ? Math.round((appointmentStats.aiBookings / appointmentStats.total) * 100) : 0}%
                         </div>
+                        <div className="text-muted-foreground">KI-Anteil</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+            </div>
+
+            {/* Appointment Dialog */}
+            <AppointmentDialog
+              open={showAppointmentDialog}
+              onOpenChange={setShowAppointmentDialog}
+              appointment={selectedAppointment}
+              isEditing={isEditing}
+              onSuccess={handleAppointmentSuccess}
+            />
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Termin löschen</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Möchten Sie diesen Termin wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+                    Löschen
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </main>
+      </div>
+    </SidebarProvider>
+  );
+}
                         
                         <div className="bg-gradient-secondary/10 rounded-xl p-4 text-center border border-secondary/20">
                           <div className="text-2xl font-bold text-secondary mb-1">
