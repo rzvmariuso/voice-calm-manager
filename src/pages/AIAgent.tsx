@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -32,7 +33,8 @@ import { useAuth } from "@/hooks/useAuth"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Link } from "react-router-dom"
 
-const recentCalls = [
+// This will be replaced with real data from the database
+const defaultRecentCalls = [
   {
     id: "1",
     caller: "Anna Müller",
@@ -80,6 +82,15 @@ export default function AIAgent() {
   const [aiPrompt, setAiPrompt] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isCreatingAssistant, setIsCreatingAssistant] = useState(false)
+  const [testPhoneNumber, setTestPhoneNumber] = useState("")
+  const [recentCalls, setRecentCalls] = useState(defaultRecentCalls)
+  const [stats, setStats] = useState({
+    totalCalls: 0,
+    successfulBookings: 0,
+    successRate: 0,
+    avgCallDuration: "0:00"
+  })
   const { toast } = useToast()
   const { user } = useAuth()
   const { isSubscribed } = useSubscription()
@@ -87,10 +98,27 @@ export default function AIAgent() {
   // Check if user has access to AI features (subscription or whitelisted email)
   const hasAIAccess = isSubscribed || user?.email === 'razvanmariusoancea@gmail.com'
 
-  // Load AI configuration on component mount
+  // Load AI configuration and call logs on component mount
   useEffect(() => {
     loadAIConfig()
+    loadCallLogs()
   }, [])
+
+  const loadCallLogs = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-call-logs')
+      
+      if (error) throw error
+      
+      if (data.success) {
+        setRecentCalls(data.callLogs)
+        setStats(data.stats)
+      }
+    } catch (error) {
+      console.error('Error loading call logs:', error)
+      // Keep default mock data if loading fails
+    }
+  }
 
   const loadAIConfig = async () => {
     try {
@@ -163,6 +191,8 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
           title: "Gespeichert",
           description: "KI-Konfiguration wurde erfolgreich aktualisiert",
         })
+        // Reload call logs after successful save
+        loadCallLogs()
       } else {
         throw new Error(data.error || 'Unbekannter Fehler')
       }
@@ -175,6 +205,84 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
       })
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const createVapiAssistant = async () => {
+    if (!aiPrompt.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Bitte speichern Sie zuerst den AI-Prompt",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      setIsCreatingAssistant(true)
+      const { data, error } = await supabase.functions.invoke('create-vapi-assistant', {
+        body: { prompt: aiPrompt }
+      })
+      
+      if (error) throw error
+      
+      if (data.success) {
+        toast({
+          title: "Erfolg",
+          description: "VAPI Assistant wurde erfolgreich erstellt",
+        })
+        // Reload call logs after creating assistant
+        loadCallLogs()
+      } else {
+        throw new Error(data.error || 'Unbekannter Fehler')
+      }
+    } catch (error) {
+      console.error('Error creating VAPI assistant:', error)
+      toast({
+        title: "Fehler",
+        description: "Assistant konnte nicht erstellt werden: " + error.message,
+        variant: "destructive"
+      })
+    } finally {
+      setIsCreatingAssistant(false)
+    }
+  }
+
+  const makeTestCall = async () => {
+    if (!testPhoneNumber) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie eine Telefonnummer ein",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('test-vapi-call', {
+        body: { phoneNumber: testPhoneNumber }
+      })
+      
+      if (error) throw error
+      
+      if (data.success) {
+        toast({
+          title: "Test-Anruf gestartet",
+          description: data.message,
+        })
+        setTestPhoneNumber("")
+        // Reload call logs after test call
+        loadCallLogs()
+      } else {
+        throw new Error(data.error || 'Unbekannter Fehler')
+      }
+    } catch (error) {
+      console.error('Error making test call:', error)
+      toast({
+        title: "Fehler",
+        description: "Test-Anruf konnte nicht gestartet werden: " + error.message,
+        variant: "destructive"
+      })
     }
   }
 
@@ -216,10 +324,10 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
   }
 
   const stats = {
-    totalCalls: 47,
-    successfulBookings: 32,
-    successRate: 68,
-    avgCallDuration: "2:45"
+    totalCalls: stats.totalCalls || 0,
+    successfulBookings: stats.successfulBookings || 0,
+    successRate: stats.successRate || 0,
+    avgCallDuration: stats.avgCallDuration || "0:00"
   }
 
   return (
@@ -364,12 +472,39 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                     </p>
                   </div>
                   
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="test-phone">Test-Telefonnummer</Label>
+                      <Input
+                        id="test-phone"
+                        type="tel"
+                        value={testPhoneNumber}
+                        onChange={(e) => setTestPhoneNumber(e.target.value)}
+                        placeholder="+49 123 456789"
+                        disabled={!hasAIAccess}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Nummer für Test-Anrufe
+                      </p>
+                    </div>
+                  </div>
+                  
                   <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1" disabled={!hasAIAccess}>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1" 
+                      disabled={!hasAIAccess || isCreatingAssistant}
+                      onClick={createVapiAssistant}
+                    >
                       <Volume2 className="w-4 h-4 mr-2" />
-                      Stimme testen
+                      {isCreatingAssistant ? "Erstelle..." : "Assistant erstellen"}
                     </Button>
-                    <Button variant="outline" className="flex-1" disabled={!hasAIAccess}>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1" 
+                      disabled={!hasAIAccess}
+                      onClick={makeTestCall}
+                    >
                       <Mic className="w-4 h-4 mr-2" />
                       Test-Anruf
                     </Button>
