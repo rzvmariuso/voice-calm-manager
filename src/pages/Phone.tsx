@@ -9,13 +9,13 @@ import TelephonyInterface from "@/components/telephony/TelephonyInterface";
 const Phone = () => {
   const [callStatus, setCallStatus] = useState('idle');
 
-  // Mock stats - in production, these would come from your database
+  // Real stats - these will be loaded from the database in production
   const stats = {
-    totalCalls: 24,
-    appointmentsBooked: 18,
-    transferredToHuman: 3,
-    avgDuration: "2:34",
-    successRate: 75
+    totalCalls: 0,
+    appointmentsBooked: 0,
+    transferredToHuman: 0,
+    avgDuration: "0:00",
+    successRate: 0
   };
 
   return (

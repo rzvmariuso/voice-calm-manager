@@ -77,36 +77,9 @@ export function NotificationCenter() {
   }, []);
 
   const loadNotifications = () => {
-    // Simulate notification data
-    const mockNotifications: NotificationItem[] = [
-      {
-        id: '1',
-        type: 'sms',
-        title: 'SMS Erinnerung gesendet',
-        message: 'Erinnerung an Max Mustermann für Termin heute um 14:00',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000),
-        status: 'sent'
-      },
-      {
-        id: '2',
-        type: 'email',
-        title: 'E-Mail Bestätigung',
-        message: 'Terminbestätigung an anna.schmidt@email.com gesendet',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        status: 'sent'
-      },
-      {
-        id: '3',
-        type: 'push',
-        title: 'Browser Benachrichtigung',
-        message: 'Neuer Termin wurde gebucht',
-        timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
-        status: 'sent'
-      }
-    ];
-
-    setNotifications(mockNotifications);
-    setUnreadCount(mockNotifications.filter(n => n.status === 'pending').length);
+    // Start with empty notifications - real data will be loaded from database
+    setNotifications([]);
+    setUnreadCount(0);
   };
 
   const saveSettings = (newSettings: NotificationSettings) => {

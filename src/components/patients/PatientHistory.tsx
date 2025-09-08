@@ -97,26 +97,8 @@ export function PatientHistory({ patient, onClose }: PatientHistoryProps) {
 
       setAppointments(appointmentsData || []);
 
-      // For now, we'll simulate notes data since we don't have a notes table yet
-      // In a real implementation, you would create a patient_notes table
-      const mockNotes: PatientNote[] = [
-        {
-          id: '1',
-          note: 'Patient zeigt gute Fortschritte bei der Physiotherapie',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          type: 'treatment'
-        },
-        {
-          id: '2',
-          note: 'Allergien: Keine bekannt',
-          created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          updated_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          type: 'medical'
-        }
-      ];
-
-      setNotes(mockNotes);
+      // Load notes from database - for now empty until notes system is implemented
+      setNotes([]);
     } catch (error) {
       console.error('Error loading patient data:', error);
       toast({
