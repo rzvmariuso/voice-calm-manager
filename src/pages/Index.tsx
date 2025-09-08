@@ -144,11 +144,13 @@ export default function Index() {
                   </Button>
                 </Link>
               ) : canAccessAI ? (
-                <Button className="button-gradient hover:scale-105 transition-all duration-300 animate-glow-pulse flex-1 lg:flex-none text-sm">
-                  <Bot className="w-4 h-4 mr-1 lg:mr-2" />
-                  <span className="hidden sm:inline">KI-Agent aktivieren</span>
-                  <span className="sm:hidden">KI aktiv</span>
-                </Button>
+                <Link to="/ai-agent" className="flex-1 lg:flex-none">
+                  <Button className="button-gradient hover:scale-105 transition-all duration-300 w-full lg:w-auto text-sm">
+                    <Bot className="w-4 h-4 mr-1 lg:mr-2" />
+                    <span className="hidden sm:inline">KI-Agent konfigurieren</span>
+                    <span className="sm:hidden">KI Setup</span>
+                  </Button>
+                </Link>
               ) : (
                 <Link to="/billing" className="flex-1 lg:flex-none">
                   <Button variant="outline" className="hover:scale-105 transition-all duration-300 w-full lg:w-auto text-sm">
