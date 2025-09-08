@@ -26,19 +26,37 @@ serve(async (req) => {
     logStep("Function started");
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    if (!stripeKey) {
+      logStep("ERROR: STRIPE_SECRET_KEY not found in environment");
+      throw new Error("STRIPE_SECRET_KEY is not set");
+    }
     logStep("Stripe key verified");
 
     // Parse request body
-    const { planId, billingPeriod } = await req.json();
+    let planId, billingPeriod;
+    try {
+      const body = await req.json();
+      planId = body.planId;
+      billingPeriod = body.billingPeriod;
+    } catch (parseError) {
+      logStep("ERROR: Failed to parse request body", { parseError });
+      throw new Error("Invalid JSON in request body");
+    }
+    
     logStep("Request data received", { planId, billingPeriod });
 
     if (!planId || !billingPeriod) {
+      logStep("ERROR: Missing required parameters", { planId, billingPeriod });
       throw new Error("Missing required parameters: planId and billingPeriod");
     }
 
+    if (!['monthly', 'yearly'].includes(billingPeriod)) {
+      logStep("ERROR: Invalid billing period", { billingPeriod });
+      throw new Error("Invalid billing period. Must be 'monthly' or 'yearly'");
+    }
+
     // Create Supabase client using the service role key for database access
-    const supabaseClient = createClient(
+    const supabaseService = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
@@ -46,17 +64,26 @@ serve(async (req) => {
 
     // Authenticate user
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
+    if (!authHeader) {
+      logStep("ERROR: No authorization header provided");
+      throw new Error("No authorization header provided");
+    }
     
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    if (userError) {
+      logStep("ERROR: Authentication failed", { error: userError });
+      throw new Error(`Authentication error: ${userError.message}`);
+    }
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user?.email) {
+      logStep("ERROR: User not authenticated or email not available");
+      throw new Error("User not authenticated or email not available");
+    }
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Get subscription plan details
-    const { data: plan, error: planError } = await supabaseClient
+    // Get subscription plan details using service client
+    const { data: plan, error: planError } = await supabaseService
       .from("subscription_plans")
       .select("*")
       .eq("id", planId)
@@ -76,17 +103,42 @@ serve(async (req) => {
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
     // Check for existing customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-      logStep("Existing customer found", { customerId });
-    } else {
-      logStep("No existing customer, will create during checkout");
+    try {
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        logStep("Existing customer found", { customerId });
+      } else {
+        logStep("No existing customer, will create during checkout");
+      }
+    } catch (stripeError) {
+      logStep("ERROR: Failed to check for existing customer", { stripeError });
+      // Continue without existing customer - Stripe will create one
     }
 
     const price = billingPeriod === 'yearly' ? plan.price_yearly : plan.price_monthly;
     const interval = billingPeriod === 'yearly' ? 'year' : 'month';
+
+    // Validate price
+    if (!price || price <= 0) {
+      logStep("ERROR: Invalid price", { price, billingPeriod, plan: plan.name });
+      throw new Error(`Invalid price for plan ${plan.name} and billing period ${billingPeriod}`);
+    }
+
+    // Map plan names to Stripe product IDs
+    const stripeProductIds = {
+      'Starter': 'prod_T0u8QVYCIQbqsN',
+      'Professional': 'prod_T0uJhHWgXacZHO', 
+      'Enterprise': 'prod_T0uKOHNzf4qoaE'
+    };
+
+    const productId = stripeProductIds[plan.name as keyof typeof stripeProductIds];
+    if (!productId) {
+      logStep("ERROR: No Stripe product ID found for plan", { planName: plan.name, availableProducts: Object.keys(stripeProductIds) });
+      throw new Error(`No Stripe product ID configured for plan: ${plan.name}`);
+    }
+    logStep("Using Stripe product", { planName: plan.name, productId });
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -95,10 +147,7 @@ serve(async (req) => {
         {
           price_data: {
             currency: "eur",
-            product_data: { 
-              name: `${plan.name} Plan - ${billingPeriod === 'yearly' ? 'Jährlich' : 'Monatlich'}`,
-              description: `PraxisFlow ${plan.name} Subscription`
-            },
+            product: productId, // Use the correct Stripe product ID
             unit_amount: price,
             recurring: { interval },
           },
@@ -112,7 +161,13 @@ serve(async (req) => {
         user_id: user.id,
         plan_id: planId,
         plan_name: plan.name,
+        billing_period: billingPeriod,
       },
+      // Add more checkout session options for better UX
+      allow_promotion_codes: true,
+      billing_address_collection: 'required',
+      payment_method_types: ['card', 'sepa_debit'],
+      locale: 'de',
     });
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });

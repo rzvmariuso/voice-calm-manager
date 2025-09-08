@@ -90,8 +90,8 @@ export function useSubscription() {
   const createCheckout = useCallback(async (planId: string, billingPeriod: 'monthly' | 'yearly') => {
     if (!user || !session) {
       toast({
-        title: "Authentication Required",
-        description: "Please log in to subscribe",
+        title: "Anmeldung erforderlich",
+        description: "Bitte melden Sie sich an, um ein Abonnement zu erstellen.",
         variant: "destructive",
       });
       return;
@@ -99,7 +99,7 @@ export function useSubscription() {
 
     try {
       setLoading(true);
-      console.log('Creating checkout session...', { planId, billingPeriod });
+      console.log('Creating checkout session...', { planId, billingPeriod, userId: user.id });
 
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { planId, billingPeriod }
@@ -109,28 +109,93 @@ export function useSubscription() {
 
       if (error) {
         console.error('Checkout creation error:', error);
+        
+        // Handle specific error cases with German messages
+        if (error.message?.includes('authentication') || error.message?.includes('not authenticated')) {
+          toast({
+            title: "Authentifizierungsfehler",
+            description: "Bitte melden Sie sich erneut an und versuchen Sie es noch einmal.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (error.message?.includes('STRIPE_SECRET_KEY')) {
+          toast({
+            title: "Konfigurationsfehler", 
+            description: "Stripe ist nicht korrekt konfiguriert. Bitte kontaktieren Sie den Support.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (error.message?.includes('plan not found') || error.message?.includes('Plan not found')) {
+          toast({
+            title: "Plan nicht gefunden",
+            description: "Der ausgewählte Plan konnte nicht gefunden werden. Bitte versuchen Sie es mit einem anderen Plan.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Generic error fallback
+        toast({
+          title: "Fehler beim Erstellen der Zahlung",
+          description: error.message || "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+          variant: "destructive",
+        });
         throw error;
       }
 
       if (data?.url) {
         console.log('Opening checkout URL:', data.url);
-        // Try multiple methods to ensure popup opens
-        const opened = window.open(data.url, '_blank');
-        if (!opened) {
-          // Fallback: navigate in same tab if popup blocked
-          console.log('Popup blocked, navigating in same tab');
-          window.location.href = data.url;
-        }
+        
+        // Show loading message
+        toast({
+          title: "Weiterleitung zu Stripe",
+          description: "Sie werden zur sicheren Zahlungsseite weitergeleitet...",
+        });
+        
+        // Try to open in new tab first (preferred method)
+        const newWindow = window.open(data.url, '_blank', 'noopener,noreferrer,width=800,height=600');
+        
+        // Check if popup was blocked after a short delay
+        setTimeout(() => {
+          if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+            console.log('Popup was blocked, using same tab redirect');
+            toast({
+              title: "Popup blockiert",
+              description: "Popup wurde blockiert. Sie werden in diesem Tab weitergeleitet...",
+            });
+            // Navigate in same tab as fallback
+            window.location.href = data.url;
+          } else {
+            console.log('Popup opened successfully');
+          }
+        }, 200);
+        
       } else {
+        console.error('No checkout URL received in response');
+        toast({
+          title: "Fehler", 
+          description: "Keine Checkout-URL erhalten. Bitte versuchen Sie es erneut.",
+          variant: "destructive",
+        });
         throw new Error('No checkout URL received');
       }
     } catch (error) {
-      console.error('Error creating checkout:', error);
-      toast({
-        title: "Checkout Error",
-        description: "Could not create checkout session. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Checkout error:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      
+      // Only show toast if we haven't already shown one for this specific error
+      if (!errorMessage.includes('authentication') && !errorMessage.includes('STRIPE_SECRET_KEY')) {
+        toast({
+          title: "Checkout-Fehler",
+          description: `Fehler beim Erstellen der Zahlung: ${errorMessage}`,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -139,8 +204,8 @@ export function useSubscription() {
   const openCustomerPortal = useCallback(async () => {
     if (!user || !session) {
       toast({
-        title: "Authentication Required",
-        description: "Please log in to manage your subscription",
+        title: "Anmeldung erforderlich",
+        description: "Bitte melden Sie sich an, um Ihr Abonnement zu verwalten",
         variant: "destructive",
       });
       return;
@@ -154,20 +219,29 @@ export function useSubscription() {
 
       if (error) {
         console.error('Customer portal error:', error);
+        toast({
+          title: "Portal-Fehler",
+          description: error.message || "Konnte das Kundenportal nicht öffnen. Bitte versuchen Sie es erneut.",
+          variant: "destructive",
+        });
         throw error;
       }
 
       if (data?.url) {
         console.log('Redirecting to customer portal:', data.url);
-        window.open(data.url, '_blank');
+        toast({
+          title: "Weiterleitung zum Kundenportal",
+          description: "Sie werden zum Stripe-Kundenportal weitergeleitet...",
+        });
+        window.open(data.url, '_blank', 'noopener,noreferrer');
       } else {
         throw new Error('No portal URL received');
       }
     } catch (error) {
       console.error('Error opening customer portal:', error);
       toast({
-        title: "Portal Error",
-        description: "Could not open customer portal. Please try again.",
+        title: "Portal-Fehler",
+        description: "Konnte das Kundenportal nicht öffnen. Bitte versuchen Sie es erneut.",
         variant: "destructive",
       });
     } finally {

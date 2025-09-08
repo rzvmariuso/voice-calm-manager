@@ -197,12 +197,12 @@ export default function Billing() {
 
               {/* Billing Period Toggle */}
               <div className="text-center mb-6">
-                <div className="inline-flex items-center bg-muted rounded-lg p-1 w-full max-w-md">
+                <div className="inline-flex items-center bg-muted rounded-lg p-1 w-full max-w-sm mx-auto">
                   <Button
                     variant={billingPeriod === 'monthly' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setBillingPeriod('monthly')}
-                    className="rounded-md flex-1"
+                    className="rounded-md flex-1 text-sm"
                   >
                     Monatlich
                   </Button>
@@ -210,7 +210,7 @@ export default function Billing() {
                     variant={billingPeriod === 'yearly' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setBillingPeriod('yearly')}
-                    className="rounded-md flex-1"
+                    className="rounded-md flex-1 text-sm"
                   >
                     <span className="truncate">Jährlich</span>
                     <Badge variant="secondary" className="ml-1 text-xs hidden sm:inline-flex">
@@ -218,10 +218,15 @@ export default function Billing() {
                     </Badge>
                   </Button>
                 </div>
+                {billingPeriod === 'yearly' && (
+                  <p className="text-xs text-muted-foreground mt-2 sm:hidden">
+                    17% Ersparnis bei jährlicher Zahlung
+                  </p>
+                )}
               </div>
 
               {/* Pricing Plans */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-6">
                 {plans.map((plan, index) => {
                   const isCurrentPlan = currentPlan?.id === plan.id;
                   const price = billingPeriod === 'yearly' ? plan.price_yearly : plan.price_monthly;
@@ -231,23 +236,23 @@ export default function Billing() {
                   return (
                     <MobileCard 
                       key={plan.id} 
-                      className={`relative ${isProfessional ? 'border-2 border-primary shadow-glow' : ''} ${isCurrentPlan ? 'border-success bg-success/5' : ''}`}
+                      className={`relative ${isProfessional ? 'border-2 border-primary shadow-glow' : ''} ${isCurrentPlan ? 'border-success bg-success/5' : ''} transition-all duration-200 hover:shadow-lg`}
                     >
                       {isProfessional && (
                         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                          <Badge className="bg-primary text-primary-foreground whitespace-nowrap">
+                          <Badge className="bg-primary text-primary-foreground whitespace-nowrap px-3 py-1">
                             <Zap className="w-3 h-3 mr-1" />
                             Beliebtester Plan
                           </Badge>
                         </div>
                       )}
                       
-                      <div className="text-center mb-4">
+                      <div className="text-center mb-4 pt-2">
                         <h3 className="text-xl lg:text-2xl font-bold mb-2">{plan.name}</h3>
                         <div className="space-y-2">
                           <div className="text-2xl lg:text-3xl font-bold">
                             €{formatPrice(price)}
-                            <span className="text-base lg:text-lg font-normal text-muted-foreground">
+                            <span className="text-base lg:text-lg font-normal text-muted-foreground ml-1">
                               /{billingPeriod === 'yearly' ? 'Jahr' : 'Monat'}
                             </span>
                           </div>
@@ -259,25 +264,26 @@ export default function Billing() {
                         </div>
                       </div>
                       
-                      <div className="space-y-3 mb-6">
+                      <div className="space-y-3 mb-6 min-h-[120px]">
                         {(plan.features as string[]).map((feature, featureIndex) => (
                           <div key={featureIndex} className="flex items-start gap-2">
                             <Check className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
-                            <span className="text-sm">{feature}</span>
+                            <span className="text-sm leading-relaxed">{feature}</span>
                           </div>
                         ))}
                       </div>
                       
                       <div className="mt-auto">
                         {isCurrentPlan ? (
-                          <Button variant="outline" className="w-full" disabled>
+                          <Button variant="outline" className="w-full h-11" disabled>
+                            <Crown className="w-4 h-4 mr-2" />
                             Aktueller Plan
                           </Button>
                         ) : (
                           <Button
                             onClick={() => createCheckout(plan.id, billingPeriod)}
                             disabled={loading}
-                            className={`w-full ${isProfessional ? 'button-gradient' : ''}`}
+                            className={`w-full h-11 ${isProfessional ? 'button-gradient' : ''}`}
                             variant={isProfessional ? 'default' : 'outline'}
                           >
                             {loading ? (
@@ -291,6 +297,21 @@ export default function Billing() {
                   );
                 })}
               </div>
+
+              {/* Debug Info (only in development) */}
+              {process.env.NODE_ENV === 'development' && (
+                <MobileCard className="mb-6 bg-muted/50">
+                  <div className="text-sm space-y-2">
+                    <h4 className="font-semibold">Debug Info:</h4>
+                    <p>User ID: {user?.id}</p>
+                    <p>User Email: {user?.email}</p>
+                    <p>Plans Loaded: {plans.length}</p>
+                    <p>Current Subscription: {isSubscribed ? 'Yes' : 'No'}</p>
+                    <p>Current Plan: {currentPlan?.name || 'None'}</p>
+                    <p>Loading State: {loading ? 'Yes' : 'No'}</p>
+                  </div>
+                </MobileCard>
+              )}
 
               {/* Back to Dashboard */}
               <div className="text-center">
