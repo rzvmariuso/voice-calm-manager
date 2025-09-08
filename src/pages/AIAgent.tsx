@@ -33,49 +33,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Link } from "react-router-dom"
 
-// This will be replaced with real data from the database
-const defaultRecentCalls = [
-  {
-    id: "1",
-    caller: "Anna Müller",
-    phone: "+49 123 456789",
-    time: "vor 5 Min",
-    duration: "2:34",
-    outcome: "appointment_booked",
-    service: "Massage",
-    appointmentDate: "2024-01-16, 14:00"
-  },
-  {
-    id: "2", 
-    caller: "Michael Schmidt",
-    phone: "+49 987 654321",
-    time: "vor 12 Min",
-    duration: "1:45",
-    outcome: "information_request",
-    service: "Physiotherapie",
-    appointmentDate: null
-  },
-  {
-    id: "3",
-    caller: "Sarah Wagner", 
-    phone: "+49 555 123456",
-    time: "vor 25 Min",
-    duration: "3:12",
-    outcome: "appointment_booked",
-    service: "Zahnreinigung",
-    appointmentDate: "2024-01-17, 09:30"
-  },
-  {
-    id: "4",
-    caller: "Unbekannt",
-    phone: "+49 444 987654",
-    time: "vor 1 Std",
-    duration: "0:23",
-    outcome: "missed_call",
-    service: null,
-    appointmentDate: null
-  }
-]
+// Empty initial state - no mock data
 
 export default function AIAgent() {
   const [isActive, setIsActive] = useState(true)
@@ -84,7 +42,8 @@ export default function AIAgent() {
   const [isSaving, setIsSaving] = useState(false)
   const [isCreatingAssistant, setIsCreatingAssistant] = useState(false)
   const [testPhoneNumber, setTestPhoneNumber] = useState("")
-  const [recentCalls, setRecentCalls] = useState(defaultRecentCalls)
+  const [recentCalls, setRecentCalls] = useState([])
+  const [isCleaningEnv, setIsCleaningEnv] = useState(false)
   const [stats, setStats] = useState({
     totalCalls: 0,
     successfulBookings: 0,
@@ -111,12 +70,13 @@ export default function AIAgent() {
       if (error) throw error
       
       if (data.success) {
-        setRecentCalls(data.callLogs)
+        setRecentCalls(data.callLogs || [])
         setStats(data.stats)
       }
     } catch (error) {
       console.error('Error loading call logs:', error)
-      // Keep default mock data if loading fails
+      // Keep empty state if loading fails
+      setRecentCalls([])
     }
   }
 
@@ -283,6 +243,59 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
         description: "Test-Anruf konnte nicht gestartet werden: " + error.message,
         variant: "destructive"
       })
+    }
+  }
+
+  const cleanAIEnvironment = async () => {
+    if (!window.confirm('Möchten Sie die gesamte KI-Umgebung zurücksetzen?\n\nDies löscht:\n- Alle Anruf-Logs\n- VAPI Assistant\n- Voice-Einstellungen\n\nDieser Vorgang kann nicht rückgängig gemacht werden.')) {
+      return
+    }
+
+    try {
+      setIsCleaningEnv(true)
+      
+      const { data, error } = await supabase.functions.invoke('clean-ai-env', {
+        body: { 
+          purgeCallLogs: true,
+          resetVoiceSettings: true,
+          deleteVapiAssistant: true
+        }
+      })
+      
+      if (error) throw error
+      
+      if (data.success) {
+        const { results } = data
+        let message = 'Bereinigung abgeschlossen:\n'
+        
+        if (results.callLogsPurged) message += '✓ Anruf-Logs gelöscht\n'
+        if (results.voiceSettingsReset) message += '✓ Voice-Einstellungen zurückgesetzt\n'
+        if (results.vapiAssistantDeleted) message += '✓ VAPI Assistant gelöscht\n'
+        
+        if (results.errors.length > 0) {
+          message += '\nFehler:\n' + results.errors.join('\n')
+        }
+        
+        toast({
+          title: "Umgebung bereinigt",
+          description: message,
+        })
+        
+        // Reload all data
+        loadAIConfig()
+        loadCallLogs()
+      } else {
+        throw new Error(data.error || 'Unbekannter Fehler')
+      }
+    } catch (error) {
+      console.error('Error cleaning AI environment:', error)
+      toast({
+        title: "Fehler",
+        description: "Bereinigung fehlgeschlagen: " + error.message,
+        variant: "destructive"
+      })
+    } finally {
+      setIsCleaningEnv(false)
     }
   }
 
@@ -482,33 +495,47 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1" 
-                      disabled={!hasAIAccess || isCreatingAssistant}
-                      onClick={createVapiAssistant}
-                    >
-                      <Volume2 className="w-4 h-4 mr-2" />
-                      {isCreatingAssistant ? "Erstelle..." : "Assistant erstellen"}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1" 
-                      disabled={!hasAIAccess}
-                      onClick={makeTestCall}
-                    >
-                      <Mic className="w-4 h-4 mr-2" />
-                      Test-Anruf
-                    </Button>
-                    <Button 
-                      onClick={saveAIConfig}
-                      disabled={isSaving || isLoading || !hasAIAccess}
-                      className="bg-gradient-primary text-white shadow-glow flex-1"
-                    >
-                      <Settings className="w-4 h-4 mr-2" />
-                      {isSaving ? "Speichern..." : "Speichern"}
-                    </Button>
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1" 
+                        disabled={!hasAIAccess || isCreatingAssistant}
+                        onClick={createVapiAssistant}
+                      >
+                        <Volume2 className="w-4 h-4 mr-2" />
+                        {isCreatingAssistant ? "Erstelle..." : "Assistant erstellen"}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="flex-1" 
+                        disabled={!hasAIAccess}
+                        onClick={makeTestCall}
+                      >
+                        <Mic className="w-4 h-4 mr-2" />
+                        Test-Anruf
+                      </Button>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={saveAIConfig}
+                        disabled={isSaving || isLoading || !hasAIAccess}
+                        className="bg-gradient-primary text-white shadow-glow flex-1"
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        {isSaving ? "Speichern..." : "Speichern"}
+                      </Button>
+                      
+                      <Button 
+                        variant="destructive"
+                        onClick={cleanAIEnvironment}
+                        disabled={isCleaningEnv || !hasAIAccess}
+                        className="flex-1"
+                      >
+                        {isCleaningEnv ? "Bereinige..." : "Neu starten (Clean)"}
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -523,43 +550,53 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {recentCalls.map((call) => (
-                    <div key={call.id} className="p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="bg-gradient-primary text-white text-xs">
-                              {call.caller !== "Unbekannt" ? call.caller.split(' ').map(n => n[0]).join('') : "?"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium text-sm">{call.caller}</p>
-                            <p className="text-xs text-muted-foreground">{call.phone}</p>
+                {recentCalls.length > 0 ? (
+                  <div className="space-y-4">
+                    {recentCalls.map((call) => (
+                      <div key={call.id} className="p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-8 h-8">
+                              <AvatarFallback className="bg-gradient-primary text-white text-xs">
+                                {call.caller !== "Unbekannt" ? call.caller.split(' ').map(n => n[0]).join('') : "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">{call.caller}</p>
+                              <p className="text-xs text-muted-foreground">{call.phone}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground">{call.time}</p>
+                            <p className="text-xs font-medium">{call.duration}</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-xs text-muted-foreground">{call.time}</p>
-                          <p className="text-xs font-medium">{call.duration}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {getOutcomeBadge(call.outcome)}
-                          {call.service && (
-                            <span className="text-xs text-muted-foreground">{call.service}</span>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {getOutcomeBadge(call.outcome)}
+                            {call.service && (
+                              <span className="text-xs text-muted-foreground">{call.service}</span>
+                            )}
+                          </div>
+                          {call.appointmentDate && (
+                            <span className="text-xs text-success font-medium">
+                              {call.appointmentDate}
+                            </span>
                           )}
                         </div>
-                        {call.appointmentDate && (
-                          <span className="text-xs text-success font-medium">
-                            {call.appointmentDate}
-                          </span>
-                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <PhoneCall className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+                    <p className="text-muted-foreground">Noch keine Anrufe vorhanden</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Anrufe werden hier angezeigt, sobald der KI-Agent aktiv ist
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
