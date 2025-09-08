@@ -76,7 +76,7 @@ export default function Billing() {
         <div className="flex min-h-screen w-full bg-gradient-subtle">
           <AppSidebar />
           <MobileHeader 
-            title="Billing"
+            title="Abrechnung"
             subtitle="Pläne werden geladen..."
             showUpgradeButton={false}
           />
@@ -105,7 +105,7 @@ export default function Billing() {
       <div className="flex min-h-screen w-full bg-gradient-subtle">
         <AppSidebar />
         <MobileHeader 
-          title="Billing"
+          title="Abrechnung"
           subtitle="Abonnement verwalten"
           showUpgradeButton={false}
         />
@@ -117,7 +117,7 @@ export default function Billing() {
                 <SidebarTrigger />
                 <div>
                   <h1 className="text-3xl font-bold text-gradient">
-                    Abonnement & Billing
+                    Abonnement & Abrechnung
                   </h1>
                   <p className="text-muted-foreground">
                     Verwalten Sie Ihr Abonnement und Rechnungen
