@@ -1,6 +1,8 @@
-const CACHE_NAME = 'voice-calm-manager-v2';
-const STATIC_CACHE = 'static-cache-v2';
-const RUNTIME_CACHE = 'runtime-cache-v2';
+// Version-based cache names for automatic updates
+const VERSION = '20250908-' + Date.now();
+const CACHE_NAME = `voice-calm-manager-${VERSION}`;
+const STATIC_CACHE = `static-cache-${VERSION}`;
+const RUNTIME_CACHE = `runtime-cache-${VERSION}`;
 
 const urlsToCache = [
   '/',
@@ -11,8 +13,9 @@ const urlsToCache = [
   '/manifest.json'
 ];
 
-// Install event - cache resources
+// Install event - cache resources and force update
 self.addEventListener('install', event => {
+  console.log('Service Worker installing with version:', VERSION);
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -22,23 +25,40 @@ self.addEventListener('install', event => {
         console.error('Failed to cache resources during install:', error);
       })
   );
+  // Force immediate activation
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and notify clients
 self.addEventListener('activate', event => {
+  console.log('Service Worker activating with version:', VERSION);
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (![CACHE_NAME, STATIC_CACHE, RUNTIME_CACHE].includes(cacheName)) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    Promise.all([
+      // Clean up old caches
+      caches.keys().then(cacheNames => {
+        return Promise.all(
+          cacheNames.map(cacheName => {
+            if (![CACHE_NAME, STATIC_CACHE, RUNTIME_CACHE].includes(cacheName)) {
+              console.log('Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      }),
+      // Take control of all clients immediately
+      self.clients.claim().then(() => {
+        // Notify all clients about the update
+        return self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'SW_UPDATED',
+              version: VERSION
+            });
+          });
+        });
+      })
+    ])
   );
-  self.clients.claim();
 });
 
 // Fetch event - serve from cache with optimized strategies
@@ -198,6 +218,8 @@ self.addEventListener('notificationclick', event => {
 self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  } else if (event.data && event.data.type === 'GET_VERSION') {
+    event.ports[0].postMessage({ version: VERSION });
   }
 });
 
