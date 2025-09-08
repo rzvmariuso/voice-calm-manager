@@ -100,6 +100,45 @@ export default function Billing() {
     return Math.round(discount);
   };
 
+  // Feature translation function
+  const translateFeature = (feature: string): string => {
+    const translations: Record<string, string> = {
+      'Basic Support': 'Basis-Support',
+      'Up to 50 Patients': 'Bis zu 50 Patienten',
+      'Up to 200 Patients': 'Bis zu 200 Patienten',
+      'Up to 1000 Patients': 'Bis zu 1000 Patienten',
+      'Unlimited Patients': 'Unbegrenzte Patienten',
+      '1 Practice': '1 Praxis',
+      '3 Practices': '3 Praxen',
+      '10 Practices': '10 Praxen',
+      'Unlimited Practices': 'Unbegrenzte Praxen',
+      'AI Features': 'KI-Features',
+      'All AI Features': 'Alle KI-Features',
+      'Advanced AI Features': 'Erweiterte KI-Features',
+      'Priority Support': 'Prioritäts-Support',
+      '24/7 Support': '24/7 Support',
+      'Premium Support': 'Premium-Support',
+      'Custom Branding': 'Individuelle Markengestaltung',
+      'Advanced Analytics': 'Erweiterte Analysen',
+      'Custom Integration': 'Individuelle Integration',
+      'Dedicated Account Manager': 'Persönlicher Kundenbetreuer',
+      'White Label Solution': 'White-Label-Lösung',
+      'API Access': 'API-Zugang',
+      'SMS Reminders': 'SMS-Erinnerungen',
+      'Email Notifications': 'E-Mail-Benachrichtigungen',
+      'Calendar Integration': 'Kalender-Integration',
+      'Patient Portal': 'Patientenportal',
+      'Online Booking': 'Online-Terminbuchung',
+      'Automated Workflows': 'Automatisierte Arbeitsabläufe',
+      'Data Export': 'Datenexport',
+      'Backup & Recovery': 'Sicherung & Wiederherstellung',
+      'GDPR Compliance': 'DSGVO-Konformität',
+      'Multi-language Support': 'Mehrsprachiger Support'
+    };
+    
+    return translations[feature] || feature;
+  };
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-gradient-subtle">
@@ -268,7 +307,7 @@ export default function Billing() {
                         {(plan.features as string[]).map((feature, featureIndex) => (
                           <div key={featureIndex} className="flex items-start gap-2">
                             <Check className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
-                            <span className="text-sm leading-relaxed">{feature}</span>
+                            <span className="text-sm leading-relaxed">{translateFeature(feature)}</span>
                           </div>
                         ))}
                       </div>
