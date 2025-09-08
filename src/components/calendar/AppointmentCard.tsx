@@ -35,13 +35,13 @@ export function AppointmentCard({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'bg-success hover:bg-success/80';
+        return 'bg-success hover:bg-success/90 shadow-sm hover:shadow-lg';
       case 'completed':
-        return 'bg-muted hover:bg-muted/80';
+        return 'bg-accent hover:bg-accent/80 border border-accent-foreground/20';
       case 'cancelled':
-        return 'bg-destructive hover:bg-destructive/80';
+        return 'bg-destructive hover:bg-destructive/90 shadow-sm hover:shadow-lg';
       default:
-        return 'bg-warning hover:bg-warning/80';
+        return 'bg-warning hover:bg-warning/90 shadow-sm hover:shadow-lg';
     }
   };
 
@@ -94,9 +94,10 @@ export function AppointmentCard({
         <PopoverTrigger asChild>
           <div 
             className={`
-              relative group text-xs p-2 rounded text-white cursor-pointer transition-all duration-200 animate-fade-in
+              relative group text-xs p-3 rounded-lg text-white cursor-pointer 
+              transition-all duration-300 animate-fade-in hover:scale-[1.02] hover-glow
               ${appointment.ai_booked 
-                ? 'bg-gradient-primary shadow-sm hover:shadow-lg' 
+                ? 'bg-gradient-primary shadow-elegant hover:shadow-glow' 
                 : getStatusColor(appointment.status)
               }
             `}
@@ -104,46 +105,72 @@ export function AppointmentCard({
             draggable={draggable}
             onDragStart={onDragStart ? (e) => onDragStart(e, appointment) : undefined}
           >
-            <div className="flex items-center gap-1 mb-1">
-              {appointment.ai_booked && <Bot className="w-2 h-2" />}
-              <Clock className="w-2 h-2" />
-              <span className="font-medium">{appointment.appointment_time}</span>
+            {/* Header with time and AI indicator */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                {appointment.ai_booked && (
+                  <div className="w-4 h-4 bg-white/20 rounded-full flex items-center justify-center">
+                    <Bot className="w-2.5 h-2.5" />
+                  </div>
+                )}
+                <Clock className="w-3 h-3" />
+                <span className="font-bold text-sm">{appointment.appointment_time}</span>
+              </div>
+              
+              {/* Duration badge */}
+              <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full font-medium">
+                {appointment.duration_minutes || 30}min
+              </span>
             </div>
-            <div className="truncate font-medium">
+
+            {/* Patient name */}
+            <div className="truncate font-semibold text-sm mb-1">
               {appointment.patient.first_name} {appointment.patient.last_name}
             </div>
-            <div className="truncate text-xs opacity-90">
+            
+            {/* Service */}
+            <div className="truncate text-xs opacity-90 font-medium">
               {appointment.service}
             </div>
 
+            {/* Status indicator */}
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <div className={`
+                w-2 h-2 rounded-full
+                ${appointment.status === 'confirmed' ? 'bg-white' : 
+                  appointment.status === 'pending' ? 'bg-yellow-300' :
+                  appointment.status === 'completed' ? 'bg-green-300' : 'bg-red-300'}
+              `} />
+            </div>
+
             {/* Quick action buttons */}
-            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
+            <div className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-1">
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-4 w-4 p-0 text-white hover:bg-white/20"
+                className="h-6 w-6 p-0 text-white hover:bg-white/20 rounded-full"
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(appointment);
                 }}
               >
-                <Edit className="h-2 w-2" />
+                <Edit className="h-3 w-3" />
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-4 w-4 p-0 text-white hover:bg-red-500/50"
+                className="h-6 w-6 p-0 text-white hover:bg-red-500/50 rounded-full"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(appointment);
                 }}
               >
-                <Trash2 className="h-2 w-2" />
+                <Trash2 className="h-3 w-3" />
               </Button>
             </div>
           </div>
         </PopoverTrigger>
-        <PopoverContent className="w-80 animate-scale-in">
+        <PopoverContent className="w-80 animate-scale-in shadow-elegant">
           <AppointmentDetails 
             appointment={appointment}
             onEdit={onEdit}
@@ -159,9 +186,10 @@ export function AppointmentCard({
   return (
     <div 
       className={`
-        relative group text-xs p-2 rounded text-white cursor-pointer truncate transition-all duration-200 animate-fade-in
+        relative group text-xs p-3 rounded-lg text-white cursor-pointer 
+        transition-all duration-300 animate-fade-in hover:scale-[1.02] hover-glow
         ${appointment.ai_booked 
-          ? 'bg-gradient-primary shadow-sm hover:shadow-lg' 
+          ? 'bg-gradient-primary shadow-elegant hover:shadow-glow' 
           : getStatusColor(appointment.status)
         }
       `}
@@ -169,38 +197,56 @@ export function AppointmentCard({
       draggable={draggable}
       onDragStart={onDragStart ? (e) => onDragStart(e, appointment) : undefined}
     >
-      <div className="flex items-center gap-1">
-        {appointment.ai_booked && <Bot className="w-2 h-2" />}
-        <Clock className="w-2 h-2" />
-        <span>{appointment.appointment_time}</span>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
+          {appointment.ai_booked && (
+            <div className="w-4 h-4 bg-white/20 rounded-full flex items-center justify-center">
+              <Bot className="w-2.5 h-2.5" />
+            </div>
+          )}
+          <Clock className="w-3 h-3" />
+          <span className="font-bold text-sm">{appointment.appointment_time}</span>
+        </div>
+        
+        <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full font-medium">
+          {appointment.duration_minutes || 30}min
+        </span>
       </div>
-      <div className="truncate">
-        {appointment.patient.first_name} {appointment.patient.last_name}
+
+      {/* Patient info */}
+      <div className="space-y-1">
+        <div className="truncate font-semibold">
+          {appointment.patient.first_name} {appointment.patient.last_name}
+        </div>
+        <div className="truncate text-xs opacity-90">
+          {appointment.service}
+        </div>
       </div>
       
       {/* Action buttons - appear on hover */}
-      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-1">
         <Button
           size="sm"
           variant="ghost"
-          className="h-4 w-4 p-0 text-white hover:bg-white/20"
+          className="h-6 w-6 p-0 text-white hover:bg-white/20 rounded-full"
           onClick={(e) => {
             e.stopPropagation();
             onEdit(appointment);
           }}
         >
-          <Edit className="h-2 w-2" />
+          <Edit className="h-3 w-3" />
         </Button>
         <Button
           size="sm"
           variant="ghost"
-          className="h-4 w-4 p-0 text-white hover:bg-red-500/50"
+          className="h-6 w-6 p-0 text-white hover:bg-red-500/50 rounded-full"
           onClick={(e) => {
             e.stopPropagation();
             onDelete(appointment);
           }}
         >
-          <Trash2 className="h-2 w-2" />
+          <Trash2 className="h-3 w-3" />
         </Button>
       </div>
     </div>
