@@ -95,15 +95,15 @@ export default function Billing() {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
-        <main className="flex-1 p-6 bg-background">
+        <main className="flex-1 p-4 lg:p-6 bg-background">
           <div className="max-w-6xl mx-auto">
-            <div className="flex items-center gap-4 mb-8">
+            <div className="flex items-center gap-4 mb-6 lg:mb-8">
               <SidebarTrigger />
-              <div>
-                <h1 className="text-3xl font-bold text-gradient">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl lg:text-3xl font-bold text-gradient truncate">
                   Abonnement & Billing
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground text-sm lg:text-base">
                   Verwalten Sie Ihr Abonnement und Rechnungen
                 </p>
               </div>
@@ -111,25 +111,25 @@ export default function Billing() {
 
             {/* Current Subscription Status */}
             {isSubscribed && currentPlan && (
-              <Card className="mb-8 border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Crown className="w-6 h-6 text-primary" />
-                      <div>
-                        <CardTitle className="text-xl">Aktives Abonnement</CardTitle>
-                        <CardDescription>
+              <Card className="mb-6 lg:mb-8 border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
+                <CardHeader className="pb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Crown className="w-5 h-5 lg:w-6 lg:h-6 text-primary flex-shrink-0" />
+                      <div className="min-w-0">
+                        <CardTitle className="text-lg lg:text-xl truncate">Aktives Abonnement</CardTitle>
+                        <CardDescription className="text-sm">
                           Sie haben ein aktives {currentPlan.name} Abonnement
                         </CardDescription>
                       </div>
                     </div>
-                    <Badge variant="secondary" className="bg-success text-success-foreground">
+                    <Badge variant="secondary" className="bg-success text-success-foreground w-fit">
                       Aktiv
                     </Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     <div>
                       <p className="text-sm text-muted-foreground">Plan</p>
                       <p className="font-semibold">{currentPlan.name}</p>
@@ -150,11 +150,11 @@ export default function Billing() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-4">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <Button 
                       onClick={openCustomerPortal}
                       disabled={loading}
-                      className="button-gradient"
+                      className="button-gradient w-full sm:w-auto"
                     >
                       {loading ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -167,6 +167,7 @@ export default function Billing() {
                       variant="outline" 
                       onClick={checkSubscription}
                       disabled={refreshing}
+                      className="w-full sm:w-auto"
                     >
                       {refreshing ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -179,13 +180,13 @@ export default function Billing() {
             )}
 
             {/* Billing Period Toggle */}
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center bg-muted rounded-lg p-1">
+            <div className="text-center mb-6 lg:mb-8">
+              <div className="inline-flex items-center bg-muted rounded-lg p-1 w-full max-w-sm mx-auto sm:w-auto">
                 <Button
                   variant={billingPeriod === 'monthly' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setBillingPeriod('monthly')}
-                  className="rounded-md"
+                  className="rounded-md flex-1 sm:flex-initial"
                 >
                   Monatlich
                 </Button>
@@ -193,18 +194,20 @@ export default function Billing() {
                   variant={billingPeriod === 'yearly' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setBillingPeriod('yearly')}
-                  className="rounded-md"
+                  className="rounded-md flex-1 sm:flex-initial"
                 >
-                  Jährlich
-                  <Badge variant="secondary" className="ml-2 text-xs">
-                    Bis zu 17% sparen
+                  <span className="hidden sm:inline">Jährlich</span>
+                  <span className="sm:hidden">Jahr</span>
+                  <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">
+                    <span className="hidden sm:inline">Bis zu 17% sparen</span>
+                    <span className="sm:hidden">17%</span>
                   </Badge>
                 </Button>
               </div>
             </div>
 
             {/* Pricing Plans */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
               {plans.map((plan, index) => {
                 const isCurrentPlan = currentPlan?.id === plan.id;
                 const price = billingPeriod === 'yearly' ? plan.price_yearly : plan.price_monthly;
@@ -217,25 +220,26 @@ export default function Billing() {
                     className={`relative ${isProfessional ? 'border-2 border-primary shadow-glow' : ''} ${isCurrentPlan ? 'border-success bg-success/5' : ''}`}
                   >
                     {isProfessional && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                        <Badge className="bg-primary text-primary-foreground">
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                        <Badge className="bg-primary text-primary-foreground text-xs">
                           <Zap className="w-3 h-3 mr-1" />
-                          Beliebtester Plan
+                          <span className="hidden sm:inline">Beliebtester Plan</span>
+                          <span className="sm:hidden">Beliebt</span>
                         </Badge>
                       </div>
                     )}
                     
-                    <CardHeader className="text-center">
-                      <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                    <CardHeader className="text-center pb-4">
+                      <CardTitle className="text-xl lg:text-2xl">{plan.name}</CardTitle>
                       <div className="space-y-2">
-                        <div className="text-3xl font-bold">
+                        <div className="text-2xl lg:text-3xl font-bold">
                           €{formatPrice(price)}
-                          <span className="text-lg font-normal text-muted-foreground">
+                          <span className="text-base lg:text-lg font-normal text-muted-foreground">
                             /{billingPeriod === 'yearly' ? 'Jahr' : 'Monat'}
                           </span>
                         </div>
                         {billingPeriod === 'yearly' && (
-                          <Badge variant="outline" className="text-success border-success">
+                          <Badge variant="outline" className="text-success border-success text-xs">
                             {yearlyDiscount}% Ersparnis
                           </Badge>
                         )}
@@ -245,9 +249,9 @@ export default function Billing() {
                     <CardContent className="space-y-4">
                       <div className="space-y-2">
                         {(plan.features as string[]).map((feature, featureIndex) => (
-                          <div key={featureIndex} className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-success" />
-                            <span className="text-sm">{feature}</span>
+                          <div key={featureIndex} className="flex items-start gap-2">
+                            <Check className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
+                            <span className="text-sm leading-tight">{feature}</span>
                           </div>
                         ))}
                       </div>
