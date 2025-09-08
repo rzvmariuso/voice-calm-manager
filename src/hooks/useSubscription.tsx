@@ -105,14 +105,22 @@ export function useSubscription() {
         body: { planId, billingPeriod }
       });
 
+      console.log('Checkout response:', { data, error });
+
       if (error) {
         console.error('Checkout creation error:', error);
         throw error;
       }
 
       if (data?.url) {
-        console.log('Redirecting to checkout:', data.url);
-        window.open(data.url, '_blank');
+        console.log('Opening checkout URL:', data.url);
+        // Try multiple methods to ensure popup opens
+        const opened = window.open(data.url, '_blank');
+        if (!opened) {
+          // Fallback: navigate in same tab if popup blocked
+          console.log('Popup blocked, navigating in same tab');
+          window.location.href = data.url;
+        }
       } else {
         throw new Error('No checkout URL received');
       }
