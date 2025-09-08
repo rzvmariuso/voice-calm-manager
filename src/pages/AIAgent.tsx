@@ -21,11 +21,16 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
-  Users
+  Users,
+  Crown
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { useSubscription } from "@/hooks/useSubscription"
+import { useAuth } from "@/hooks/useAuth"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Link } from "react-router-dom"
 
 const recentCalls = [
   {
@@ -76,6 +81,11 @@ export default function AIAgent() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const { toast } = useToast()
+  const { user } = useAuth()
+  const { isSubscribed } = useSubscription()
+
+  // Check if user has access to AI features (subscription or whitelisted email)
+  const hasAIAccess = isSubscribed || user?.email === 'razvanmariusoancea@gmail.com'
 
   // Load AI configuration on component mount
   useEffect(() => {
@@ -217,6 +227,21 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
       <div className="flex min-h-screen w-full">
         <AppSidebar />
         <main className="flex-1 p-6 bg-background">
+          {!hasAIAccess && (
+            <Alert className="mb-6 border-primary bg-primary/5">
+              <Crown className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between">
+                <span>
+                  <strong>Pro-Feature:</strong> Der KI-Agent ist nur im Pro-Plan verfügbar.
+                </span>
+                <Link to="/billing">
+                  <Button size="sm" className="ml-4">
+                    Jetzt upgraden
+                  </Button>
+                </Link>
+              </AlertDescription>
+            </Alert>
+          )}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <SidebarTrigger />
@@ -240,6 +265,7 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                 onClick={toggleAgent}
                 variant={isActive ? "destructive" : "default"}
                 className={isActive ? "" : "bg-gradient-primary text-white shadow-glow"}
+                disabled={!hasAIAccess}
               >
                 {isActive ? (
                   <>
@@ -330,8 +356,8 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                       onChange={(e) => setAiPrompt(e.target.value)}
                       rows={12}
                       className="font-mono text-sm"
-                      disabled={isLoading}
-                      placeholder={isLoading ? "Konfiguration wird geladen..." : ""}
+                      disabled={isLoading || !hasAIAccess}
+                      placeholder={isLoading ? "Konfiguration wird geladen..." : !hasAIAccess ? "Pro-Plan erforderlich" : ""}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
                       Definiert das Verhalten und die Antworten des KI-Agenten
@@ -339,17 +365,17 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                   </div>
                   
                   <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1">
+                    <Button variant="outline" className="flex-1" disabled={!hasAIAccess}>
                       <Volume2 className="w-4 h-4 mr-2" />
                       Stimme testen
                     </Button>
-                    <Button variant="outline" className="flex-1">
+                    <Button variant="outline" className="flex-1" disabled={!hasAIAccess}>
                       <Mic className="w-4 h-4 mr-2" />
                       Test-Anruf
                     </Button>
                     <Button 
                       onClick={saveAIConfig}
-                      disabled={isSaving || isLoading}
+                      disabled={isSaving || isLoading || !hasAIAccess}
                       className="bg-gradient-primary text-white shadow-glow flex-1"
                     >
                       <Settings className="w-4 h-4 mr-2" />

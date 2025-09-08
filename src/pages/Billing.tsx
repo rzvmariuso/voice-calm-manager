@@ -298,20 +298,14 @@ export default function Billing() {
                 })}
               </div>
 
-              {/* Debug Info (only in development) */}
-              {process.env.NODE_ENV === 'development' && (
-                <MobileCard className="mb-6 bg-muted/50">
-                  <div className="text-sm space-y-2">
-                    <h4 className="font-semibold">Debug Info:</h4>
-                    <p>User ID: {user?.id}</p>
-                    <p>User Email: {user?.email}</p>
-                    <p>Plans Loaded: {plans.length}</p>
-                    <p>Current Subscription: {isSubscribed ? 'Yes' : 'No'}</p>
-                    <p>Current Plan: {currentPlan?.name || 'None'}</p>
-                    <p>Loading State: {loading ? 'Yes' : 'No'}</p>
-                  </div>
-                </MobileCard>
-              )}
+              {/* User Overview */}
+              <MobileCard className="mb-6 bg-muted/10">
+                <div className="text-sm space-y-2">
+                  <h4 className="font-semibold">Konto-Übersicht</h4>
+                  <p><span className="text-muted-foreground">E-Mail:</span> {user?.email}</p>
+                  <p><span className="text-muted-foreground">Plan:</span> {isSubscribed ? currentPlan?.name || 'Unbekannt' : 'Kein aktives Abonnement'}</p>
+                </div>
+              </MobileCard>
 
               {/* Back to Dashboard */}
               <div className="text-center">

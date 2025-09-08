@@ -319,7 +319,7 @@ All colors MUST be HSL.
   /* High DPI mobile displays */
   @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
     .shadow-soft, .shadow-glow {
-      filter: blur(0.5px);
+      /* Remove blur effect for crisp text rendering */
     }
   }
   }

@@ -15,6 +15,11 @@ import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { Switch } from "@/components/ui/switch"
+import { useSubscription } from "@/hooks/useSubscription"
+import { useAuth } from "@/hooks/useAuth"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Link } from "react-router-dom"
+import { Crown } from "lucide-react"
 
 export default function Automation() {
   const [n8nWebhookUrl, setN8nWebhookUrl] = useState("")
@@ -22,6 +27,11 @@ export default function Automation() {
   const [isTestingWebhook, setIsTestingWebhook] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const { toast } = useToast()
+  const { user } = useAuth()
+  const { isSubscribed } = useSubscription()
+
+  // Check if user has access to automation features (subscription or whitelisted email)
+  const hasAutomationAccess = isSubscribed || user?.email === 'razvanmariusoancea@gmail.com'
 
   useEffect(() => {
     loadN8nConfig()
@@ -133,6 +143,21 @@ export default function Automation() {
       <div className="flex min-h-screen w-full">
         <AppSidebar />
         <main className="flex-1 p-6 bg-background">
+          {!hasAutomationAccess && (
+            <Alert className="mb-6 border-primary bg-primary/5">
+              <Crown className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between">
+                <span>
+                  <strong>Pro-Feature:</strong> n8n Automation ist nur im Pro-Plan verfügbar.
+                </span>
+                <Link to="/billing">
+                  <Button size="sm" className="ml-4">
+                    Jetzt upgraden
+                  </Button>
+                </Link>
+              </AlertDescription>
+            </Alert>
+          )}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <SidebarTrigger />
@@ -173,7 +198,8 @@ export default function Automation() {
                   <Switch
                     id="n8n-enabled"
                     checked={n8nEnabled}
-                    onCheckedChange={setN8nEnabled}
+                    onCheckedChange={hasAutomationAccess ? setN8nEnabled : undefined}
+                    disabled={!hasAutomationAccess}
                   />
                 </div>
 
@@ -184,8 +210,9 @@ export default function Automation() {
                       id="n8n-webhook"
                       value={n8nWebhookUrl}
                       onChange={(e) => setN8nWebhookUrl(e.target.value)}
-                      placeholder="https://your-n8n-instance.com/webhook/..."
+                      placeholder={!hasAutomationAccess ? "Pro-Plan erforderlich" : "https://your-n8n-instance.com/webhook/..."}
                       className="font-mono text-sm"
+                      disabled={!hasAutomationAccess}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
                       Webhook URL aus deinem n8n Workflow
@@ -196,7 +223,7 @@ export default function Automation() {
                 <div className="flex gap-2">
                   <Button 
                     onClick={testN8nWebhook}
-                    disabled={isTestingWebhook || !n8nEnabled}
+                    disabled={isTestingWebhook || !n8nEnabled || !hasAutomationAccess}
                     variant="outline" 
                     className="flex-1"
                   >
@@ -205,7 +232,7 @@ export default function Automation() {
                   </Button>
                   <Button 
                     onClick={saveN8nConfig}
-                    disabled={isSaving}
+                    disabled={isSaving || !hasAutomationAccess}
                     className="bg-gradient-primary text-white shadow-glow flex-1"
                   >
                     <Settings className="w-4 h-4 mr-2" />
