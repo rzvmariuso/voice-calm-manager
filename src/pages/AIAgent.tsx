@@ -179,8 +179,8 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
       setIsSaving(true)
       const { data, error } = await supabase.functions.invoke('update-ai-config', {
         body: { 
-          prompt: aiPrompt,
-          voiceSettings: {} 
+          prompt: aiPrompt
+          // Don't send empty voiceSettings to preserve existing voice settings
         }
       })
       

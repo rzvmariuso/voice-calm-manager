@@ -50,14 +50,21 @@ serve(async (req) => {
       throw new Error('Praxis nicht gefunden');
     }
 
+    // Prepare update object - only include fields that should be updated
+    const updateData: any = {
+      ai_prompt: prompt,
+      updated_at: new Date().toISOString()
+    };
+
+    // Only update voice settings if they are provided and not empty
+    if (voiceSettings && Object.keys(voiceSettings).length > 0) {
+      updateData.ai_voice_settings = voiceSettings;
+    }
+
     // Update practice with new AI configuration
     const { error: updateError } = await supabaseService
       .from('practices')
-      .update({
-        ai_prompt: prompt,
-        ai_voice_settings: voiceSettings || {},
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', practice.id);
 
     if (updateError) {
