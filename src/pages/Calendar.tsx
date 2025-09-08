@@ -18,6 +18,8 @@ import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAppointmentWebhook } from "@/hooks/useAppointmentWebhook";
+import { usePractice } from "@/hooks/usePractice";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -25,6 +27,8 @@ export default function Calendar() {
   const { appointments, isLoading, refetch } = useAppointments();
   const { toast } = useToast();
   const { triggerWebhook } = useAppointmentWebhook();
+  const { practice, loading: practiceLoading } = usePractice();
+  const { user, loading: authLoading } = useAuth();
   
   // Dialog states
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
@@ -221,6 +225,44 @@ const handleAppointmentDrop = async (appointmentId: string, newDate: string) => 
       isSameDay(new Date(`${appointment.appointment_date}T00:00:00`), new Date())
     ).sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
   };
+
+  if (authLoading || practiceLoading) {
+    return (
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full">
+          <AppSidebar />
+          <main className="flex-1 bg-background">
+            <div className="flex items-center p-3 sm:p-6 lg:hidden">
+              <MobileNavigation />
+            </div>
+            <LoadingPage 
+              title="Lade Anwendung..." 
+              description="Authentifizierung und Daten werden geladen" 
+            />
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
+
+  if (!user || !practice) {
+    return (
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full">
+          <AppSidebar />
+          <main className="flex-1 bg-background">
+            <div className="flex items-center p-3 sm:p-6 lg:hidden">
+              <MobileNavigation />
+            </div>
+            <LoadingPage 
+              title="Weiterleitung..." 
+              description="Sie werden zur Anmeldung weitergeleitet" 
+            />
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
 
   if (isLoading) {
     return (
