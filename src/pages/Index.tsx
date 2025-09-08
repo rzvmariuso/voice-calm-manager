@@ -96,12 +96,33 @@ export default function Index() {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
-        <MobileNavigation />
-        <main className="flex-1 p-4 lg:p-6 bg-background overflow-x-hidden">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 lg:mb-8 space-y-4 lg:space-y-0">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger />
-              <div>
+        <main className="flex-1 overflow-x-hidden">
+          {/* Mobile Header */}
+          <div className="lg:hidden bg-background border-b border-border p-4 sticky top-0 z-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <MobileNavigation />
+                <div className="w-8 h-8 bg-gradient-primary rounded-lg overflow-hidden flex items-center justify-center">
+                  <img src="/lovable-uploads/f8bf1ba1-4dee-42dd-9c1d-543ca3de4a53.png" alt="Voxcal Logo" className="w-6 h-6 object-contain" />
+                </div>
+                <span className="font-bold text-lg">Voxcal</span>
+              </div>
+              {!isSubscribed && (
+                <Link to="/billing">
+                  <Button size="sm" className="button-gradient">
+                    <Crown className="w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Desktop and Mobile Content */}
+          <div className="p-4 lg:p-6">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 lg:mb-8 space-y-4 lg:space-y-0">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger className="hidden lg:inline-flex" />
+                <div>
                 <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-hero bg-clip-text text-transparent">
                   Dashboard
                 </h1>
@@ -144,8 +165,8 @@ export default function Index() {
             </div>
           </div>
 
-          {/* Stats Overview */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 mb-6 lg:mb-8 animate-fade-in">
+            {/* Stats Overview */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 mb-6 lg:mb-8 animate-fade-in">
             <div className="animate-scale-in" style={{ animationDelay: '0.1s' }}>
               <Link to="/calendar">
                 <div className="cursor-pointer hover:scale-105 transition-transform duration-200">
@@ -200,11 +221,11 @@ export default function Index() {
             </div>
           </div>
 
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-            <div className="lg:col-span-2">
-              <RecentAppointments />
-            </div>
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+              <div className="lg:col-span-2">
+                <RecentAppointments />
+              </div>
             
             <div className="space-y-6">
               {/* Subscription Status Card */}
@@ -367,6 +388,7 @@ export default function Index() {
                   </div>
                 </CardContent>
               </Card>
+              </div>
             </div>
           </div>
         </main>
