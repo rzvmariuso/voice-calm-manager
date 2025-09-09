@@ -257,7 +257,11 @@ export type Database = {
       }
       patients: {
         Row: {
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
           consent_date: string | null
+          country: string | null
           created_at: string
           data_retention_until: string | null
           date_of_birth: string | null
@@ -266,12 +270,18 @@ export type Database = {
           id: string
           last_name: string
           phone: string | null
+          postal_code: string | null
           practice_id: string
           privacy_consent: boolean
+          state: string | null
           updated_at: string
         }
         Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
           consent_date?: string | null
+          country?: string | null
           created_at?: string
           data_retention_until?: string | null
           date_of_birth?: string | null
@@ -280,12 +290,18 @@ export type Database = {
           id?: string
           last_name: string
           phone?: string | null
+          postal_code?: string | null
           practice_id: string
           privacy_consent?: boolean
+          state?: string | null
           updated_at?: string
         }
         Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
           consent_date?: string | null
+          country?: string | null
           created_at?: string
           data_retention_until?: string | null
           date_of_birth?: string | null
@@ -294,8 +310,10 @@ export type Database = {
           id?: string
           last_name?: string
           phone?: string | null
+          postal_code?: string | null
           practice_id?: string
           privacy_consent?: boolean
+          state?: string | null
           updated_at?: string
         }
         Relationships: [

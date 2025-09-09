@@ -14,7 +14,9 @@ import {
   Plus,
   Calendar,
   Shield,
-  Clock
+  Clock,
+  MapPin,
+  Home
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -45,6 +47,12 @@ interface Patient {
   consent_date: string | null;
   created_at: string;
   data_retention_until: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  postal_code: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
 }
 
 interface PatientListProps {
@@ -252,6 +260,18 @@ export function PatientList({ onEdit, onAdd, refreshTrigger }: PatientListProps)
                           <div className="flex items-center gap-2">
                             <Phone className="w-4 h-4" />
                             <span>{patient.phone}</span>
+                          </div>
+                        )}
+                        
+                        {(patient.address_line1 || patient.city) && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4" />
+                            <span className="truncate">
+                              {[patient.address_line1, patient.postal_code, patient.city]
+                                .filter(Boolean)
+                                .join(', ')
+                              }
+                            </span>
                           </div>
                         )}
                       </div>

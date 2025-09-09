@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CalendarIcon, User, Phone, Mail, Save, X, FileText } from "lucide-react";
+import { CalendarIcon, User, Phone, Mail, Save, X, FileText, MapPin, Home } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +33,13 @@ export function PatientForm({ onSuccess, onCancel, patient, isEditing = false }:
     email: patient?.email || "",
     phone: patient?.phone || "",
     date_of_birth: patient?.date_of_birth ? new Date(patient.date_of_birth) : undefined,
-    privacy_consent: patient?.privacy_consent || false
+    privacy_consent: patient?.privacy_consent || false,
+    address_line1: patient?.address_line1 || "",
+    address_line2: patient?.address_line2 || "",
+    postal_code: patient?.postal_code || "",
+    city: patient?.city || "",
+    state: patient?.state || "",
+    country: patient?.country || "Deutschland"
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,6 +75,12 @@ export function PatientForm({ onSuccess, onCancel, patient, isEditing = false }:
         date_of_birth: formData.date_of_birth ? format(formData.date_of_birth, 'yyyy-MM-dd') : null,
         privacy_consent: formData.privacy_consent,
         consent_date: formData.privacy_consent ? new Date().toISOString() : null,
+        address_line1: formData.address_line1 || null,
+        address_line2: formData.address_line2 || null,
+        postal_code: formData.postal_code || null,
+        city: formData.city || null,
+        state: formData.state || null,
+        country: formData.country || null,
       };
 
       if (isEditing && patient) {
@@ -214,6 +226,84 @@ export function PatientForm({ onSuccess, onCancel, patient, isEditing = false }:
                   placeholder="+49 123 456789"
                   className="pl-10"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Address Info */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
+              <Home className="w-5 h-5" />
+              Adresse
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="address_line1">Straße und Hausnummer</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="address_line1"
+                    value={formData.address_line1}
+                    onChange={(e) => setFormData(prev => ({ ...prev, address_line1: e.target.value }))}
+                    placeholder="Musterstraße 123"
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address_line2">Adresszusatz (optional)</Label>
+                <Input
+                  id="address_line2"
+                  value={formData.address_line2}
+                  onChange={(e) => setFormData(prev => ({ ...prev, address_line2: e.target.value }))}
+                  placeholder="2. OG, Wohnung 12"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="postal_code">PLZ</Label>
+                  <Input
+                    id="postal_code"
+                    value={formData.postal_code}
+                    onChange={(e) => setFormData(prev => ({ ...prev, postal_code: e.target.value }))}
+                    placeholder="12345"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="city">Stadt</Label>
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                    placeholder="Berlin"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="state">Bundesland</Label>
+                  <Input
+                    id="state"
+                    value={formData.state}
+                    onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
+                    placeholder="Berlin"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="country">Land</Label>
+                  <Input
+                    id="country"
+                    value={formData.country}
+                    onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
+                    placeholder="Deutschland"
+                  />
+                </div>
               </div>
             </div>
           </div>
