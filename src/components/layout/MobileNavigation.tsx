@@ -3,6 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { 
   Menu, 
   Calendar, 
@@ -14,9 +16,13 @@ import {
   CreditCard, 
   Zap, 
   HelpCircle,
-  X
+  X,
+  LogOut,
+  User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { usePractice } from "@/hooks/usePractice";
 
 const navigationItems = [
   {
@@ -85,6 +91,8 @@ export function MobileNavigation() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const currentPath = location.pathname;
+  const { user, signOut } = useAuth();
+  const { practice } = usePractice();
 
   const handleNavigation = (url: string) => {
     setIsOpen(false);
@@ -117,7 +125,7 @@ export function MobileNavigation() {
                   </div>
                   <div>
                     <SheetTitle className="font-bold text-lg">
-                      Voxcal
+                      {practice?.name || "Voxcal"}
                     </SheetTitle>
                     <p className="text-sm text-muted-foreground">KI-Terminbuchung</p>
                   </div>
@@ -131,6 +139,26 @@ export function MobileNavigation() {
                   <X className="w-4 h-4" />
                 </Button>
               </div>
+              
+              {/* User Profile Section */}
+              {user && (
+                <div className="flex items-center gap-3 mt-4 p-3 bg-muted/20 rounded-lg">
+                  <Avatar className="w-10 h-10">
+                    <AvatarFallback className="bg-gradient-primary text-white">
+                      {user.email?.charAt(0).toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {user.user_metadata?.display_name || user.email}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {user.email}
+                    </p>
+                  </div>
+                  <ThemeToggle />
+                </div>
+              )}
             </SheetHeader>
 
             {/* Navigation */}
@@ -174,7 +202,20 @@ export function MobileNavigation() {
             </div>
 
             {/* Footer */}
-            <div className="border-t p-4">
+            <div className="border-t p-4 space-y-3">
+              {/* Logout Button */}
+              <Button 
+                variant="outline" 
+                className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={async () => {
+                  await signOut();
+                  setIsOpen(false);
+                }}
+              >
+                <LogOut className="w-4 h-4" />
+                Abmelden
+              </Button>
+              
               <div className="text-center text-xs text-muted-foreground">
                 <p>Version 1.0.0</p>
                 <p className="mt-1">© 2024 Voxcal</p>

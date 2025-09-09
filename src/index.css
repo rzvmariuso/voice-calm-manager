@@ -177,6 +177,8 @@ All colors MUST be HSL.
       overscroll-behavior: none;
       -webkit-overflow-scrolling: touch;
       touch-action: manipulation;
+      min-height: 100vh;
+      min-height: 100dvh; /* Dynamic viewport height for mobile */
     }
     
     /* Ensure proper container sizing */
@@ -190,6 +192,27 @@ All colors MUST be HSL.
     button, .button, [role="button"] {
       min-height: 44px;
       min-width: 44px;
+      touch-action: manipulation;
+    }
+    
+    /* Prevent zoom on input focus */
+    input, select, textarea {
+      font-size: 16px;
+    }
+    
+    /* Calendar specific mobile optimizations */
+    .calendar-mobile-grid {
+      font-size: 12px;
+    }
+    
+    .calendar-mobile-grid .calendar-day {
+      min-height: 60px;
+      padding: 4px;
+    }
+    
+    .calendar-mobile-grid .calendar-day-header {
+      font-size: 10px;
+      padding: 2px;
     }
   }
   

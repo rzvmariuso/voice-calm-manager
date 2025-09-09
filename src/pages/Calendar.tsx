@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { MobileNavigation } from "@/components/layout/MobileNavigation";
+import { MobileHeader } from "@/components/layout/MobileHeader";
 import { LoadingPage } from "@/components/common/LoadingSpinner";
+import { MobileStatCard, MobileAppointmentPreview } from "@/components/common/MobileOptimizedContent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -287,15 +289,52 @@ const handleAppointmentDrop = async (appointmentId: string, newDate: string) => 
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
-        <main className="flex-1 p-3 sm:p-6 bg-background">
-          <div className="flex items-center justify-between mb-6">
+        
+        {/* Mobile Header */}
+        <MobileHeader 
+          title="Kalender"
+          subtitle="Termine verwalten"
+          showUpgradeButton={true}
+        />
+        
+        <main className="flex-1 p-3 sm:p-4 lg:p-6 bg-background pt-20 lg:pt-6">
+          <div className="flex items-center justify-between mb-4 lg:mb-6 hidden lg:flex">
             <div className="flex items-center">
-              <SidebarTrigger className="mr-4 hidden lg:flex" />
-              <MobileNavigation />
+              <SidebarTrigger className="mr-4" />
             </div>
           </div>
 
-          <div className="space-y-6">
+          {/* Mobile Stats Cards - Only visible on mobile */}
+          <div className="lg:hidden mb-4 grid grid-cols-2 gap-3">
+            <MobileStatCard title="Gesamt" value={appointmentStats.total} />
+            <MobileStatCard title="KI Buchungen" value={appointmentStats.aiBookings} className="bg-primary/5" />
+          </div>
+
+          {/* Mobile Today's Appointments Preview - Only on mobile */}
+          <div className="lg:hidden mb-4">
+            {(() => {
+              const todayAppointments = getTodaysAppointments().slice(0, 3);
+              return todayAppointments.length > 0 ? (
+                <div className="bg-card rounded-lg p-3 shadow-soft border border-border/50">
+                  <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <CalendarIcon className="w-4 h-4 text-primary" />
+                    Heute ({todayAppointments.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {todayAppointments.map((appointment) => (
+                      <MobileAppointmentPreview
+                        key={appointment.id}
+                        appointment={appointment}
+                        onClick={() => handleEditAppointment(appointment)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+            })()}
+          </div>
+
+          <div className="space-y-4 lg:space-y-6">
             {/* Header with filters and navigation */}
             <CalendarHeader
               currentDate={currentDate}
@@ -309,9 +348,9 @@ const handleAppointmentDrop = async (appointmentId: string, newDate: string) => 
               appointmentStats={appointmentStats}
             />
 
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 lg:gap-6">
               {/* Main Calendar */}
-              <div className="xl:col-span-3">
+              <div className="xl:col-span-3 order-2 xl:order-1">
                 {viewMode === 'month' ? (
                   <MonthView
                     currentDate={currentDate}
@@ -331,8 +370,8 @@ const handleAppointmentDrop = async (appointmentId: string, newDate: string) => 
                 )}
               </div>
 
-              {/* Sidebar */}
-              <div className="space-y-4">
+              {/* Sidebar - Show on top on mobile */}
+              <div className="space-y-4 order-1 xl:order-2 hidden lg:block">
                 {/* Today's Appointments */}
                 <Card className="border">
                   <CardHeader className="pb-3">

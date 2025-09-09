@@ -64,8 +64,9 @@ export function MonthView({
         <div className="grid grid-cols-7 gap-0 border border-border rounded-lg overflow-hidden bg-card">
           {/* Week headers */}
           {weekDays.map(day => (
-            <div key={day} className="p-2 text-center text-xs font-medium text-muted-foreground border-b border-border bg-muted/20">
-              {day}
+            <div key={day} className="p-1.5 sm:p-2 text-center text-xs sm:text-sm font-medium text-muted-foreground border-b border-border bg-muted/20">
+              <span className="hidden sm:inline">{day}</span>
+              <span className="sm:hidden">{day.charAt(0)}</span>
             </div>
           ))}
           
@@ -80,22 +81,22 @@ export function MonthView({
               <div 
                 key={index} 
                 className={`
-                  group relative min-h-[100px] p-2 border-r border-b border-border/30 
+                  group relative min-h-[80px] sm:min-h-[100px] lg:min-h-[120px] p-1 sm:p-2 border-r border-b border-border/30 
                   transition-colors duration-200
                   ${!isCurrentMonth ? 'opacity-40 bg-muted/10' : 'bg-card'}
                   ${isTodayDate ? 'bg-primary/5 border-primary/20' : ''}
-                  ${isWeekend ? 'bg-muted/20 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/10'}
+                  ${isWeekend ? 'bg-muted/20 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/10 active:bg-muted/20'}
                 `}
                 onClick={() => !isWeekend && onDayClick?.(day)}
                 onDragOver={!isWeekend ? handleDragOver : undefined}
                 onDrop={!isWeekend ? (e) => handleDrop(e, day) : undefined}
               >
                 {/* Day header */}
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-1 sm:mb-2">
                   <span className={`
-                    text-sm font-medium
+                    text-xs sm:text-sm font-medium
                     ${isTodayDate 
-                      ? 'text-white bg-primary w-6 h-6 rounded-full flex items-center justify-center text-xs' 
+                      ? 'text-white bg-primary w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs' 
                       : isCurrentMonth 
                         ? 'text-foreground' 
                         : 'text-muted-foreground'
@@ -106,36 +107,60 @@ export function MonthView({
                   </span>
                   
                   {dayAppointments.length > 0 && (
-                    <span className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded font-medium">
+                    <span className="text-xs px-1 sm:px-1.5 py-0.5 bg-primary/10 text-primary rounded font-medium">
                       {dayAppointments.length}
                     </span>
                   )}
                 </div>
                 
                 {/* Appointments */}
-                <div className="space-y-1">
-                  {dayAppointments.slice(0, 2).map((appointment) => (
-                    <AppointmentCard
-                      key={appointment.id}
-                      appointment={appointment}
-                      onEdit={onEditAppointment}
-                      onDelete={onDeleteAppointment}
-                      draggable={true}
-                      onDragStart={handleDragStart}
-                      compact
-                    />
-                  ))}
+                <div className="space-y-0.5 sm:space-y-1">
+                  {/* Show only 1 appointment on very small screens, 2 on larger */}
+                  <div className="block sm:hidden">
+                    {dayAppointments.slice(0, 1).map((appointment) => (
+                      <AppointmentCard
+                        key={appointment.id}
+                        appointment={appointment}
+                        onEdit={onEditAppointment}
+                        onDelete={onDeleteAppointment}
+                        draggable={true}
+                        onDragStart={handleDragStart}
+                        compact
+                        style={{ fontSize: '10px', padding: '2px 4px' }}
+                      />
+                    ))}
+                    
+                    {dayAppointments.length > 1 && (
+                      <div className="text-[10px] text-center py-0.5 text-muted-foreground">
+                        +{dayAppointments.length - 1} weitere
+                      </div>
+                    )}
+                  </div>
                   
-                  {dayAppointments.length > 2 && (
-                    <div className="text-xs text-center py-1 text-muted-foreground">
-                      +{dayAppointments.length - 2} weitere
-                    </div>
-                  )}
+                  <div className="hidden sm:block">
+                    {dayAppointments.slice(0, 2).map((appointment) => (
+                      <AppointmentCard
+                        key={appointment.id}
+                        appointment={appointment}
+                        onEdit={onEditAppointment}
+                        onDelete={onDeleteAppointment}
+                        draggable={true}
+                        onDragStart={handleDragStart}
+                        compact
+                      />
+                    ))}
+                    
+                    {dayAppointments.length > 2 && (
+                      <div className="text-xs text-center py-1 text-muted-foreground">
+                        +{dayAppointments.length - 2} weitere
+                      </div>
+                    )}
+                  </div>
 
                   {/* Empty state */}
                   {dayAppointments.length === 0 && isCurrentMonth && !isWeekend && (
-                    <div className="opacity-0 group-hover:opacity-50 transition-opacity text-center py-4">
-                      <CalendarPlus className="w-4 h-4 mx-auto text-muted-foreground" />
+                    <div className="opacity-0 group-hover:opacity-50 transition-opacity text-center py-2 sm:py-4">
+                      <CalendarPlus className="w-3 h-3 sm:w-4 sm:h-4 mx-auto text-muted-foreground" />
                     </div>
                   )}
                 </div>
