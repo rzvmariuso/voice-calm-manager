@@ -26,11 +26,10 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
     const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     const jwt = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(jwt);
+    const { data: { user }, error: authError } = await supabaseService.auth.getUser(jwt);
     if (authError || !user) throw new Error('Invalid token');
 
     // Get user's practice
