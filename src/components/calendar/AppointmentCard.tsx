@@ -10,6 +10,7 @@ import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { formatAppointmentTime } from "@/lib/dateUtils";
 
 interface AppointmentCardProps {
   appointment: AppointmentWithPatient;
@@ -114,29 +115,26 @@ export function AppointmentCard({
             )} />
 
             {/* Time & AI Badge */}
-            <div className="flex items-start justify-between mb-2 pl-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-foreground">
-                  {appointment.appointment_time.slice(0, 5)}
+            <div className="flex items-start justify-between mb-1 pl-4">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold text-foreground">
+                  {formatAppointmentTime(appointment.appointment_time)}
                 </span>
                 {appointment.ai_booked && (
-                  <div className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded-full font-medium">
+                  <div className="text-xs px-1 py-0.5 bg-primary/15 text-primary rounded font-medium">
                     AI
                   </div>
                 )}
               </div>
-              <span className="text-xs text-muted-foreground font-medium">
+              <span className="text-xs text-muted-foreground">
                 {appointment.duration_minutes || 30}m
               </span>
             </div>
 
-            {/* Patient & Service */}
-            <div className="space-y-1 pl-4">
+            {/* Patient Name Only */}
+            <div className="pl-4">
               <div className="text-sm font-medium text-foreground truncate">
                 {appointment.patient.first_name} {appointment.patient.last_name}
-              </div>
-              <div className="text-xs text-muted-foreground truncate">
-                {appointment.service}
               </div>
             </div>
 
@@ -203,7 +201,7 @@ export function AppointmentCard({
             </span>
           )}
           <span className="text-xs font-medium">
-            {appointment.appointment_time}
+            {formatAppointmentTime(appointment.appointment_time)}
           </span>
         </div>
         

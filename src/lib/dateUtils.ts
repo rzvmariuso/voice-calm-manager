@@ -74,3 +74,10 @@ export function isTodayInBerlin(date: Date | string): boolean {
   
   return berlinDate.toDateString() === today.toDateString();
 }
+
+/**
+ * Formatiert Zeit für Termine (HH:MM ohne Sekunden)
+ */
+export function formatAppointmentTime(timeStr: string): string {
+  return timeStr.slice(0, 5); // Entfernt Sekunden aus HH:MM:SS Format
+}

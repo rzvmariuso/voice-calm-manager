@@ -6,7 +6,7 @@ import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isToday }
 import { de } from "date-fns/locale";
 import { AppointmentWithPatient } from "@/hooks/useAppointments";
 import { AppointmentCard } from "./AppointmentCard";
-import { toBerlinTime, isTodayInBerlin } from "@/lib/dateUtils";
+import { toBerlinTime, isTodayInBerlin, formatAppointmentTime } from "@/lib/dateUtils";
 
 interface WeekViewProps {
   currentDate: Date;
@@ -120,29 +120,29 @@ export function WeekView({
                         ${isBusinessHour && !isWeekend ? 'hover:bg-muted/10' : ''}
                         ${isWeekend ? 'bg-muted/5' : ''}
                       `}>
-                        {slotAppointments.map((appointment, aptIndex) => {
-                          const duration = appointment.duration_minutes || 30;
-                          const height = Math.max(40, (duration / 60) * 64);
-                          
-                          return (
-                            <AppointmentCard
-                              key={appointment.id}
-                              appointment={appointment}
-                              onEdit={onEditAppointment}
-                              onDelete={onDeleteAppointment}
-                              compact
-                              style={{ 
-                                position: 'absolute',
-                                top: `${aptIndex * 20}px`,
-                                left: '2px',
-                                right: '2px',
-                                height: `${height}px`,
-                                zIndex: 10 + aptIndex,
-                                minHeight: '40px'
-                              }}
-                            />
-                          );
-                        })}
+                  {slotAppointments.map((appointment, aptIndex) => {
+                    const duration = appointment.duration_minutes || 30;
+                    const height = Math.max(36, (duration / 60) * 64);
+                    
+                    return (
+                      <AppointmentCard
+                        key={appointment.id}
+                        appointment={appointment}
+                        onEdit={onEditAppointment}
+                        onDelete={onDeleteAppointment}
+                        compact
+                        style={{ 
+                          position: 'absolute',
+                          top: `${aptIndex * 18}px`,
+                          left: '1px',
+                          right: '1px',
+                          height: `${height}px`,
+                          zIndex: 10 + aptIndex,
+                          minHeight: '36px'
+                        }}
+                      />
+                    );
+                  })}
                       </div>
                     );
                   })}
