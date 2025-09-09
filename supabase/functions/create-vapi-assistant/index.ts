@@ -129,6 +129,44 @@ PRAXISDATEN:
     const assistant = await vapiResponse.json();
     console.log('VAPI assistant created:', assistant);
 
+    // Get user's phone number to link with assistant
+    const { data: userPhone, error: phoneError } = await supabaseService
+      .from('user_phone_numbers')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .single();
+
+    // If user has a phone number, link it with the assistant
+    if (userPhone && userPhone.vapi_phone_id) {
+      console.log(`Linking phone ${userPhone.phone_number} with assistant ${assistant.id}`);
+      
+      const phoneUpdateResponse = await fetch(`https://api.vapi.ai/phone-number/${userPhone.vapi_phone_id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${vapiApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          assistantId: assistant.id
+        })
+      });
+
+      if (phoneUpdateResponse.ok) {
+        // Update our database with the assistant ID
+        await supabaseService
+          .from('user_phone_numbers')
+          .update({ vapi_assistant_id: assistant.id })
+          .eq('id', userPhone.id);
+        
+        console.log(`Successfully linked phone ${userPhone.phone_number} with assistant ${assistant.id}`);
+      } else {
+        console.error('Failed to link phone number with assistant:', await phoneUpdateResponse.text());
+      }
+    } else {
+      console.log('No active phone number found for user - assistant created without phone link');
+    }
+
     // Update practice with assistant ID
     await supabaseService
       .from('practices')
