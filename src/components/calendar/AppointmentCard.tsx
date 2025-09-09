@@ -99,8 +99,8 @@ export function AppointmentCard({
               "relative group p-2 rounded-lg border cursor-pointer transition-all duration-200",
               "hover:shadow-soft hover:-translate-y-0.5",
               appointment.ai_booked
-                ? "bg-white border-primary/20 hover:border-primary/40" 
-                : "bg-white border-border hover:border-border/60"
+                ? "bg-background border-primary/20 hover:border-primary/40" 
+                : "bg-background border-border hover:border-border/60"
             )}
             style={style}
             draggable={draggable}

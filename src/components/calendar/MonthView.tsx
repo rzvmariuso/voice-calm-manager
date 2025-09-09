@@ -66,7 +66,7 @@ export function MonthView({
   }
 
   return (
-    <div className="bg-card rounded-lg border shadow-soft">
+    <div className="bg-background rounded-lg border shadow-soft">
       {/* Calendar Header */}
       <div className="border-b border-border p-4">
         <ResizablePanelGroup direction="horizontal" className="min-h-[60px]">
