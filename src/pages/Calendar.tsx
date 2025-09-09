@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Clock, User, Calendar as CalendarIcon, Bot, CheckCircle } from "lucide-react";
+import { Clock, User, Calendar as CalendarIcon, Bot, CheckCircle, Trash2 } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
 import { CalendarHeader } from "@/components/calendar/CalendarHeader";
@@ -30,6 +30,9 @@ export default function Calendar() {
   const { appointments, isLoading, refetch } = useAppointments();
   const { toast } = useToast();
   const { triggerWebhook } = useAppointmentWebhook();
+  
+  // Bulk delete state
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const { practice, loading: practiceLoading } = usePractice();
   const { user, loading: authLoading } = useAuth();
   
@@ -149,6 +152,35 @@ export default function Calendar() {
     } finally {
       setDeleteDialogOpen(false);
       setAppointmentToDelete(null);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!practice) return;
+    
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('practice_id', practice.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Alle Termine gelöscht",
+        description: "Alle Demo-Daten wurden erfolgreich entfernt.",
+      });
+
+      refetch();
+    } catch (error: any) {
+      console.error('Error deleting appointments:', error);
+      toast({
+        title: "Fehler",
+        description: "Termine konnten nicht gelöscht werden",
+        variant: "destructive",
+      });
+    } finally {
+      setBulkDeleteDialogOpen(false);
     }
   };
 
@@ -497,7 +529,21 @@ const handleAppointmentDrop = async (appointmentId: string, newDate: string) => 
                         </div>
                         <div className="text-muted-foreground">KI-Anteil</div>
                       </div>
-                    </div>
+                     </div>
+                     
+                     {/* Bulk delete button for removing demo data */}
+                     <div className="mt-3 pt-3 border-t border-border/50">
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         className="w-full text-xs"
+                         onClick={() => setBulkDeleteDialogOpen(true)}
+                         disabled={appointmentStats.total === 0}
+                       >
+                         <Trash2 className="w-3 h-3 mr-2" />
+                         Demo-Daten entfernen
+                       </Button>
+                     </div>
                   </CardContent>
                 </Card>
               </div>
@@ -525,6 +571,24 @@ const handleAppointmentDrop = async (appointmentId: string, newDate: string) => 
                 <AlertDialogCancel>Abbrechen</AlertDialogCancel>
                 <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
                   Löschen
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* Bulk Delete Confirmation Dialog */}
+          <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Alle Termine löschen</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Möchten Sie wirklich alle Termine ({appointmentStats.total}) löschen? Diese Aktion kann nicht rückgängig gemacht werden und entfernt alle Demo-Daten.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive hover:bg-destructive/90">
+                  Alle löschen
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

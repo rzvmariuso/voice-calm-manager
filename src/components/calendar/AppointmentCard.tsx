@@ -139,31 +139,7 @@ export const AppointmentCard = memo(({
               </div>
             </div>
 
-            {/* Always Visible Action Buttons */}
-            <div className="absolute top-1 right-1 flex gap-1 opacity-60 hover:opacity-100 transition-opacity duration-200">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 w-6 p-0 hover:bg-accent text-muted-foreground hover:text-foreground"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(appointment);
-                }}
-              >
-                <Edit className="h-3 w-3" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 w-6 p-0 hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(appointment);
-                }}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
+            {/* Removed always visible action buttons - now only in popover */}
           </div>
         </PopoverTrigger>
         <PopoverContent className="w-80 p-4 bg-popover border border-border">
@@ -212,7 +188,7 @@ export const AppointmentCard = memo(({
       </div>
 
       {/* Patient info */}
-      <div className="space-y-0.5 pr-10">
+      <div className="space-y-0.5">
         <div className="truncate text-xs font-medium text-card-foreground">
           {appointment.patient.first_name} {appointment.patient.last_name}
         </div>
@@ -221,31 +197,7 @@ export const AppointmentCard = memo(({
         </div>
       </div>
       
-      {/* Always Visible Action buttons */}
-      <div className="absolute top-1 right-1 flex gap-0.5 opacity-60 hover:opacity-100 transition-opacity duration-200">
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-4 w-4 p-0 text-muted-foreground hover:text-foreground hover:bg-accent/50"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(appointment);
-          }}
-        >
-          <Edit className="h-2.5 w-2.5" />
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-4 w-4 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(appointment);
-          }}
-        >
-          <Trash2 className="h-2.5 w-2.5" />
-        </Button>
-      </div>
+      {/* Removed always visible action buttons - actions available only in popover */}
     </div>
   );
 });
