@@ -113,7 +113,7 @@ export function MonthView({
           {/* Calendar Grid */}
           <div className="divide-y divide-border">
             {weeks.map((week, weekIndex) => (
-              <ResizablePanelGroup key={weekIndex} direction="horizontal" className="min-h-[100px] lg:min-h-[140px]">
+              <ResizablePanelGroup key={weekIndex} direction="horizontal" className="min-h-[100px] lg:min-h-[140px]" onLayout={setPanelSizes}>
                 {week.map((date, dayIndex) => {
                   const dayAppointments = getAppointmentsForDay(date);
                   const isToday = isTodayInBerlin(date);

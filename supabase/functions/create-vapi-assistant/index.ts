@@ -99,12 +99,11 @@ PRAXISDATEN:
         model: "eleven_multilingual_v2"
       },
       firstMessage: greetingMessage,
-      language: "de-DE",
+      language: "de",
       maxDurationSeconds: 600,
-      silenceTimeoutSeconds: 3,
+      silenceTimeoutSeconds: 10,
       responseDelaySeconds: 0.4,
       llmRequestDelaySeconds: 0.1,
-      interruptionThreshold: 100,
       endCallMessage: "Vielen Dank für Ihren Anruf. Auf Wiederhören!",
       serverUrl: `${supabaseUrl}/functions/v1/vapi-webhook`,
       serverUrlSecret: "vapi-webhook-secret"
