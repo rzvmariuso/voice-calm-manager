@@ -5,6 +5,7 @@ import { AppointmentCard } from "./AppointmentCard";
 import { toBerlinTime, isTodayInBerlin } from "@/lib/dateUtils";
 import { CalendarPlus } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { cn } from "@/lib/utils";
 
 interface MonthViewProps {
   currentDate: Date;
@@ -58,117 +59,103 @@ export function MonthView({
   };
 
   return (
-    <Card className="border">
-      <CardContent className="p-0">
-        {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-0 border border-border rounded-lg overflow-hidden bg-card">
-          {/* Week headers */}
-          {weekDays.map(day => (
-            <div key={day} className="p-1.5 sm:p-2 text-center text-xs sm:text-sm font-medium text-muted-foreground border-b border-border bg-muted/20">
-              <span className="hidden sm:inline">{day}</span>
-              <span className="sm:hidden">{day.charAt(0)}</span>
+    <div className="bg-white rounded-lg border shadow-soft">
+      {/* Calendar Header */}
+      <div className="border-b border-border p-4">
+        <div className="grid grid-cols-7 gap-1">
+          {['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'].map((day, index) => (
+            <div key={day} className="text-center py-2">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {day.slice(0, 2)}
+              </div>
+              <div className="text-sm font-medium text-foreground lg:hidden">
+                {day.slice(0, 3)}
+              </div>
+              <div className="text-sm font-medium text-foreground hidden lg:block">
+                {day}
+              </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Calendar Grid */}
+      <div className="grid grid-cols-7 divide-x divide-border">
+        {calendarDays.map((date, index) => {
+          const dayAppointments = getAppointmentsForDay(date);
+          const isToday = isTodayInBerlin(date);
+          const isCurrentMonth = isSameMonth(date, currentDate);
+          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+          const dayKey = format(date, 'yyyy-MM-dd');
           
-          {/* Calendar days */}
-          {calendarDays.map((day, index) => {
-            const dayAppointments = getAppointmentsForDay(day);
-            const isCurrentMonth = isSameMonth(day, currentDate);
-            const isTodayDate = isTodayInBerlin(day);
-            const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-            
-            return (
-              <div 
-                key={index} 
-                className={`
-                  group relative min-h-[80px] sm:min-h-[100px] lg:min-h-[120px] p-1 sm:p-2 border-r border-b border-border/30 
-                  transition-colors duration-200
-                  ${!isCurrentMonth ? 'opacity-40 bg-muted/10' : 'bg-card'}
-                  ${isTodayDate ? 'bg-primary/5 border-primary/20' : ''}
-                  ${isWeekend ? 'bg-muted/20 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/10 active:bg-muted/20'}
-                `}
-                onClick={() => !isWeekend && onDayClick?.(day)}
-                onDragOver={!isWeekend ? handleDragOver : undefined}
-                onDrop={!isWeekend ? (e) => handleDrop(e, day) : undefined}
-              >
-                {/* Day header */}
-                <div className="flex items-center justify-between mb-1 sm:mb-2">
-                  <span className={`
-                    text-xs sm:text-sm font-medium
-                    ${isTodayDate 
-                      ? 'text-white bg-primary w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs' 
-                      : isCurrentMonth 
-                        ? 'text-foreground' 
-                        : 'text-muted-foreground'
-                    }
-                    ${isWeekend ? 'text-muted-foreground' : ''}
-                  `}>
-                    {format(day, 'd')}
-                  </span>
+          return (
+            <div
+              key={index}
+              className={cn(
+                "min-h-[100px] lg:min-h-[140px] border-b border-border transition-colors",
+                "hover:bg-gray-50/50 cursor-pointer group",
+                !isCurrentMonth && "bg-gray-50/30",
+                isWeekend && !isCurrentMonth && "bg-gray-50/50",
+                isWeekend && isCurrentMonth && "bg-gray-50/20"
+              )}
+              onClick={() => onDayClick?.(date)}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, date)}
+              data-date={dayKey}
+            >
+              {/* Day Header */}
+              <div className="p-2 lg:p-3">
+                <div className={cn(
+                  "flex items-center justify-between",
+                  "text-sm lg:text-base font-medium",
+                  isToday 
+                    ? "text-white" 
+                    : isCurrentMonth 
+                      ? "text-foreground" 
+                      : "text-muted-foreground"
+                )}>
+                  <div className={cn(
+                    "flex items-center justify-center w-6 h-6 lg:w-7 lg:h-7 rounded-full transition-colors",
+                    isToday 
+                      ? "bg-primary text-primary-foreground font-semibold" 
+                      : "hover:bg-accent"
+                  )}>
+                    {format(date, 'd')}
+                  </div>
                   
                   {dayAppointments.length > 0 && (
-                    <span className="text-xs px-1 sm:px-1.5 py-0.5 bg-primary/10 text-primary rounded font-medium">
+                    <div className="text-xs text-muted-foreground bg-gray-100 px-1.5 py-0.5 rounded-full">
                       {dayAppointments.length}
-                    </span>
+                    </div>
                   )}
                 </div>
                 
                 {/* Appointments */}
-                <div className="space-y-0.5 sm:space-y-1">
-                  {/* Show only 1 appointment on very small screens, 2 on larger */}
-                  <div className="block sm:hidden">
-                    {dayAppointments.slice(0, 1).map((appointment) => (
-                      <AppointmentCard
-                        key={appointment.id}
-                        appointment={appointment}
-                        onEdit={onEditAppointment}
-                        onDelete={onDeleteAppointment}
-                        draggable={true}
-                        onDragStart={handleDragStart}
-                        compact
-                        style={{ fontSize: '10px', padding: '2px 4px' }}
-                      />
-                    ))}
-                    
-                    {dayAppointments.length > 1 && (
-                      <div className="text-[10px] text-center py-0.5 text-muted-foreground">
-                        +{dayAppointments.length - 1} weitere
-                      </div>
-                    )}
-                  </div>
+                <div className="mt-2 space-y-1">
+                  {dayAppointments.slice(0, 3).map((appointment) => (
+                    <AppointmentCard
+                      key={appointment.id}
+                      appointment={appointment}
+                      onEdit={onEditAppointment}
+                      onDelete={onDeleteAppointment}
+                      compact={true}
+                      draggable={true}
+                      onDragStart={handleDragStart}
+                    />
+                  ))}
                   
-                  <div className="hidden sm:block">
-                    {dayAppointments.slice(0, 2).map((appointment) => (
-                      <AppointmentCard
-                        key={appointment.id}
-                        appointment={appointment}
-                        onEdit={onEditAppointment}
-                        onDelete={onDeleteAppointment}
-                        draggable={true}
-                        onDragStart={handleDragStart}
-                        compact
-                      />
-                    ))}
-                    
-                    {dayAppointments.length > 2 && (
-                      <div className="text-xs text-center py-1 text-muted-foreground">
-                        +{dayAppointments.length - 2} weitere
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Empty state */}
-                  {dayAppointments.length === 0 && isCurrentMonth && !isWeekend && (
-                    <div className="opacity-0 group-hover:opacity-50 transition-opacity text-center py-2 sm:py-4">
-                      <CalendarPlus className="w-3 h-3 sm:w-4 sm:h-4 mx-auto text-muted-foreground" />
+                  {/* Show remaining count */}
+                  {dayAppointments.length > 3 && (
+                    <div className="text-xs text-muted-foreground text-center py-1 hover:text-foreground cursor-pointer">
+                      +{dayAppointments.length - 3} weitere Termine
                     </div>
                   )}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

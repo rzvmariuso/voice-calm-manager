@@ -3,13 +3,14 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { MobileNavigation } from "@/components/layout/MobileNavigation";
 import { MobileHeader } from "@/components/layout/MobileHeader";
+import { BottomNavigation } from "@/components/layout/BottomNavigation";
 import { LoadingPage } from "@/components/common/LoadingSpinner";
 import { MobileStatCard, MobileAppointmentPreview } from "@/components/common/MobileOptimizedContent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Clock, User, Calendar as CalendarIcon, Bot } from "lucide-react";
+import { Clock, User, Calendar as CalendarIcon, Bot, CheckCircle } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
 import { CalendarHeader } from "@/components/calendar/CalendarHeader";
@@ -34,9 +35,8 @@ export default function Calendar() {
   
   // Dialog states
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
-  const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<any>(null);
 
   // Filter states
@@ -111,13 +111,12 @@ export default function Calendar() {
 
   const handleEditAppointment = (appointment: any) => {
     setSelectedAppointment(appointment);
-    setIsEditing(true);
-    setShowAppointmentDialog(true);
+    setIsDialogOpen(true);
   };
 
   const handleDeleteAppointment = (appointment: any) => {
     setAppointmentToDelete(appointment);
-    setShowDeleteDialog(true);
+    setDeleteDialogOpen(true);
   };
 
   const confirmDelete = async () => {
@@ -148,21 +147,19 @@ export default function Calendar() {
         variant: "destructive",
       });
     } finally {
-      setShowDeleteDialog(false);
+      setDeleteDialogOpen(false);
       setAppointmentToDelete(null);
     }
   };
 
   const handleNewAppointment = (selectedDate?: Date) => {
     setSelectedAppointment(selectedDate ? { appointment_date: format(selectedDate, 'yyyy-MM-dd') } : null);
-    setIsEditing(false);
-    setShowAppointmentDialog(true);
+    setIsDialogOpen(true);
   };
 
   const handleAppointmentSuccess = () => {
-    setShowAppointmentDialog(false);
+    setIsDialogOpen(false);
     setSelectedAppointment(null);
-    setIsEditing(false);
     refetch();
   };
 
@@ -509,15 +506,14 @@ const handleAppointmentDrop = async (appointmentId: string, newDate: string) => 
 
           {/* Appointment Dialog */}
           <AppointmentDialog
-            open={showAppointmentDialog}
-            onOpenChange={setShowAppointmentDialog}
+            open={isDialogOpen}
+            onOpenChange={setIsDialogOpen}
             appointment={selectedAppointment}
-            isEditing={isEditing}
             onSuccess={handleAppointmentSuccess}
           />
 
           {/* Delete Confirmation Dialog */}
-          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Termin löschen</AlertDialogTitle>
@@ -535,6 +531,9 @@ const handleAppointmentDrop = async (appointmentId: string, newDate: string) => 
           </AlertDialog>
         </main>
       </div>
+      
+      {/* Bottom Navigation for Mobile */}
+      <BottomNavigation />
     </SidebarProvider>
   );
 }

@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface AppointmentCardProps {
   appointment: AppointmentWithPatient;
@@ -93,74 +94,80 @@ export function AppointmentCard({
       <Popover>
         <PopoverTrigger asChild>
           <div 
-            className={`
-              relative group text-xs p-2 rounded border-l-2 cursor-pointer 
-              transition-colors duration-150
-              ${appointment.ai_booked 
-                ? 'border-l-primary bg-primary/10 hover:bg-primary/15' 
-                : 'border-l-accent bg-accent/10 hover:bg-accent/15'
-              }
-            `}
+            className={cn(
+              "relative group p-2 rounded-lg border cursor-pointer transition-all duration-200",
+              "hover:shadow-soft hover:-translate-y-0.5",
+              appointment.ai_booked
+                ? "bg-white border-primary/20 hover:border-primary/40" 
+                : "bg-white border-border hover:border-border/60"
+            )}
             style={style}
             draggable={draggable}
             onDragStart={onDragStart ? (e) => onDragStart(e, appointment) : undefined}
           >
-            {/* Header with time */}
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-1">
-                {appointment.ai_booked && (
-                  <span className="text-xs px-1 bg-primary/20 text-primary rounded">
-                    KI
-                  </span>
-                )}
-                <span className="text-xs font-medium">
-                  {appointment.appointment_time}
+            {/* Status indicator */}
+            <div className={cn(
+              "absolute top-2 left-2 w-2 h-2 rounded-full",
+              appointment.status === 'confirmed' ? "bg-success" :
+              appointment.status === 'pending' ? "bg-warning" :
+              appointment.status === 'completed' ? "bg-primary" : "bg-destructive"
+            )} />
+
+            {/* Time & AI Badge */}
+            <div className="flex items-start justify-between mb-2 pl-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-foreground">
+                  {appointment.appointment_time.slice(0, 5)}
                 </span>
+                {appointment.ai_booked && (
+                  <div className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded-full font-medium">
+                    AI
+                  </div>
+                )}
               </div>
-              
-              <span className="text-xs text-muted-foreground">
-                {appointment.duration_minutes || 30}min
+              <span className="text-xs text-muted-foreground font-medium">
+                {appointment.duration_minutes || 30}m
               </span>
             </div>
 
-            {/* Patient name */}
-            <div className="truncate text-xs font-medium text-foreground">
-              {appointment.patient.first_name} {appointment.patient.last_name}
-            </div>
-            
-            {/* Service */}
-            <div className="truncate text-xs text-muted-foreground">
-              {appointment.service}
+            {/* Patient & Service */}
+            <div className="space-y-1 pl-4">
+              <div className="text-sm font-medium text-foreground truncate">
+                {appointment.patient.first_name} {appointment.patient.last_name}
+              </div>
+              <div className="text-xs text-muted-foreground truncate">
+                {appointment.service}
+              </div>
             </div>
 
-            {/* Quick action buttons */}
-            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
+            {/* Hover Actions */}
+            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-4 w-4 p-0 text-muted-foreground hover:text-foreground"
+                className="h-6 w-6 p-0 hover:bg-accent"
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(appointment);
                 }}
               >
-                <Edit className="h-2.5 w-2.5" />
+                <Edit className="h-3 w-3" />
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-4 w-4 p-0 text-muted-foreground hover:text-destructive"
+                className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(appointment);
                 }}
               >
-                <Trash2 className="h-2.5 w-2.5" />
+                <Trash2 className="h-3 w-3" />
               </Button>
             </div>
           </div>
         </PopoverTrigger>
-        <PopoverContent className="w-80">
+        <PopoverContent className="w-80 p-4">
           <AppointmentDetails 
             appointment={appointment}
             onEdit={onEdit}
