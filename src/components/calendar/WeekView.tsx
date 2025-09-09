@@ -42,7 +42,7 @@ export function WeekView({
         <CardTitle className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-muted-foreground" />
           <div>
-            <h3 className="text-lg font-medium">Wochenansicht</h3>
+            <div className="text-lg font-medium">Wochenansicht</div>
             <p className="text-xs text-muted-foreground font-normal">
               {format(weekStart, 'dd.MM', { locale: de })} - {format(weekEnd, 'dd.MM.yyyy', { locale: de })}
             </p>

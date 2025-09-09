@@ -375,7 +375,7 @@ const handleAppointmentDrop = async (appointmentId: string, newDate: string) => 
                     <CardTitle className="text-base flex items-center gap-2">
                       <CalendarIcon className="w-4 h-4 text-primary" />
                       <div>
-                        <h3 className="font-medium">Heute</h3>
+                        <div className="font-medium">Heute</div>
                         <p className="text-xs text-muted-foreground font-normal">
                           {format(new Date(), 'EEE, dd.MM.yyyy', { locale: de })}
                         </p>
