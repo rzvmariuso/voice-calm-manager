@@ -78,6 +78,46 @@ function validatePhoneNumber(phoneNumber: string): boolean {
 
 // Create assistant in Vapi dashboard
 async function createAssistant(vapiApiKey: string, practiceId: string): Promise<string> {
+  // Fetch practice data from database
+  const { data: practice, error: practiceError } = await supabase
+    .from('practices')
+    .select('name, phone, email, address, ai_prompt')
+    .eq('id', practiceId)
+    .single();
+
+  if (practiceError || !practice) {
+    console.error('Failed to fetch practice data:', practiceError);
+    throw new Error('Practice not found for assistant creation');
+  }
+
+  // Create dynamic greeting message with practice data
+  const greetingMessage = `Hallo, hier ist der digitale Assistent von der Praxis ${practice.name}. Wie kann ich Ihnen helfen?`;
+
+  // Enhanced German system prompt with practice context
+  const enhancedPrompt = `${practice.ai_prompt || 'Du bist ein freundlicher KI-Assistent für Terminbuchungen in einer medizinischen Praxis.'}
+
+WICHTIGE ANWEISUNGEN:
+- Spreche ausschließlich höflich und natürlich in deutscher Sprache
+- Antworte kurz und klar
+- Wiederhole wichtige Daten wie Name, Termin und Telefonnummer zur Bestätigung
+- Bei Unklarheiten sage: "Entschuldigung, das habe ich nicht ganz verstanden. Könnten Sie das bitte wiederholen?"
+- Verwende nur die bereitgestellten Praxisdaten, erfinde nichts
+
+PRAXISDATEN:
+- Praxisname: ${practice.name}
+- Telefon: ${practice.phone || 'Nicht verfügbar'}
+- E-Mail: ${practice.email || 'Nicht verfügbar'}
+- Adresse: ${practice.address || 'Nicht verfügbar'}
+
+TERMINBUCHUNG:
+→ Name: "Mit wem spreche ich denn?"
+→ Wunschtermin: "Wann würde es Ihnen denn passen?"
+→ Behandlung: "Worum geht es denn bei Ihrem Termin?"
+→ Telefon: "Für Rückfragen hätte ich gern Ihre Telefonnummer"
+→ Bestätigung: "Also [Tag] um [Zeit] für [Name]. Passt das so?"
+
+Deine Aufgabe ist es, Patienten dabei zu helfen, Termine zu buchen, zu verschieben oder abzusagen.`;
+
   const response = await fetch('https://api.vapi.ai/assistant', {
     method: 'POST',
     headers: {
@@ -85,54 +125,51 @@ async function createAssistant(vapiApiKey: string, practiceId: string): Promise<
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      name: `Burt - Praxis AI`,
+      name: `${practice.name} - KI Assistent`,
       model: {
         provider: 'openai',
-        model: 'gpt-4o-mini',
-        temperature: 0.7,
-        maxTokens: 200,
+        model: 'gpt-4',
+        temperature: 0.5,
+        maxTokens: 300,
         messages: [{
           role: 'system',
-          content: `Du bist Lisa, die freundliche Sprechstundenhilfe einer deutschen Arztpraxis. Praxis-ID: ${practiceId}
-
-PERSÖNLICHKEIT:
-- Warm, hilfsbereit und menschlich
-- Sprich wie eine echte Kollegin, nicht wie ein Roboter
-- Verwende natürliche Füllwörter: "äh", "also", "genau"
-- Reagiere spontan und authentisch
-
-GESPRÄCHSFÜHRUNG:
-- Begrüße natürlich: "Praxis Weber, Lisa am Apparat! Wie kann ich helfen?"
-- Stelle höchstens EINE Frage auf einmal
-- Lass den Patienten aussprechen
-- Bestätige mit "Mhm", "Genau", "Verstehe"
-- Führe das Gespräch fließend ohne Pausen
-
-TERMINBUCHUNG:
-→ Name: "Ach ja, und mit wem spreche ich?"
-→ Wunschtermin: "Wann würde es Ihnen denn passen?"
-→ Behandlung: "Worum geht's denn?"
-→ Telefon: "Für Rückfragen hätte ich gern Ihre Nummer"
-→ Bestätigung: "Prima! Also [Tag] um [Zeit] für [Name]. Passt das?"
-
-VERFÜGBAR: Mo-Fr, 8-18 Uhr
-
-WICHTIG: Sprich natürlich, ohne Kunstpausen. Wie eine echte Sprechstundenhilfe!`
+          content: enhancedPrompt
+        }],
+        functions: [{
+          name: "book_appointment",
+          description: "Bucht einen Termin für einen Patienten",
+          parameters: {
+            type: "object",
+            properties: {
+              patientName: { type: "string", description: "Vollständiger Name des Patienten" },
+              phoneNumber: { type: "string", description: "Telefonnummer des Patienten" },
+              service: { type: "string", description: "Art der Behandlung/Dienstleistung" },
+              appointmentDate: { type: "string", description: "Datum im Format YYYY-MM-DD" },
+              appointmentTime: { type: "string", description: "Uhrzeit im Format HH:MM" }
+            },
+            required: ["patientName", "phoneNumber", "service", "appointmentDate", "appointmentTime"]
+          }
         }]
       },
       voice: {
         provider: '11labs',
-        voiceId: 'EXAVITQu4vr4xnSDxMaL', // Sarah - weibliche deutsche Stimme
+        voiceId: 'EXAVITQu4vr4xnSDxMaL', // German voice Sarah
         model: 'eleven_multilingual_v2',
-        stability: 0.9,
-        similarityBoost: 0.95,
+        stability: 0.7,
+        similarityBoost: 0.6,
         style: 0.2,
         useSpeakerBoost: true,
         optimizeStreamingLatency: 4
       },
-      firstMessage: 'Praxis Weber, Lisa am Apparat! Wie kann ich Ihnen helfen?',
+      firstMessage: greetingMessage,
+      language: "de-DE",
+      maxDurationSeconds: 600,
+      silenceTimeoutSeconds: 3,
+      responseDelaySeconds: 0.4,
+      llmRequestDelaySeconds: 0.1,
+      interruptionThreshold: 100,
+      endCallMessage: "Vielen Dank für Ihren Anruf! Wir freuen uns auf Sie. Auf Wiederhören!",
       serverUrl: 'https://jdbprivzprvpfoxrfyjy.supabase.co/functions/v1/ai-booking',
-      endCallMessage: 'Vielen Dank für Ihren Anruf! Wir freuen uns auf Sie. Auf Wiederhören!',
       recordingEnabled: true,
       transcriber: {
         provider: 'deepgram',
@@ -152,7 +189,7 @@ WICHTIG: Sprich natürlich, ohne Kunstpausen. Wie eine echte Sprechstundenhilfe!
   }
 
   const result = await response.json();
-  console.log('Assistant created:', result.id);
+  console.log('German Vapi assistant created:', result.id, 'for practice:', practice.name);
   return result.id;
 }
 

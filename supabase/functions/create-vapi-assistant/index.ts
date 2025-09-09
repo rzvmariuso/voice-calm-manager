@@ -45,27 +45,47 @@ serve(async (req) => {
     const { prompt } = await req.json();
     const systemPrompt = prompt || practice.ai_prompt;
 
-    // Create VAPI assistant
+    // Create dynamic greeting message with practice data
+    const greetingMessage = `Hallo, hier ist der digitale Assistent von der Praxis ${practice.name}. Wie kann ich Ihnen helfen?`;
+    
+    // Enhanced German system prompt with practice context
+    const enhancedPrompt = `${systemPrompt}
+
+WICHTIGE ANWEISUNGEN:
+- Spreche ausschließlich höflich und natürlich in deutscher Sprache
+- Antworte kurz und klar
+- Wiederhole wichtige Daten wie Name, Termin und Telefonnummer zur Bestätigung
+- Bei Unklarheiten sage: "Entschuldigung, das habe ich nicht ganz verstanden. Könnten Sie das bitte wiederholen?"
+- Verwende nur die bereitgestellten Praxisdaten, erfinde nichts
+
+PRAXISDATEN:
+- Praxisname: ${practice.name}
+- Telefon: ${practice.phone || 'Nicht verfügbar'}
+- E-Mail: ${practice.email || 'Nicht verfügbar'}
+- Adresse: ${practice.address || 'Nicht verfügbar'}`;
+
+    // Create VAPI assistant with German configuration
     const assistantConfig = {
-      name: `${practice.name} - KI Assistant`,
+      name: `${practice.name} - KI Assistent`,
       model: {
         provider: "openai",
         model: "gpt-4",
         messages: [{
           role: "system",
-          content: systemPrompt
+          content: enhancedPrompt
         }],
+        temperature: 0.5,
         functions: [{
           name: "book_appointment",
-          description: "Books an appointment for a patient",
+          description: "Bucht einen Termin für einen Patienten",
           parameters: {
             type: "object",
             properties: {
-              patientName: { type: "string", description: "Patient's full name" },
-              phoneNumber: { type: "string", description: "Patient's phone number" },
-              service: { type: "string", description: "Type of service/treatment" },
-              appointmentDate: { type: "string", description: "Date in YYYY-MM-DD format" },
-              appointmentTime: { type: "string", description: "Time in HH:MM format" }
+              patientName: { type: "string", description: "Vollständiger Name des Patienten" },
+              phoneNumber: { type: "string", description: "Telefonnummer des Patienten" },
+              service: { type: "string", description: "Art der Behandlung/Dienstleistung" },
+              appointmentDate: { type: "string", description: "Datum im Format YYYY-MM-DD" },
+              appointmentTime: { type: "string", description: "Uhrzeit im Format HH:MM" }
             },
             required: ["patientName", "phoneNumber", "service", "appointmentDate", "appointmentTime"]
           }
@@ -73,11 +93,19 @@ serve(async (req) => {
       },
       voice: {
         provider: "11labs",
-        voiceId: "pNInz6obpgDQGcFmaJgB", // Professional German voice
-        stability: 0.5,
-        similarityBoost: 0.8,
+        voiceId: "EXAVITQu4vr4xnSDxMaL", // German voice Sarah
+        stability: 0.7,
+        similarityBoost: 0.6,
         model: "eleven_multilingual_v2"
       },
+      firstMessage: greetingMessage,
+      language: "de-DE",
+      maxDurationSeconds: 600,
+      silenceTimeoutSeconds: 3,
+      responseDelaySeconds: 0.4,
+      llmRequestDelaySeconds: 0.1,
+      interruptionThreshold: 100,
+      endCallMessage: "Vielen Dank für Ihren Anruf. Auf Wiederhören!",
       serverUrl: `${supabaseUrl}/functions/v1/vapi-webhook`,
       serverUrlSecret: "vapi-webhook-secret"
     };
