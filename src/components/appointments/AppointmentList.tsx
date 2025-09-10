@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +77,7 @@ const statusLabels = {
 };
 
 export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentListProps) {
+  const navigate = useNavigate();
   const { practice } = usePractice();
   const { toast } = useToast();
   const { triggerWebhook } = useAppointmentWebhook();
@@ -341,9 +343,13 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">
+                        <Button
+                          variant="link"
+                          className="p-0 h-auto font-medium text-left hover:underline"
+                          onClick={() => navigate(`/patients/${appointment.patient.id}`)}
+                        >
                           {appointment.patient.first_name} {appointment.patient.last_name}
-                        </span>
+                        </Button>
                       </div>
 
                       {appointment.patient.email && (

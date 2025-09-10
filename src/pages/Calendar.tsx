@@ -153,7 +153,7 @@ export default function Calendar() {
   };
 
   const handlePatientClick = (patientId: string) => {
-    navigate(`/patients?highlight=${patientId}`);
+    navigate(`/patients/${patientId}`);
   };
 
   const handleAppointmentDrop = async (appointmentId: string, newDate: string) => {

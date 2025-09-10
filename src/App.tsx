@@ -26,6 +26,7 @@ import Imprint from "./pages/Imprint";
 import Analytics from "./pages/Analytics";
 import Notifications from "./pages/Notifications";
 import Recurring from "./pages/Recurring";
+import PatientDetails from "./pages/PatientDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="/appointments" element={<Appointments />} />
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/patients" element={<Patients />} />
+              <Route path="/patients/:id" element={<PatientDetails />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/recurring" element={<Recurring />} />
