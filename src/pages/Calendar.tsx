@@ -1,28 +1,23 @@
-import { useState, useEffect } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/layout/AppSidebar";
-import { MobileNavigation } from "@/components/layout/MobileNavigation";
-import { MobileHeader } from "@/components/layout/MobileHeader";
-import { BottomNavigation } from "@/components/layout/BottomNavigation";
+import { useState } from "react";
 import { LoadingPage } from "@/components/common/LoadingSpinner";
-import { MobileStatCard, MobileAppointmentPreview } from "@/components/common/MobileOptimizedContent";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Clock, User, Calendar as CalendarIcon, Bot, CheckCircle, Trash2 } from "lucide-react";
+import { CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Bot, Calendar as CalIcon } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
-import { CalendarHeader } from "@/components/calendar/CalendarHeader";
-import { MonthView } from "@/components/calendar/MonthView";
-import { WeekView } from "@/components/calendar/WeekView";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, startOfWeek, endOfWeek } from "date-fns";
+import { ModernMonthView } from "@/components/calendar/ModernMonthView";
+import { ModernWeekView } from "@/components/calendar/ModernWeekView";
+import { BottomNavigation } from "@/components/layout/BottomNavigation";
+import { format, isSameDay, startOfWeek, endOfWeek } from "date-fns";
 import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAppointmentWebhook } from "@/hooks/useAppointmentWebhook";
 import { usePractice } from "@/hooks/usePractice";
 import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -31,8 +26,6 @@ export default function Calendar() {
   const { toast } = useToast();
   const { triggerWebhook } = useAppointmentWebhook();
   
-  // Bulk delete state
-  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const { practice, loading: practiceLoading } = usePractice();
   const { user, loading: authLoading } = useAuth();
   
@@ -42,52 +35,33 @@ export default function Calendar() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<any>(null);
 
-  // Filter states
-  const [filters, setFilters] = useState({
-    status: 'all',
-    service: 'all',
-    aiOnly: false,
-    searchTerm: ''
-  });
+  // Simple search filter
+  const [searchTerm, setSearchTerm] = useState('');
+  const [aiFilter, setAiFilter] = useState(false);
 
-  // Filter appointments based on current filters
+  // Filter appointments
   const filteredAppointments = appointments.filter(appointment => {
-    // Status filter
-    if (filters.status !== 'all' && appointment.status !== filters.status) {
-      return false;
-    }
-
-    // Service filter
-    if (filters.service !== 'all' && appointment.service !== filters.service) {
-      return false;
-    }
-
-    // AI only filter
-    if (filters.aiOnly && !appointment.ai_booked) {
-      return false;
-    }
-
-    // Search term filter
-    if (filters.searchTerm) {
-      const searchLower = filters.searchTerm.toLowerCase();
+    if (aiFilter && !appointment.ai_booked) return false;
+    
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
       const patientName = `${appointment.patient.first_name} ${appointment.patient.last_name}`.toLowerCase();
       const service = appointment.service.toLowerCase();
-      const notes = (appointment.notes || '').toLowerCase();
-      
-      if (!patientName.includes(searchLower) && 
-          !service.includes(searchLower) && 
-          !notes.includes(searchLower)) {
+      if (!patientName.includes(searchLower) && !service.includes(searchLower)) {
         return false;
       }
     }
-
+    
     return true;
   });
 
-  // Calculate stats for display
-  const appointmentStats = {
+  // Stats
+  const stats = {
     total: filteredAppointments.length,
     aiBookings: filteredAppointments.filter(a => a.ai_booked).length,
+    today: filteredAppointments.filter(appointment => 
+      isSameDay(new Date(`${appointment.appointment_date}T00:00:00`), new Date())
+    ).length,
     thisWeek: (() => {
       const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
       const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
@@ -108,8 +82,11 @@ export default function Calendar() {
     setCurrentDate(newDate);
   };
 
-  const handleToday = () => {
-    setCurrentDate(new Date());
+  const handleToday = () => setCurrentDate(new Date());
+
+  const handleNewAppointment = (selectedDate?: Date) => {
+    setSelectedAppointment(selectedDate ? { appointment_date: format(selectedDate, 'yyyy-MM-dd') } : null);
+    setIsDialogOpen(true);
   };
 
   const handleEditAppointment = (appointment: any) => {
@@ -133,7 +110,6 @@ export default function Calendar() {
 
       if (error) throw error;
 
-      // Trigger webhook for cancellation
       await triggerWebhook('cancelled', appointmentToDelete.id, appointmentToDelete, appointmentToDelete.patient);
 
       toast({
@@ -155,449 +131,308 @@ export default function Calendar() {
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (!practice) return;
-    
-    try {
-      const { error } = await supabase
-        .from('appointments')
-        .delete()
-        .eq('practice_id', practice.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Alle Termine gelöscht",
-        description: "Alle Demo-Daten wurden erfolgreich entfernt.",
-      });
-
-      refetch();
-    } catch (error: any) {
-      console.error('Error deleting appointments:', error);
-      toast({
-        title: "Fehler",
-        description: "Termine konnten nicht gelöscht werden",
-        variant: "destructive",
-      });
-    } finally {
-      setBulkDeleteDialogOpen(false);
-    }
-  };
-
-  const handleNewAppointment = (selectedDate?: Date) => {
-    setSelectedAppointment(selectedDate ? { appointment_date: format(selectedDate, 'yyyy-MM-dd') } : null);
-    setIsDialogOpen(true);
-  };
-
   const handleAppointmentSuccess = () => {
     setIsDialogOpen(false);
     setSelectedAppointment(null);
     refetch();
   };
 
-const handleDayClick = (date: Date) => {
-  // Blockiere Wochenenden (Samstag = 6, Sonntag = 0)
-  const dayOfWeek = date.getDay();
-  if (dayOfWeek === 0 || dayOfWeek === 6) {
-    toast({
-      title: "Wochenende",
-      description: "An Wochenenden können keine Termine gebucht werden.",
-      variant: "destructive",
-    });
-    return;
-  }
-  
-  if (isSameDay(date, currentDate)) {
+  const handleDayClick = (date: Date) => {
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      toast({
+        title: "Wochenende",
+        description: "An Wochenenden können keine Termine gebucht werden.",
+        variant: "destructive",
+      });
+      return;
+    }
     handleNewAppointment(date);
-  } else {
-    setCurrentDate(date);
-  }
-};
-
-const handleAppointmentDrop = async (appointmentId: string, newDate: string) => {
-  // Blockiere Wochenenden beim Verschieben
-  const date = new Date(newDate);
-  const dayOfWeek = date.getDay();
-  if (dayOfWeek === 0 || dayOfWeek === 6) {
-    toast({
-      title: "Wochenende",
-      description: "Termine können nicht auf Wochenenden verschoben werden.",
-      variant: "destructive",
-    });
-    return;
-  }
-
-  try {
-    const { error } = await supabase
-      .from('appointments')
-      .update({ appointment_date: newDate })
-      .eq('id', appointmentId);
-
-    if (error) throw error;
-
-    toast({
-      title: "Termin verschoben",
-      description: `Der Termin wurde erfolgreich auf den ${format(new Date(newDate), 'dd.MM.yyyy', { locale: de })} verschoben.`,
-    });
-
-    refetch();
-  } catch (error) {
-    console.error('Error moving appointment:', error);
-    toast({
-      title: "Fehler",
-      description: "Termin konnte nicht verschoben werden",
-      variant: "destructive",
-    });
-  }
-};
-
-  const getTodaysAppointments = () => {
-    return filteredAppointments.filter(appointment => 
-      isSameDay(new Date(`${appointment.appointment_date}T00:00:00`), new Date())
-    ).sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
   };
 
-  if (authLoading || practiceLoading) {
+  const handleAppointmentDrop = async (appointmentId: string, newDate: string) => {
+    const date = new Date(newDate);
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      toast({
+        title: "Wochenende",
+        description: "Termine können nicht auf Wochenenden verschoben werden.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ appointment_date: newDate })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Termin verschoben",
+        description: `Der Termin wurde erfolgreich verschoben.`,
+      });
+
+      refetch();
+    } catch (error) {
+      console.error('Error moving appointment:', error);
+      toast({
+        title: "Fehler",
+        description: "Termin konnte nicht verschoben werden",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (authLoading || practiceLoading || isLoading) {
     return (
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full">
-          <AppSidebar />
-          <main className="flex-1 bg-background">
-            <div className="flex items-center p-3 sm:p-6 lg:hidden">
-              <MobileNavigation />
-            </div>
-            <LoadingPage 
-              title="Lade Anwendung..." 
-              description="Authentifizierung und Daten werden geladen" 
-            />
-          </main>
-        </div>
-      </SidebarProvider>
+      <div className="min-h-screen bg-background">
+        <LoadingPage 
+          title="Lade Kalender..." 
+          description="Termine werden geladen" 
+        />
+      </div>
     );
   }
 
   if (!user || !practice) {
     return (
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full">
-          <AppSidebar />
-          <main className="flex-1 bg-background">
-            <div className="flex items-center p-3 sm:p-6 lg:hidden">
-              <MobileNavigation />
-            </div>
-            <LoadingPage 
-              title="Weiterleitung..." 
-              description="Sie werden zur Anmeldung weitergeleitet" 
-            />
-          </main>
-        </div>
-      </SidebarProvider>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full">
-          <AppSidebar />
-          <main className="flex-1 bg-background">
-            <div className="flex items-center p-3 sm:p-6 lg:hidden">
-              <MobileNavigation />
-            </div>
-            <LoadingPage 
-              title="Lade Kalender..." 
-              description="Termine und Daten werden geladen" 
-            />
-          </main>
-        </div>
-      </SidebarProvider>
+      <div className="min-h-screen bg-background">
+        <LoadingPage 
+          title="Weiterleitung..." 
+          description="Sie werden zur Anmeldung weitergeleitet" 
+        />
+      </div>
     );
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <AppSidebar />
-        
-        {/* Mobile Header */}
-        <MobileHeader 
-          title="Kalender"
-          subtitle="Termine verwalten"
-          showUpgradeButton={true}
-        />
-        
-        <main className="flex-1 p-3 sm:p-4 lg:p-6 bg-background pt-20 lg:pt-6">
-          <div className="flex items-center justify-between mb-4 lg:mb-6 hidden lg:flex">
-            <div className="flex items-center">
-              <SidebarTrigger className="mr-4" />
-            </div>
-          </div>
-
-          {/* Mobile Stats Cards - Only visible on mobile */}
-          <div className="lg:hidden mb-4 grid grid-cols-2 gap-3">
-            <MobileStatCard title="Gesamt" value={appointmentStats.total} />
-            <MobileStatCard title="KI Buchungen" value={appointmentStats.aiBookings} className="bg-primary/5" />
-          </div>
-
-          {/* Mobile Today's Appointments Preview - Only on mobile */}
-          <div className="lg:hidden mb-4">
-            {(() => {
-              const todayAppointments = getTodaysAppointments().slice(0, 3);
-              return todayAppointments.length > 0 ? (
-                <div className="bg-card rounded-lg p-3 shadow-soft border border-border/50">
-                  <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
-                    <CalendarIcon className="w-4 h-4 text-primary" />
-                    Heute ({todayAppointments.length})
-                  </h3>
-                  <div className="space-y-2">
-                    {todayAppointments.map((appointment) => (
-                      <MobileAppointmentPreview
-                        key={appointment.id}
-                        appointment={appointment}
-                        onClick={() => handleEditAppointment(appointment)}
-                      />
-                    ))}
+    <div className="min-h-screen bg-background">
+      {/* Modern Header */}
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
+            {/* Left: Logo & Title */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-primary rounded-lg overflow-hidden flex items-center justify-center">
+                  <img 
+                    src="/lovable-uploads/f8bf1ba1-4dee-42dd-9c1d-543ca3de4a53.png" 
+                    alt="Voxcal Logo" 
+                    className="w-6 h-6 object-contain" 
+                  />
+                </div>
+                <div>
+                  <h1 className="text-xl font-semibold">
+                    {format(currentDate, viewMode === 'month' ? 'MMMM yyyy' : 'PPP', { locale: de })}
+                  </h1>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span>{stats.today} heute</span>
+                    <span>{stats.thisWeek} diese Woche</span>
+                    {stats.aiBookings > 0 && <span>{stats.aiBookings} KI</span>}
                   </div>
                 </div>
-              ) : null;
-            })()}
-          </div>
+              </div>
+            </div>
 
-          <div className="space-y-4 lg:space-y-6">
-            {/* Header with filters and navigation */}
-            <CalendarHeader
-              currentDate={currentDate}
-              viewMode={viewMode}
-              onViewModeChange={setViewMode}
-              onNavigate={navigateDate}
-              onToday={handleToday}
-              onNewAppointment={() => handleNewAppointment()}
-              filters={filters}
-              onFiltersChange={setFilters}
-              appointmentStats={appointmentStats}
-            />
-
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 lg:gap-6">
-              {/* Main Calendar */}
-              <div className="xl:col-span-3 order-2 xl:order-1">
-                {viewMode === 'month' ? (
-                  <MonthView
-                    currentDate={currentDate}
-                    appointments={filteredAppointments}
-                    onEditAppointment={handleEditAppointment}
-                    onDeleteAppointment={handleDeleteAppointment}
-                    onDayClick={handleDayClick}
-                    onAppointmentDrop={handleAppointmentDrop}
-                  />
-                ) : (
-                  <WeekView
-                    currentDate={currentDate}
-                    appointments={filteredAppointments}
-                    onEditAppointment={handleEditAppointment}
-                    onDeleteAppointment={handleDeleteAppointment}
-                  />
-                )}
+            {/* Right: Actions */}
+            <div className="flex items-center gap-3">
+              {/* Navigation */}
+              <div className="hidden sm:flex items-center gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigateDate('prev')}
+                  className="h-9 w-9 p-0"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleToday}
+                  className="h-9 px-3"
+                >
+                  Heute
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigateDate('next')}
+                  className="h-9 w-9 p-0"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              {/* View Toggle */}
+              <div className="hidden sm:flex bg-muted rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'month' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('month')}
+                  className="h-7 px-3 text-sm"
+                >
+                  Monat
+                </Button>
+                <Button
+                  variant={viewMode === 'week' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('week')}
+                  className="h-7 px-3 text-sm"
+                >
+                  Woche
+                </Button>
               </div>
 
-              {/* Sidebar - Show on top on mobile */}
-              <div className="space-y-4 order-1 xl:order-2 hidden lg:block">
-                {/* Today's Appointments */}
-                <Card className="border">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <CalendarIcon className="w-4 h-4 text-primary" />
-                      <div>
-                        <div className="font-medium">Heute</div>
-                        <p className="text-xs text-muted-foreground font-normal">
-                          {format(new Date(), 'EEE, dd.MM.yyyy', { locale: de })}
-                        </p>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3">
-                    {(() => {
-                      const todayAppointments = getTodaysAppointments();
-                      if (todayAppointments.length === 0) {
-                        return (
-                          <div className="text-center py-6">
-                            <CalendarIcon className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
-                            <p className="text-sm text-muted-foreground mb-3">Keine Termine heute</p>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-7 text-xs"
-                              onClick={() => handleNewAppointment(new Date())}
-                            >
-                              <CalendarIcon className="w-3 h-3 mr-1" />
-                              Hinzufügen
-                            </Button>
-                          </div>
-                        );
-                      }
-                      
-                      return (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-muted-foreground">
-                              {todayAppointments.length} {todayAppointments.length === 1 ? 'Termin' : 'Termine'}
-                            </span>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 text-xs p-1"
-                              onClick={() => handleNewAppointment(new Date())}
-                            >
-                              + Hinzufügen
-                            </Button>
-                          </div>
-                          
-                          {todayAppointments.map((appointment) => (
-                            <div 
-                              key={appointment.id} 
-                              className="group p-2 border rounded hover:bg-muted/20 transition-colors cursor-pointer"
-                              onClick={() => handleEditAppointment(appointment)}
-                            >
-                              <div className="flex items-start justify-between mb-1">
-                                <div className="flex items-center gap-2">
-                                  <div className={`
-                                    w-6 h-6 rounded flex items-center justify-center text-xs font-medium
-                                    ${appointment.ai_booked ? 'bg-primary/10 text-primary' : 'bg-muted'}
-                                  `}>
-                                    {appointment.ai_booked ? (
-                                      <Bot className="w-3 h-3" />
-                                    ) : (
-                                      <Clock className="w-3 h-3" />
-                                    )}
-                                  </div>
-                                  <div>
-                                    <div className="flex items-center gap-1 mb-0.5">
-                                      <span className="text-sm font-medium">
-                                        {appointment.appointment_time}
-                                      </span>
-                                      <Badge 
-                                        variant="secondary"
-                                        className="text-xs h-4 px-1"
-                                      >
-                                        {appointment.status === 'confirmed' ? 'OK' : 
-                                         appointment.status === 'pending' ? 'Warten' :
-                                         appointment.status === 'completed' ? 'Fertig' : 'Abgesagt'}
-                                      </Badge>
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {appointment.patient.first_name} {appointment.patient.last_name}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              <div className="text-xs text-muted-foreground bg-muted/30 rounded px-2 py-1">
-                                {appointment.service} • {appointment.duration_minutes || 30} Min
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
-
-                {/* Enhanced Statistics */}
-                <Card className="border">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-primary" />
-                      <h3 className="font-medium">Statistiken</h3>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3">
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="text-center p-2 bg-muted/20 rounded">
-                        <div className="text-lg font-medium">{appointmentStats.total}</div>
-                        <div className="text-muted-foreground">Gesamt</div>
-                      </div>
-                      <div className="text-center p-2 bg-primary/10 rounded">
-                        <div className="text-lg font-medium text-primary">{appointmentStats.aiBookings}</div>
-                        <div className="text-muted-foreground">KI-Termine</div>
-                      </div>
-                      <div className="text-center p-2 bg-muted/20 rounded">
-                        <div className="text-lg font-medium">{appointmentStats.thisWeek}</div>
-                        <div className="text-muted-foreground">Diese Woche</div>
-                      </div>
-                      <div className="text-center p-2 bg-muted/20 rounded">
-                        <div className="text-lg font-medium">
-                          {appointmentStats.total > 0 ? Math.round((appointmentStats.aiBookings / appointmentStats.total) * 100) : 0}%
-                        </div>
-                        <div className="text-muted-foreground">KI-Anteil</div>
-                      </div>
-                     </div>
-                     
-                     {/* Bulk delete button for removing demo data */}
-                     <div className="mt-3 pt-3 border-t border-border/50">
-                       <Button
-                         variant="outline"
-                         size="sm"
-                         className="w-full text-xs"
-                         onClick={() => setBulkDeleteDialogOpen(true)}
-                         disabled={appointmentStats.total === 0}
-                       >
-                         <Trash2 className="w-3 h-3 mr-2" />
-                         Demo-Daten entfernen
-                       </Button>
-                     </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <Button 
+                onClick={() => handleNewAppointment()}
+                className="h-9"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Neuer Termin
+              </Button>
             </div>
           </div>
 
-          {/* Appointment Dialog */}
-          <AppointmentDialog
-            open={isDialogOpen}
-            onOpenChange={setIsDialogOpen}
-            appointment={selectedAppointment}
-            onSuccess={handleAppointmentSuccess}
+          {/* Search & Filters */}
+          <div className="flex items-center gap-3 pb-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Suche nach Patienten oder Services..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-9"
+              />
+            </div>
+
+            <Button
+              variant={aiFilter ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAiFilter(!aiFilter)}
+              className="h-9 gap-2"
+            >
+              <Bot className="w-4 h-4" />
+              KI Filter
+            </Button>
+
+            {(searchTerm || aiFilter) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm('');
+                  setAiFilter(false);
+                }}
+                className="h-9 text-muted-foreground"
+              >
+                Filter zurücksetzen
+              </Button>
+            )}
+          </div>
+
+          {/* Mobile Navigation */}
+          <div className="sm:hidden flex items-center justify-between pb-4">
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigateDate('prev')}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleToday}
+                className="h-8 px-2 text-sm"
+              >
+                Heute
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigateDate('next')}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="flex bg-muted rounded-lg p-1">
+              <Button
+                variant={viewMode === 'month' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('month')}
+                className="h-6 px-2 text-xs"
+              >
+                Monat
+              </Button>
+              <Button
+                variant={viewMode === 'week' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('week')}
+                className="h-6 px-2 text-xs"
+              >
+                Woche
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Calendar */}
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {viewMode === 'month' ? (
+          <ModernMonthView
+            currentDate={currentDate}
+            appointments={filteredAppointments}
+            onEditAppointment={handleEditAppointment}
+            onDeleteAppointment={handleDeleteAppointment}
+            onDayClick={handleDayClick}
+            onAppointmentDrop={handleAppointmentDrop}
           />
+        ) : (
+          <ModernWeekView
+            currentDate={currentDate}
+            appointments={filteredAppointments}
+            onEditAppointment={handleEditAppointment}
+            onDeleteAppointment={handleDeleteAppointment}
+          />
+        )}
+      </main>
 
-          {/* Delete Confirmation Dialog */}
-          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Termin löschen</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Möchten Sie diesen Termin wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
-                  Löschen
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          {/* Bulk Delete Confirmation Dialog */}
-          <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Alle Termine löschen</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Möchten Sie wirklich alle Termine ({appointmentStats.total}) löschen? Diese Aktion kann nicht rückgängig gemacht werden und entfernt alle Demo-Daten.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive hover:bg-destructive/90">
-                  Alle löschen
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </main>
-      </div>
-      
-      {/* Bottom Navigation for Mobile */}
+      {/* Mobile Bottom Navigation */}
       <BottomNavigation />
-    </SidebarProvider>
+
+      {/* Dialogs */}
+      <AppointmentDialog
+        appointment={selectedAppointment}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSuccess={handleAppointmentSuccess}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Termin löschen</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sind Sie sicher, dass Sie diesen Termin löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
