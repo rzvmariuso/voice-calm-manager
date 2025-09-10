@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { LoadingPage } from "@/components/common/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 export default function Calendar() {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const { appointments, isLoading, refetch } = useAppointments();
@@ -148,6 +150,10 @@ export default function Calendar() {
       return;
     }
     handleNewAppointment(date);
+  };
+
+  const handlePatientClick = (patientId: string) => {
+    navigate(`/patients?highlight=${patientId}`);
   };
 
   const handleAppointmentDrop = async (appointmentId: string, newDate: string) => {
@@ -393,6 +399,7 @@ export default function Calendar() {
             appointments={filteredAppointments}
             onEditAppointment={handleEditAppointment}
             onDeleteAppointment={handleDeleteAppointment}
+            onPatientClick={handlePatientClick}
             onDayClick={handleDayClick}
             onAppointmentDrop={handleAppointmentDrop}
           />
@@ -402,6 +409,7 @@ export default function Calendar() {
             appointments={filteredAppointments}
             onEditAppointment={handleEditAppointment}
             onDeleteAppointment={handleDeleteAppointment}
+            onPatientClick={handlePatientClick}
           />
         )}
       </main>

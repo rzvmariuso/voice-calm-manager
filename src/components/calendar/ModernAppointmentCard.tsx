@@ -13,6 +13,7 @@ interface ModernAppointmentCardProps {
   appointment: AppointmentWithPatient;
   onEdit: (appointment: AppointmentWithPatient) => void;
   onDelete: (appointment: AppointmentWithPatient) => void;
+  onPatientClick?: (patientId: string) => void;
   variant?: 'compact' | 'timeline' | 'full';
   draggable?: boolean;
   onDragStart?: (e: React.DragEvent) => void;
@@ -22,6 +23,7 @@ export function ModernAppointmentCard({
   appointment,
   onEdit,
   onDelete,
+  onPatientClick,
   variant = 'compact',
   draggable = false,
   onDragStart
@@ -96,6 +98,7 @@ export function ModernAppointmentCard({
             appointment={appointment}
             onEdit={() => { onEdit(appointment); setIsOpen(false); }}
             onDelete={() => { onDelete(appointment); setIsOpen(false); }}
+            onPatientClick={onPatientClick}
           />
         </PopoverContent>
       </Popover>
@@ -141,6 +144,7 @@ export function ModernAppointmentCard({
             appointment={appointment}
             onEdit={() => { onEdit(appointment); setIsOpen(false); }}
             onDelete={() => { onDelete(appointment); setIsOpen(false); }}
+            onPatientClick={onPatientClick}
           />
         </PopoverContent>
       </Popover>
@@ -157,6 +161,7 @@ export function ModernAppointmentCard({
         appointment={appointment}
         onEdit={() => onEdit(appointment)}
         onDelete={() => onDelete(appointment)}
+        onPatientClick={onPatientClick}
         showActions
       />
     </div>
@@ -167,11 +172,13 @@ function AppointmentDetails({
   appointment, 
   onEdit, 
   onDelete,
+  onPatientClick,
   showActions = true
 }: {
   appointment: AppointmentWithPatient;
   onEdit: () => void;
   onDelete: () => void;
+  onPatientClick?: (patientId: string) => void;
   showActions?: boolean;
 }) {
   return (
@@ -181,7 +188,16 @@ function AppointmentDetails({
         <div className="space-y-1">
           <h4 className="font-semibold text-lg flex items-center gap-2">
             <User className="w-4 h-4 text-muted-foreground" />
-            {appointment.patient.first_name} {appointment.patient.last_name}
+            {onPatientClick ? (
+              <button 
+                onClick={() => onPatientClick(appointment.patient.id)}
+                className="text-primary hover:text-primary/80 hover:underline transition-colors text-left"
+              >
+                {appointment.patient.first_name} {appointment.patient.last_name}
+              </button>
+            ) : (
+              <span>{appointment.patient.first_name} {appointment.patient.last_name}</span>
+            )}
           </h4>
           <p className="text-sm text-muted-foreground flex items-center gap-2">
             <Calendar className="w-4 h-4" />

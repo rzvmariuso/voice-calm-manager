@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSameMonth, isToday, isSameDay, startOfWeek, endOfWeek } from "date-fns";
 import { de } from "date-fns/locale";
 import { AppointmentWithPatient } from "@/hooks/useAppointments";
 import { ModernAppointmentCard } from "./ModernAppointmentCard";
+import { DayAppointmentsDialog } from "./DayAppointmentsDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,7 @@ interface ModernMonthViewProps {
   appointments: AppointmentWithPatient[];
   onEditAppointment: (appointment: AppointmentWithPatient) => void;
   onDeleteAppointment: (appointment: AppointmentWithPatient) => void;
+  onPatientClick: (patientId: string) => void;
   onDayClick: (date: Date) => void;
   onAppointmentDrop: (appointmentId: string, newDate: string) => void;
 }
@@ -21,9 +23,13 @@ export function ModernMonthView({
   appointments,
   onEditAppointment,
   onDeleteAppointment,
+  onPatientClick,
   onDayClick,
   onAppointmentDrop
 }: ModernMonthViewProps) {
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showDayDialog, setShowDayDialog] = useState(false);
+
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
@@ -125,6 +131,7 @@ export function ModernMonthView({
                     appointment={appointment}
                     onEdit={onEditAppointment}
                     onDelete={onDeleteAppointment}
+                    onPatientClick={onPatientClick}
                     variant="compact"
                     draggable
                     onDragStart={(e) => {
@@ -135,15 +142,35 @@ export function ModernMonthView({
                 
                 {/* Show more indicator */}
                 {dayAppointments.length > 3 && (
-                  <div className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded text-center">
+                  <button
+                    className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 rounded text-center hover:bg-muted transition-colors w-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedDate(date);
+                      setShowDayDialog(true);
+                    }}
+                  >
                     +{dayAppointments.length - 3} weitere
-                  </div>
+                  </button>
                 )}
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Day Appointments Dialog */}
+      {selectedDate && (
+        <DayAppointmentsDialog
+          date={selectedDate}
+          appointments={getAppointmentsForDay(selectedDate)}
+          open={showDayDialog}
+          onOpenChange={setShowDayDialog}
+          onEditAppointment={onEditAppointment}
+          onDeleteAppointment={onDeleteAppointment}
+          onPatientClick={onPatientClick}
+        />
+      )}
     </div>
   );
 }

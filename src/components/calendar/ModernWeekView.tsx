@@ -12,13 +12,15 @@ interface ModernWeekViewProps {
   appointments: AppointmentWithPatient[];
   onEditAppointment: (appointment: AppointmentWithPatient) => void;
   onDeleteAppointment: (appointment: AppointmentWithPatient) => void;
+  onPatientClick: (patientId: string) => void;
 }
 
 export function ModernWeekView({
   currentDate,
   appointments,
   onEditAppointment,
-  onDeleteAppointment
+  onDeleteAppointment,
+  onPatientClick
 }: ModernWeekViewProps) {
   const weekDays = useMemo(() => {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -147,6 +149,7 @@ export function ModernWeekView({
                         appointment={appointment}
                         onEdit={onEditAppointment}
                         onDelete={onDeleteAppointment}
+                        onPatientClick={onPatientClick}
                         variant="timeline"
                       />
                     </div>
