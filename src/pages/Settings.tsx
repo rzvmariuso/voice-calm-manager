@@ -234,8 +234,8 @@ export default function Settings() {
             </div>
             </div>
 
-          <Tabs defaultValue="practice" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
+            <Tabs defaultValue="practice" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="practice" className="flex items-center gap-2">
                 <SettingsIcon className="w-4 h-4" />
                 Praxis
@@ -247,14 +247,6 @@ export default function Settings() {
               <TabsTrigger value="ai" className="flex items-center gap-2">
                 <Bot className="w-4 h-4" />
                 KI-Agent
-              </TabsTrigger>
-              <TabsTrigger value="phone" className="flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                Telefonie
-              </TabsTrigger>
-              <TabsTrigger value="automation" className="flex items-center gap-2">
-                <Database className="w-4 h-4" />
-                n8n
               </TabsTrigger>
               <TabsTrigger value="gdpr" className="flex items-center gap-2">
                 <Shield className="w-4 h-4" />
@@ -356,55 +348,6 @@ export default function Settings() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="google-api">Google Calendar API Key</Label>
-                      <div className="flex gap-2">
-                        <Input 
-                          id="google-api"
-                          type="password"
-                          value={settings.calendar.googleApiKey}
-                          onChange={(e) => setSettings(s => ({
-                            ...s, 
-                            calendar: {...s.calendar, googleApiKey: e.target.value}
-                          }))}
-                          placeholder="AIzaSyC..."
-                        />
-                        <Button 
-                          variant="outline" 
-                          onClick={() => testConnection("Google Calendar")}
-                          disabled={isLoading || !settings.calendar.googleApiKey}
-                        >
-                          <TestTube className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        OAuth2-berechtigt für sichere Kalender-Synchronisation
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="calcom-api">Cal.com API Key</Label>
-                      <div className="flex gap-2">
-                        <Input 
-                          id="calcom-api"
-                          type="password"
-                          value={settings.calendar.calcomApiKey}
-                          onChange={(e) => setSettings(s => ({
-                            ...s, 
-                            calendar: {...s.calendar, calcomApiKey: e.target.value}
-                          }))}
-                          placeholder="cal_live_..."
-                        />
-                        <Button 
-                          variant="outline" 
-                          onClick={() => testConnection("Cal.com")}
-                          disabled={isLoading || !settings.calendar.calcomApiKey}
-                        >
-                          <TestTube className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div>
                       <Label htmlFor="webhook-url">Webhook URL (Auto-generiert)</Label>
                       <Input 
                         id="webhook-url"
@@ -435,7 +378,7 @@ export default function Settings() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="vapi-api">Vapi API Key *</Label>
+                    <Label htmlFor="vapi-api">API Key *</Label>
                     <div className="flex gap-2">
                       <Input 
                         id="vapi-api"
@@ -445,7 +388,7 @@ export default function Settings() {
                           ...s, 
                           ai: {...s.ai, vapiApiKey: e.target.value}
                         }))}
-                        placeholder="vapi_..."
+                        placeholder="api_..."
                       />
                       <Button 
                         variant="outline" 
@@ -515,222 +458,6 @@ export default function Settings() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            {/* Phone Settings */}
-            <TabsContent value="phone">
-              <Card className="shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Phone className="w-5 h-5 text-primary" />
-                    Telefonie-Einstellungen
-                    <Badge variant="outline" className="border-secondary text-secondary">
-                      Twilio
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="twilio-sid">Twilio Account SID</Label>
-                      <Input 
-                        id="twilio-sid"
-                        type="password"
-                        value={settings.phone.twilioAccountSid}
-                        onChange={(e) => setSettings(s => ({
-                          ...s, 
-                          phone: {...s.phone, twilioAccountSid: e.target.value}
-                        }))}
-                        placeholder="AC..."
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="twilio-token">Twilio Auth Token</Label>
-                      <Input 
-                        id="twilio-token"
-                        type="password"
-                        value={settings.phone.twilioAuthToken}
-                        onChange={(e) => setSettings(s => ({
-                          ...s, 
-                          phone: {...s.phone, twilioAuthToken: e.target.value}
-                        }))}
-                        placeholder="Auth Token"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="phone-number">Telefonnummer</Label>
-                    <div className="flex gap-2">
-                      <Input 
-                        id="phone-number"
-                        value={settings.phone.phoneNumber}
-                        onChange={(e) => setSettings(s => ({
-                          ...s, 
-                          phone: {...s.phone, phoneNumber: e.target.value}
-                        }))}
-                        placeholder="+49 1234 567890"
-                      />
-                        <Button 
-                          variant="outline" 
-                          onClick={() => testConnection("Twilio")}
-                          disabled={isLoading || !settings.phone.twilioAccountSid}
-                        >
-                          <TestTube className="w-4 h-4" />
-                        </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Deutsche Nummer für lokale Patienten empfohlen
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="record-calls">Anrufe aufzeichnen</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Für Qualitätssicherung und DSGVO-konforme Dokumentation
-                      </p>
-                    </div>
-                    <Switch 
-                      id="record-calls"
-                      checked={settings.phone.recordCalls}
-                      onCheckedChange={(checked) => setSettings(s => ({
-                        ...s, 
-                        phone: {...s.phone, recordCalls: checked}
-                      }))}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* n8n Automation Settings */}
-            <TabsContent value="automation">
-              <div className="space-y-6">
-                <Card className="shadow-soft">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Database className="w-5 h-5 text-primary" />
-                      n8n Automation
-                      <Badge variant="outline" className={settings.n8n.enabled ? "border-success text-success" : "border-muted text-muted"}>
-                        {settings.n8n.enabled ? "Aktiviert" : "Deaktiviert"}
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="p-4 border border-primary/20 bg-primary/5 rounded-lg">
-                      <h4 className="font-medium mb-2">Was ist n8n?</h4>
-                      <p className="text-sm text-muted-foreground">
-                        n8n ist eine Open-Source Automatisierungs-Plattform. Verbinden Sie Ihre Praxis mit anderen Tools wie Excel, 
-                        Google Sheets, E-Mail-Marketing, Buchhaltungssoftware und vielem mehr.
-                      </p>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <Label>n8n Integration aktivieren</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Automatische Weiterleitung von Termindaten an n8n
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={settings.n8n.enabled}
-                        onCheckedChange={(checked) => setSettings(s => ({
-                          ...s, 
-                          n8n: {...s.n8n, enabled: checked}
-                        }))}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="n8n-webhook">n8n Webhook URL</Label>
-                      <div className="flex gap-2">
-                        <Input 
-                          id="n8n-webhook"
-                          value={settings.n8n.webhookUrl}
-                          onChange={(e) => setSettings(s => ({
-                            ...s, 
-                            n8n: {...s.n8n, webhookUrl: e.target.value}
-                          }))}
-                          placeholder="https://your-n8n-instance.com/webhook/..."
-                          disabled={!settings.n8n.enabled}
-                        />
-                        <Button 
-                          variant="outline" 
-                          onClick={() => testConnection("n8n")}
-                          disabled={!settings.n8n.enabled || !settings.n8n.webhookUrl}
-                        >
-                          <TestTube className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        1. Erstellen Sie einen Workflow in n8n<br/>
-                        2. Fügen Sie einen "Webhook" Trigger hinzu<br/>
-                        3. Kopieren Sie die URL hierher
-                      </p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label>Automatisierungen aktivieren:</Label>
-                      
-                      <div className="flex items-center justify-between p-3 border rounded">
-                        <div>
-                          <p className="text-sm font-medium">Neuer Termin</p>
-                          <p className="text-xs text-muted-foreground">Wird ausgelöst bei jeder AI-Terminbuchung</p>
-                        </div>
-                        <Switch 
-                          checked={settings.n8n.triggers.newAppointment}
-                          onCheckedChange={(checked) => setSettings(s => ({
-                            ...s, 
-                            n8n: {...s.n8n, triggers: {...s.n8n.triggers, newAppointment: checked}}
-                          }))}
-                          disabled={!settings.n8n.enabled}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 border rounded">
-                        <div>
-                          <p className="text-sm font-medium">Neuer Patient</p>
-                          <p className="text-xs text-muted-foreground">Wird ausgelöst bei der ersten Terminbuchung eines Patienten</p>
-                        </div>
-                        <Switch 
-                          checked={settings.n8n.triggers.newPatient}
-                          onCheckedChange={(checked) => setSettings(s => ({
-                            ...s, 
-                            n8n: {...s.n8n, triggers: {...s.n8n.triggers, newPatient: checked}}
-                          }))}
-                          disabled={!settings.n8n.enabled}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 border rounded">
-                        <div>
-                          <p className="text-sm font-medium">Termin aktualisiert</p>
-                          <p className="text-xs text-muted-foreground">Wird ausgelöst bei Änderungen an bestehenden Terminen</p>
-                        </div>
-                        <Switch 
-                          checked={settings.n8n.triggers.appointmentUpdated}
-                          onCheckedChange={(checked) => setSettings(s => ({
-                            ...s, 
-                            n8n: {...s.n8n, triggers: {...s.n8n.triggers, appointmentUpdated: checked}}
-                          }))}
-                          disabled={!settings.n8n.enabled}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-muted/20 rounded-lg">
-                      <h4 className="text-sm font-medium mb-2">Beispiel-Automatisierungen:</h4>
-                      <ul className="text-xs text-muted-foreground space-y-1">
-                        <li>• Neuer Termin → Google Kalender + Excel-Liste</li>
-                        <li>• Neuer Patient → CRM-System + Newsletter</li>
-                        <li>• Termin gebucht → SMS-Bestätigung + Buchhaltung</li>
-                        <li>• AI-Anruf → Slack-Benachrichtigung</li>
-                      </ul>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
             </TabsContent>
 
             {/* GDPR Settings */}

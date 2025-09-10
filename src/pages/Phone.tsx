@@ -127,7 +127,7 @@ const Phone = () => {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Vapi Integration</span>
+                      <span className="text-sm text-muted-foreground">KI Integration</span>
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
                         <span className="text-sm font-medium text-success">Online</span>
@@ -135,15 +135,7 @@ const Phone = () => {
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">OpenAI GPT</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
-                        <span className="text-sm font-medium text-success">Aktiv</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Vapi Voice</span>
+                      <span className="text-sm text-muted-foreground">Agent Status</span>
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
                         <span className="text-sm font-medium text-success">Bereit</span>

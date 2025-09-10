@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Bot, Calendar as CalIcon } from "lucide-react";
+import { CalendarIcon, ChevronLeft, ChevronRight, Plus, Search, Bot, Calendar as CalIcon, ArrowLeft } from "lucide-react";
 import { useAppointments } from "@/hooks/useAppointments";
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog";
 import { ModernMonthView } from "@/components/calendar/ModernMonthView";
@@ -220,8 +220,16 @@ export default function Calendar() {
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            {/* Left: Logo & Title */}
+            {/* Left: Back & Title */}
             <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate('/')}
+                className="h-9 w-9 p-0"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-primary rounded-lg overflow-hidden flex items-center justify-center">
                   <img 

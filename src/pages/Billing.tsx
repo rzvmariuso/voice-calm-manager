@@ -279,7 +279,7 @@ export default function Billing() {
                     >
                       {isProfessional && (
                         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                          <Badge className="bg-primary text-primary-foreground whitespace-nowrap px-3 py-1">
+                          <Badge className="bg-primary text-primary-foreground whitespace-nowrap px-3 py-1 shadow-md">
                             <Zap className="w-3 h-3 mr-1" />
                             Beliebtester Plan
                           </Badge>

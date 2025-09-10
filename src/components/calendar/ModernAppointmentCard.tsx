@@ -98,7 +98,7 @@ export function ModernAppointmentCard({
             appointment={appointment}
             onEdit={() => { onEdit(appointment); setIsOpen(false); }}
             onDelete={() => { onDelete(appointment); setIsOpen(false); }}
-            onPatientClick={onPatientClick}
+            onPatientClick={onPatientClick ? (patientId) => { onPatientClick(patientId); setIsOpen(false); } : undefined}
           />
         </PopoverContent>
       </Popover>
@@ -144,7 +144,7 @@ export function ModernAppointmentCard({
             appointment={appointment}
             onEdit={() => { onEdit(appointment); setIsOpen(false); }}
             onDelete={() => { onDelete(appointment); setIsOpen(false); }}
-            onPatientClick={onPatientClick}
+            onPatientClick={onPatientClick ? (patientId) => { onPatientClick(patientId); setIsOpen(false); } : undefined}
           />
         </PopoverContent>
       </Popover>
