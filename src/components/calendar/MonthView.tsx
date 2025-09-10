@@ -166,7 +166,15 @@ export function MonthView({
                           
                           {/* Show remaining count */}
                           {dayAppointments.length > 3 && (
-                            <div className="text-xs text-muted-foreground text-center py-1 hover:text-foreground cursor-pointer">
+                            <div 
+                              className="text-xs text-muted-foreground text-center py-1 hover:text-foreground cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Show all appointments for this day in a popover/dialog
+                                const allAppointments = dayAppointments.map(apt => `${apt.appointment_time} - ${apt.patient.first_name} ${apt.patient.last_name}`).join('\n');
+                                alert(`Alle Termine für ${format(date, 'dd.MM.yyyy')}:\n\n${allAppointments}`);
+                              }}
+                            >
                               +{dayAppointments.length - 3} weitere
                             </div>
                           )}
