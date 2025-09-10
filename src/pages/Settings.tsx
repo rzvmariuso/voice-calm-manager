@@ -40,32 +40,11 @@ export default function Settings() {
       email: "",
       website: ""
     },
-    calendar: {
-      provider: "google",
-      googleApiKey: "",
-      calcomApiKey: "",
-      webhookUrl: ""
-    },
     ai: {
       vapiApiKey: "",
       voiceId: "EXAVITQu4vr4xnSDxMaL", // Sarah - deutscher Akzent
       model: "gpt-4o-mini",
       language: "de"
-    },
-    phone: {
-      twilioAccountSid: "",
-      twilioAuthToken: "",
-      phoneNumber: "",
-      recordCalls: true
-    },
-    n8n: {
-      webhookUrl: "",
-      enabled: false,
-      triggers: {
-        newAppointment: true,
-        appointmentUpdated: false,
-        newPatient: true
-      }
     },
     gdpr: {
       dataRetentionDays: 1095,
@@ -95,54 +74,7 @@ export default function Settings() {
     }
   }
 
-  const testN8nWebhook = async () => {
-    if (!settings.n8n.webhookUrl) {
-      toast({
-        title: "Fehler",
-        description: "Bitte geben Sie eine n8n Webhook URL ein",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const response = await fetch(settings.n8n.webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        mode: "no-cors",
-        body: JSON.stringify({
-          test: true,
-          timestamp: new Date().toISOString(),
-          source: "praxis-setup",
-          message: "Test-Nachricht von Ihrer Praxis-Software"
-        }),
-      });
-
-      toast({
-        title: "Test gesendet",
-        description: "Die Test-Nachricht wurde an n8n gesendet. Prüfen Sie Ihren n8n Workflow.",
-      });
-    } catch (error) {
-      console.error("n8n test error:", error);
-      toast({
-        title: "Fehler",
-        description: "Test konnte nicht gesendet werden. Prüfen Sie die URL.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const testConnection = async (service: string) => {
-    if (service === "n8n") {
-      testN8nWebhook();
-      return;
-    }
-    
     setIsLoading(true);
     try {
       // Secure API key validation
@@ -150,26 +82,8 @@ export default function Settings() {
       let validationError = '';
 
       switch (service) {
-        case 'googleCalendar':
-          apiKey = settings.calendar.googleApiKey;
-          if (!apiKey || !apiKey.startsWith('AIza') || apiKey.length < 30) {
-            validationError = 'Invalid Google Calendar API key format';
-          }
-          break;
-        case 'vapi':
+        case 'api':
           apiKey = settings.ai.vapiApiKey;
-          if (!apiKey || apiKey.length < 20) {
-            validationError = 'Invalid Vapi API key format';
-          }
-          break;
-        case 'twilio':
-          apiKey = settings.phone.twilioAuthToken;
-          if (!apiKey || apiKey.length < 30) {
-            validationError = 'Invalid Twilio Auth Token format';
-          }
-          break;
-        case 'openai':
-          apiKey = settings.ai.vapiApiKey; // Using Vapi key instead of separate OpenAI key
           if (!apiKey || apiKey.length < 20) {
             validationError = 'Invalid API key format';
           }
@@ -235,14 +149,10 @@ export default function Settings() {
             </div>
 
             <Tabs defaultValue="practice" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="practice" className="flex items-center gap-2">
                 <SettingsIcon className="w-4 h-4" />
                 Praxis
-              </TabsTrigger>
-              <TabsTrigger value="calendar" className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Kalender
               </TabsTrigger>
               <TabsTrigger value="ai" className="flex items-center gap-2">
                 <Bot className="w-4 h-4" />
@@ -333,36 +243,6 @@ export default function Settings() {
               </Card>
             </TabsContent>
 
-            {/* Calendar Settings */}
-            <TabsContent value="calendar">
-              <div className="space-y-6">
-                <Card className="shadow-soft">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-primary" />
-                      Kalender-Integration
-                      <Badge variant="outline" className="border-success text-success">
-                        Auto-Sync
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="webhook-url">Webhook URL (Auto-generiert)</Label>
-                      <Input 
-                        id="webhook-url"
-                        value="https://your-supabase-project.supabase.co/functions/v1/calendar-webhook"
-                        disabled
-                        className="bg-muted"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Für 2-Wege-Synchronisation zwischen KI und Kalender
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
 
             {/* AI Agent Settings */}
             <TabsContent value="ai">
@@ -371,17 +251,14 @@ export default function Settings() {
                   <CardTitle className="flex items-center gap-2">
                     <Bot className="w-5 h-5 text-primary" />
                     KI-Agent Konfiguration
-                    <Badge variant="outline" className="border-primary text-primary">
-                      Vapi
-                    </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="vapi-api">API Key *</Label>
+                    <Label htmlFor="api-key">API Key *</Label>
                     <div className="flex gap-2">
                       <Input 
-                        id="vapi-api"
+                        id="api-key"
                         type="password"
                         value={settings.ai.vapiApiKey}
                         onChange={(e) => setSettings(s => ({
@@ -392,7 +269,7 @@ export default function Settings() {
                       />
                       <Button 
                         variant="outline" 
-                        onClick={() => testConnection("Vapi")}
+                        onClick={() => testConnection("api")}
                         disabled={isLoading || !settings.ai.vapiApiKey}
                       >
                         <TestTube className="w-4 h-4" />

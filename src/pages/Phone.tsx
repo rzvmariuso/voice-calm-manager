@@ -31,7 +31,7 @@ const Phone = () => {
                   Telefonie & Voice AI
                 </h1>
                 <p className="text-muted-foreground">
-                  DSGVO-konforme Telefonie-Integration mit Vapi für Deutschland
+                  DSGVO-konforme Telefonie-Integration mit KI für Deutschland
                 </p>
               </div>
             </div>

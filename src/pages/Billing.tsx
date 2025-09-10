@@ -12,12 +12,14 @@ import { Check, Crown, Zap, Shield, ArrowLeft, Loader2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Loading } from "@/components/ui/loading";
+import { usePatientCount } from "@/hooks/usePatientCount";
 
 export default function Billing() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const { patientCount } = usePatientCount();
   
   const {
     subscription,
@@ -189,9 +191,9 @@ export default function Billing() {
                         <p className="font-semibold">{currentPlan.name}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Max. Patienten</p>
+                        <p className="text-sm text-muted-foreground">Patienten</p>
                         <p className="font-semibold">
-                          {currentPlan.max_patients === -1 ? "Unbegrenzt" : currentPlan.max_patients}
+                          {patientCount} / {currentPlan.max_patients === -1 ? "∞" : currentPlan.max_patients}
                         </p>
                       </div>
                       <div>
@@ -279,9 +281,9 @@ export default function Billing() {
                     >
                       {isProfessional && (
                         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                          <Badge className="bg-primary text-primary-foreground whitespace-nowrap px-3 py-1 shadow-md">
-                            <Zap className="w-3 h-3 mr-1" />
-                            Beliebtester Plan
+                          <Badge className="bg-primary text-primary-foreground whitespace-nowrap px-3 py-1 shadow-md text-xs">
+                            <Zap className="w-3 h-3 mr-1 flex-shrink-0" />
+                            <span className="truncate">Beliebtester Plan</span>
                           </Badge>
                         </div>
                       )}
