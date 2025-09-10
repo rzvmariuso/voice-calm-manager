@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,6 @@ import { de } from "date-fns/locale";
 import { AppointmentWithPatient } from "@/hooks/useAppointments";
 import { AppointmentCard } from "./AppointmentCard";
 import { toBerlinTime, isTodayInBerlin, formatAppointmentTime } from "@/lib/dateUtils";
-import { useState, useEffect } from "react";
 
 interface WeekViewProps {
   currentDate: Date;
@@ -85,88 +85,89 @@ export function WeekView({
 
           <ResizableHandle withHandle />
 
-          {/* Day columns */}
           {weekDays.map((day, dayIndex) => {
             const dayAppointments = getAppointmentsForDay(day);
             const isTodayDate = isTodayInBerlin(day);
             const isWeekend = day.getDay() === 0 || day.getDay() === 6;
             
             return (
-              <ResizablePanel key={dayIndex} defaultSize={panelSizes[dayIndex + 1]} minSize={10} maxSize={25}>
-                <div className={`
-                  border-r border-border last:border-r-0
-                  ${isWeekend ? 'bg-muted/10' : 'bg-card'}
-                `}>
-                  {/* Day header */}
+              <React.Fragment key={dayIndex}>
+                <ResizablePanel defaultSize={panelSizes[dayIndex + 1]} minSize={10} maxSize={25}>
                   <div className={`
-                    h-12 flex flex-col items-center justify-center text-sm border-b border-border
-                    ${isTodayDate 
-                      ? 'bg-primary text-primary-foreground' 
-                      : isWeekend 
-                        ? 'bg-muted/20' 
-                        : 'bg-muted/10'
-                    }
+                    border-r border-border last:border-r-0
+                    ${isWeekend ? 'bg-muted/10' : 'bg-card'}
                   `}>
-                    <div className={`text-xs font-medium ${isTodayDate ? 'text-primary-foreground' : isWeekend ? 'text-muted-foreground' : 'text-foreground'}`}>
-                      {format(day, 'EEE', { locale: de })}
-                    </div>
-                    <div className={`text-xs ${isTodayDate ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
-                      {format(day, 'dd.MM')}
-                    </div>
-                    {dayAppointments.length > 0 && (
-                      <div className="text-xs mt-0.5 px-1 bg-primary/10 text-primary rounded">
-                        {dayAppointments.length}
+                    {/* Day header */}
+                    <div className={`
+                      h-12 flex flex-col items-center justify-center text-sm border-b border-border
+                      ${isTodayDate 
+                        ? 'bg-primary text-primary-foreground' 
+                        : isWeekend 
+                          ? 'bg-muted/20' 
+                          : 'bg-muted/10'
+                      }
+                    `}>
+                      <div className={`text-sm font-medium ${isTodayDate ? 'text-primary-foreground' : isWeekend ? 'text-muted-foreground' : 'text-foreground'}`}>
+                        {format(day, 'EEEE', { locale: de })}
                       </div>
-                    )}
-                  </div>
-
-                  {/* Time slots with appointments */}
-                  <div className="relative">
-                    {timeSlots.map((timeSlot, slotIndex) => {
-                      const slotAppointments = dayAppointments.filter(apt => {
-                        const aptHour = parseInt(apt.appointment_time.split(':')[0]);
-                        const slotHour = parseInt(timeSlot.split(':')[0]);
-                        return aptHour === slotHour;
-                      });
-
-                      const isBusinessHour = slotIndex >= 2 && slotIndex <= 12;
-
-                      return (
-                        <div key={slotIndex} className={`
-                          h-16 relative border-b border-border/30
-                          ${isBusinessHour && !isWeekend ? 'hover:bg-muted/10' : ''}
-                          ${isWeekend ? 'bg-muted/5' : ''}
-                        `}>
-                    {slotAppointments.map((appointment, aptIndex) => {
-                      const duration = appointment.duration_minutes || 30;
-                      const height = Math.max(36, (duration / 60) * 64);
-                      
-                      return (
-                        <AppointmentCard
-                          key={appointment.id}
-                          appointment={appointment}
-                          onEdit={onEditAppointment}
-                          onDelete={onDeleteAppointment}
-                          compact
-                          style={{ 
-                            position: 'absolute',
-                            top: `${aptIndex * 18}px`,
-                            left: '1px',
-                            right: '1px',
-                            height: `${height}px`,
-                            zIndex: 10 + aptIndex,
-                            minHeight: '36px'
-                          }}
-                        />
-                      );
-                    })}
+                      <div className={`text-xs ${isTodayDate ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                        {format(day, 'dd.MM')}
+                      </div>
+                      {dayAppointments.length > 0 && (
+                        <div className="text-xs mt-0.5 px-1 bg-primary/10 text-primary rounded">
+                          {dayAppointments.length}
                         </div>
-                      );
-                    })}
+                      )}
+                    </div>
+
+                    {/* Time slots with appointments */}
+                    <div className="relative">
+                      {timeSlots.map((timeSlot, slotIndex) => {
+                        const slotAppointments = dayAppointments.filter(apt => {
+                          const aptHour = parseInt(apt.appointment_time.split(':')[0]);
+                          const slotHour = parseInt(timeSlot.split(':')[0]);
+                          return aptHour === slotHour;
+                        });
+
+                        const isBusinessHour = slotIndex >= 2 && slotIndex <= 12;
+
+                        return (
+                          <div key={slotIndex} className={`
+                            h-16 relative border-b border-border/30
+                            ${isBusinessHour && !isWeekend ? 'hover:bg-muted/10' : ''}
+                            ${isWeekend ? 'bg-muted/5' : ''}
+                          `}>
+                      {slotAppointments.map((appointment, aptIndex) => {
+                        const duration = appointment.duration_minutes || 30;
+                        const height = Math.max(36, (duration / 60) * 64);
+                        
+                        return (
+                          <AppointmentCard
+                            key={appointment.id}
+                            appointment={appointment}
+                            onEdit={onEditAppointment}
+                            onDelete={onDeleteAppointment}
+                            compact
+                            style={{ 
+                              position: 'absolute',
+                              top: `${aptIndex * 18}px`,
+                              left: '1px',
+                              right: '1px',
+                              height: `${height}px`,
+                              zIndex: 10 + aptIndex,
+                              minHeight: '36px'
+                            }}
+                          />
+                        );
+                      })}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                </ResizablePanel>
                 {dayIndex < 6 && <ResizableHandle withHandle />}
-              </ResizablePanel>
+              </React.Fragment>
             );
           })}
         </ResizablePanelGroup>

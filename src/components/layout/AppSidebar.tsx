@@ -1,6 +1,5 @@
 import { Calendar, Phone, Settings, Users, BarChart3, Bot, CreditCard, Zap, HelpCircle } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
-import { ThemeToggle } from "@/components/common/ThemeToggle"
 import {
   Sidebar,
   SidebarContent,
@@ -141,14 +140,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
-      {/* Theme Toggle at bottom */}
-      <div className="p-4 border-t">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Theme</span>
-          <ThemeToggle />
-        </div>
-      </div>
     </Sidebar>
   )
 }

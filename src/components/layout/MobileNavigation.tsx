@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { 
   Menu, 
   Calendar, 
@@ -156,7 +155,6 @@ export function MobileNavigation() {
                       {user.email}
                     </p>
                   </div>
-                  <ThemeToggle />
                 </div>
               )}
             </SheetHeader>
