@@ -39,5 +39,9 @@ export function usePatientCount() {
     fetchPatientCount();
   }, [user]);
 
-  return { patientCount, loading };
+  return { 
+    totalPatients: patientCount,
+    newThisMonth: 0, // TODO: Calculate new patients this month
+    isLoading: loading
+  };
 }

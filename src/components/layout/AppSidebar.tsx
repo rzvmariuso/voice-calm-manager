@@ -1,4 +1,5 @@
-import { Calendar, Phone, Settings, Users, BarChart3, Bot, CreditCard, Zap, HelpCircle } from "lucide-react"
+import { useState } from "react";
+import { Calendar, Phone, Settings, Users, BarChart3, Bot, CreditCard, Zap, HelpCircle, Search } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import {
   Sidebar,
@@ -10,7 +11,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  useSidebar,
 } from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button";
+import { GlobalSearch } from "@/components/common/GlobalSearch";
 
 const items = [
   {
@@ -81,10 +85,13 @@ const items = [
 ]
 
 export function AppSidebar() {
+  const [searchOpen, setSearchOpen] = useState(false);
+  const { state } = useSidebar();
   const location = useLocation()
   const currentPath = location.pathname
 
   return (
+    <>
     <Sidebar className="animate-slide-in-right hidden lg:flex">
       <SidebarHeader className="border-b border-sidebar-border p-6">
         <Link to="/" className="flex items-center gap-3 group hover:no-underline">
@@ -95,13 +102,26 @@ export function AppSidebar() {
               className="w-full h-full object-contain p-1"
             />
           </div>
-          <div>
-            <h2 className="font-bold text-lg text-sidebar-foreground group-hover:text-primary transition-colors duration-200">
-              Voxcal
-            </h2>
-            <p className="text-sm text-sidebar-foreground/70">Stimme & Kalender</p>
-          </div>
+          {!state || state === "expanded" ? (
+            <div>
+              <h2 className="font-bold text-lg text-sidebar-foreground group-hover:text-primary transition-colors duration-200">
+                Voxcal
+              </h2>
+              <p className="text-sm text-sidebar-foreground/70">Stimme & Kalender</p>
+            </div>
+          ) : null}
         </Link>
+        
+        {(!state || state === "expanded") && (
+          <Button 
+            variant="outline" 
+            className="mt-4 w-full justify-start"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search className="w-4 h-4 mr-2" />
+            Suchen...
+          </Button>
+        )}
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -141,5 +161,8 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
+    
+    <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
+    </>
   )
 }

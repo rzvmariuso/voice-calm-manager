@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Crown } from "lucide-react";
+import { Crown, Search } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { MobileNavigation } from "./MobileNavigation";
+import { GlobalSearch } from "@/components/common/GlobalSearch";
 
 interface MobileHeaderProps {
   title?: string;
@@ -11,9 +13,11 @@ interface MobileHeaderProps {
 }
 
 export function MobileHeader({ title, subtitle, showUpgradeButton = false }: MobileHeaderProps) {
+  const [searchOpen, setSearchOpen] = useState(false);
   const { isSubscribed } = useSubscription();
 
   return (
+    <>
     <div className="lg:hidden bg-background border-b border-border p-4 sticky top-0 z-10 backdrop-blur-sm bg-background/95">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -37,15 +41,29 @@ export function MobileHeader({ title, subtitle, showUpgradeButton = false }: Mob
           </div>
         </div>
         
-        {showUpgradeButton && !isSubscribed && (
-          <Link to="/billing">
-            <Button size="sm" className="button-gradient flex-shrink-0">
-              <Crown className="w-4 h-4" />
-              <span className="sr-only">Upgrade</span>
-            </Button>
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search className="w-4 h-4" />
+            <span className="sr-only">Search</span>
+          </Button>
+          
+          {showUpgradeButton && !isSubscribed && (
+            <Link to="/billing">
+              <Button size="sm" className="button-gradient flex-shrink-0">
+                <Crown className="w-4 h-4" />
+                <span className="sr-only">Upgrade</span>
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
     </div>
+    
+    <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
+    </>
   );
 }

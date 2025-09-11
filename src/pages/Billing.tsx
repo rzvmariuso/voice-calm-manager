@@ -19,7 +19,7 @@ export default function Billing() {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
-  const { patientCount } = usePatientCount();
+  const { totalPatients } = usePatientCount();
   
   const {
     subscription,
@@ -193,7 +193,7 @@ export default function Billing() {
                       <div>
                         <p className="text-sm text-muted-foreground">Patienten</p>
                         <p className="font-semibold">
-                          {patientCount} / {currentPlan.max_patients === -1 ? "∞" : currentPlan.max_patients}
+                          {totalPatients} / {currentPlan.max_patients === -1 ? "∞" : currentPlan.max_patients}
                         </p>
                       </div>
                       <div>
