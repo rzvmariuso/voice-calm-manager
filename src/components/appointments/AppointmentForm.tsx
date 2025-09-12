@@ -9,8 +9,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { CalendarIcon, Clock, User, FileText, Save, X, UserPlus, Users } from "lucide-react";
+import { CalendarIcon, Clock, User, FileText, Save, X, UserPlus, Users, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { Link } from "react-router-dom";
@@ -18,6 +19,7 @@ import { formatInBerlinTime, nowInBerlin, fromBerlinTime } from "@/lib/dateUtils
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePractice } from "@/hooks/usePractice";
+import { useConflictDetection } from "@/hooks/useConflictDetection";
 import { cn } from "@/lib/utils";
 import { useAppointmentWebhook } from "@/hooks/useAppointmentWebhook";
 
@@ -74,6 +76,7 @@ export function AppointmentForm({ onSuccess, onCancel, appointment, isEditing = 
   const { practice } = usePractice();
   const { toast } = useToast();
   const { triggerWebhook } = useAppointmentWebhook();
+  const { checkAppointmentConflicts } = useConflictDetection([]);
   
 const [loading, setLoading] = useState(false);
 const [patients, setPatients] = useState<Patient[]>([]);

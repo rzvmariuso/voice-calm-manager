@@ -5,6 +5,7 @@ import { Crown, Search } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { MobileNavigation } from "./MobileNavigation";
 import { GlobalSearch } from "@/components/common/GlobalSearch";
+import { DarkModeToggle } from "@/components/common/DarkModeToggle";
 
 interface MobileHeaderProps {
   title?: string;
@@ -46,10 +47,13 @@ export function MobileHeader({ title, subtitle, showUpgradeButton = false }: Mob
             variant="ghost" 
             size="sm"
             onClick={() => setSearchOpen(true)}
+            data-search-trigger
           >
             <Search className="w-4 h-4" />
             <span className="sr-only">Search</span>
           </Button>
+          
+          <DarkModeToggle />
           
           {showUpgradeButton && !isSubscribed && (
             <Link to="/billing">

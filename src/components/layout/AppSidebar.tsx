@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button";
 import { GlobalSearch } from "@/components/common/GlobalSearch";
+import { DarkModeToggle } from "@/components/common/DarkModeToggle";
 
 const items = [
   {
@@ -113,14 +114,21 @@ export function AppSidebar() {
         </Link>
         
         {(!state || state === "expanded") && (
-          <Button 
-            variant="outline" 
-            className="mt-4 w-full justify-start"
-            onClick={() => setSearchOpen(true)}
-          >
-            <Search className="w-4 h-4 mr-2" />
-            Suchen...
-          </Button>
+          <div className="mt-4 space-y-2">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => setSearchOpen(true)}
+              data-search-trigger
+            >
+              <Search className="w-4 h-4 mr-2" />
+              Suchen...
+            </Button>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Darstellung</span>
+              <DarkModeToggle />
+            </div>
+          </div>
         )}
       </SidebarHeader>
       <SidebarContent>

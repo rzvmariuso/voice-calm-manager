@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, User, Mail, Phone, Calendar, MoreHorizontal, Edit2, Trash2 } from "lucide-react";
+import { Search, Plus, User, Mail, Phone, Calendar, MoreHorizontal, Edit2, Trash2, Users, Check, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Loading } from "@/components/ui/loading";
 import { EmptyState } from "@/components/ui/empty-state";
+import { BulkActions } from "@/components/common/BulkActions";
 import { supabase } from "@/integrations/supabase/client";
 import { usePractice } from "@/hooks/usePractice";
 import { useToast } from "@/hooks/use-toast";
@@ -32,8 +34,9 @@ const Patients = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-const { practice } = usePractice();
-const { toast } = useToast();
+  const [selectedPatients, setSelectedPatients] = useState<Set<string>>(new Set());
+  const { practice } = usePractice();
+  const { toast } = useToast();
 
 const [dialogOpen, setDialogOpen] = useState(false);
 const [isEditing, setIsEditing] = useState(false);
@@ -111,6 +114,12 @@ const filteredPatients = uniqueByName.filter(patient =>
       if (error) throw error;
 
       setPatients(patients.filter(p => p.id !== patientId));
+      setSelectedPatients(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(patientId);
+        return newSet;
+      });
+      
       toast({
         title: "Patient gelöscht",
         description: "Der Patient wurde erfolgreich gelöscht.",
@@ -123,6 +132,83 @@ const filteredPatients = uniqueByName.filter(patient =>
       });
     }
   };
+
+  const handleBulkDelete = async (selectedPatientsData: Patient[]) => {
+    try {
+      const patientIds = selectedPatientsData.map(p => p.id);
+      
+      const { error } = await supabase
+        .from('patients')
+        .delete()
+        .in('id', patientIds);
+
+      if (error) throw error;
+
+      setPatients(prev => prev.filter(p => !patientIds.includes(p.id)));
+      setSelectedPatients(new Set());
+      
+      toast({
+        title: "Patienten gelöscht",
+        description: `${selectedPatientsData.length} Patienten wurden erfolgreich gelöscht.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Fehler",
+        description: "Patienten konnten nicht gelöscht werden.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkExport = async (selectedPatientsData: Patient[]) => {
+    try {
+      const csvHeaders = "Vorname,Nachname,E-Mail,Telefon,Registriert";
+      const csvRows = selectedPatientsData.map(p => 
+        `"${p.first_name}","${p.last_name}","${p.email || ''}","${p.phone || ''}","${formatDate(p.created_at)}"`
+      );
+      
+      const csvContent = [csvHeaders, ...csvRows].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `patienten_export_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      
+      toast({
+        title: "Export erfolgreich",
+        description: `${selectedPatientsData.length} Patienten wurden exportiert.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Fehler",
+        description: "Export fehlgeschlagen.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const bulkActions = [
+    {
+      id: "export",
+      label: "Exportieren (CSV)",
+      icon: <FileText className="w-4 h-4" />,
+      action: handleBulkExport
+    },
+    {
+      id: "delete",
+      label: "Alle löschen",
+      icon: <Trash2 className="w-4 h-4" />,
+      variant: "destructive" as const,
+      action: handleBulkDelete
+    }
+  ];
 
   const getConsentStatus = (consentDate?: string) => {
     if (!consentDate) {
@@ -215,17 +301,27 @@ const filteredPatients = uniqueByName.filter(patient =>
             </div>
           </div>
 
-          {/* Search */}
-          <div className="flex gap-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Patienten suchen (Name, E-Mail, Telefon)..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 hover:border-primary/50 focus:border-primary transition-colors duration-200"
-              />
+          {/* Search and Bulk Actions */}
+          <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+            <div className="flex gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Patienten suchen (Name, E-Mail, Telefon)..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 hover:border-primary/50 focus:border-primary transition-colors duration-200"
+                />
+              </div>
             </div>
+
+            <BulkActions
+              items={filteredPatients}
+              selectedItems={selectedPatients}
+              onSelectionChange={setSelectedPatients}
+              actions={bulkActions}
+              getItemId={(patient) => patient.id}
+            />
           </div>
 
           {/* Patients List */}
@@ -254,11 +350,27 @@ action={{
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => { setIsEditing(true); setSelectedPatient(patient); setDialogOpen(true); }}>
-                        <Avatar className="w-12 h-12 hover:scale-110 transition-transform duration-200">
-                          <AvatarFallback className="bg-gradient-primary text-white">
-                            {patient.first_name[0]}{patient.last_name[0]}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={selectedPatients.has(patient.id)}
+                            onCheckedChange={(checked) => {
+                              const newSet = new Set(selectedPatients);
+                              if (checked) {
+                                newSet.add(patient.id);
+                              } else {
+                                newSet.delete(patient.id);
+                              }
+                              setSelectedPatients(newSet);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          
+                          <Avatar className="w-12 h-12 hover:scale-110 transition-transform duration-200">
+                            <AvatarFallback className="bg-gradient-primary text-white">
+                              {patient.first_name[0]}{patient.last_name[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
                         
                         <div className="flex-1">
 <div className="flex items-center gap-2 mb-1">
