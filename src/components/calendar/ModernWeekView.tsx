@@ -13,6 +13,8 @@ interface ModernWeekViewProps {
   onEditAppointment: (appointment: AppointmentWithPatient) => void;
   onDeleteAppointment: (appointment: AppointmentWithPatient) => void;
   onPatientClick: (patientId: string) => void;
+  onDayClick?: (date: Date) => void;
+  onAppointmentDrop?: (appointmentId: string, newDate: string, newTime?: string) => void;
 }
 
 export function ModernWeekView({
@@ -20,7 +22,9 @@ export function ModernWeekView({
   appointments,
   onEditAppointment,
   onDeleteAppointment,
-  onPatientClick
+  onPatientClick,
+  onDayClick,
+  onAppointmentDrop
 }: ModernWeekViewProps) {
   const weekDays = useMemo(() => {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -53,6 +57,20 @@ export function ModernWeekView({
     const height = (duration * 64) / 60; // Convert minutes to pixels
     
     return { top, height };
+  };
+
+  const handleDrop = (e: React.DragEvent, date: Date, timeSlot?: number) => {
+    e.preventDefault();
+    const appointmentId = e.dataTransfer.getData('appointmentId');
+    if (appointmentId && onAppointmentDrop) {
+      const newDate = format(date, 'yyyy-MM-dd');
+      const newTime = timeSlot ? `${timeSlot.toString().padStart(2, '0')}:00` : undefined;
+      onAppointmentDrop(appointmentId, newDate, newTime);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
   };
 
   return (
@@ -116,17 +134,19 @@ export function ModernWeekView({
             )}>
               {/* Time Slots */}
               {timeSlots.map((hour) => (
-                <div key={hour} className="h-16 border-b hover:bg-muted/20 transition-colors group">
+                <div 
+                  key={hour} 
+                  className="h-16 border-b hover:bg-muted/20 transition-colors group relative"
+                  onDrop={(e) => handleDrop(e, date, hour)}
+                  onDragOver={handleDragOver}
+                >
                   {/* Add appointment button on hover */}
-                  {!isWeekend && (
+                  {!isWeekend && onDayClick && (
                     <Button
                       size="sm"
                       variant="ghost"
                       className="opacity-0 group-hover:opacity-100 absolute inset-0 w-full h-full rounded-none transition-opacity"
-                      onClick={() => {
-                        // onDayClick could be extended to handle specific times
-                        // For now, just trigger day click
-                      }}
+                      onClick={() => onDayClick(date)}
                     >
                       <Plus className="w-4 h-4" />
                     </Button>
@@ -151,6 +171,10 @@ export function ModernWeekView({
                         onDelete={onDeleteAppointment}
                         onPatientClick={onPatientClick}
                         variant="timeline"
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('appointmentId', appointment.id);
+                        }}
                       />
                     </div>
                   );

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Phone, Settings, Users, BarChart3, Bot, CreditCard, Zap, HelpCircle, Search } from "lucide-react"
+import { Calendar, Phone, Settings, Users, BarChart3, Bot, CreditCard, Zap, HelpCircle, Search, Database } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import {
   Sidebar,
@@ -82,6 +82,11 @@ const items = [
     title: "Einstellungen",
     url: "/settings",
     icon: Settings,
+  },
+  {
+    title: "Export",
+    url: "/export",
+    icon: Database,
   },
 ]
 

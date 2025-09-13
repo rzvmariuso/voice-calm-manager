@@ -418,6 +418,8 @@ export default function Calendar() {
             onEditAppointment={handleEditAppointment}
             onDeleteAppointment={handleDeleteAppointment}
             onPatientClick={handlePatientClick}
+            onDayClick={handleDayClick}
+            onAppointmentDrop={handleAppointmentDrop}
           />
         )}
       </main>

@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PatientHistory } from "@/components/patients/PatientHistory";
+import { PatientNotes } from "@/components/patients/PatientNotes";
+import { PatientFiles } from "@/components/patients/PatientFiles";
 import { PatientDialog } from "@/components/patients/PatientDialog";
 import { LoadingPage } from "@/components/common/LoadingSpinner";
 import { supabase } from "@/integrations/supabase/client";
@@ -140,8 +142,18 @@ export default function PatientDetails() {
               </Button>
             </header>
             
-            <div className="flex-1 overflow-auto p-4 lg:p-6">
+            <div className="flex-1 overflow-auto p-4 lg:p-6 space-y-6">
               <PatientHistory patient={patient} />
+              
+              <PatientNotes 
+                patientId={patient.id} 
+                patientName={`${patient.first_name} ${patient.last_name}`}
+              />
+
+              <PatientFiles 
+                patientId={patient.id} 
+                patientName={`${patient.first_name} ${patient.last_name}`}
+              />
             </div>
           </main>
         </div>

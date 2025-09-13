@@ -29,6 +29,7 @@ import Analytics from "./pages/Analytics";
 import Notifications from "./pages/Notifications";
 import Recurring from "./pages/Recurring";
 import PatientDetails from "./pages/PatientDetails";
+import Export from "./pages/Export";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ function AppContent() {
       <Route path="/terms" element={<Terms />} />
       <Route path="/data-protection" element={<DataProtection />} />
       <Route path="/imprint" element={<Imprint />} />
+      <Route path="/export" element={<Export />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
