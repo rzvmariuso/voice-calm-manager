@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePractice } from './usePractice';
 
@@ -27,7 +27,7 @@ export const useAppointments = () => {
   const [error, setError] = useState<string | null>(null);
   const { practice } = usePractice();
 
-  const loadAppointments = async () => {
+  const loadAppointments = useCallback(async () => {
     if (!practice) return;
 
     try {
@@ -67,11 +67,11 @@ export const useAppointments = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [practice]);
 
   useEffect(() => {
     loadAppointments();
-  }, [practice]);
+  }, [loadAppointments]);
 
   return {
     appointments,

@@ -8,21 +8,35 @@ export function usePatientCount() {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (!user) {
+    if (!user?.id) {
       setLoading(false);
       return;
     }
 
     const fetchPatientCount = async () => {
       try {
+        // First get the practice ID
+        const { data: practice, error: practiceError } = await supabase
+          .from('practices')
+          .select('id')
+          .eq('owner_id', user.id)
+          .single();
+
+        if (practiceError) {
+          console.error('Error fetching practice:', practiceError);
+          return;
+        }
+
+        if (!practice?.id) {
+          setPatientCount(0);
+          return;
+        }
+
+        // Then get patient count
         const { count, error } = await supabase
           .from('patients')
           .select('*', { count: 'exact', head: true })
-          .eq('practice_id', (await supabase
-            .from('practices')
-            .select('id')
-            .eq('owner_id', user.id)
-            .single()).data?.id || '');
+          .eq('practice_id', practice.id);
 
         if (error) {
           console.error('Error fetching patient count:', error);
@@ -37,7 +51,7 @@ export function usePatientCount() {
     };
 
     fetchPatientCount();
-  }, [user]);
+  }, [user?.id]);
 
   return { 
     totalPatients: patientCount,

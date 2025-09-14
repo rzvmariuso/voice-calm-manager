@@ -251,11 +251,11 @@ export function useSubscription() {
 
   // Auto-check subscription on auth changes
   useEffect(() => {
-    if (user && session) {
+    if (user?.id && session) {
       checkSubscription();
       loadPlans();
     }
-  }, [user, session, checkSubscription, loadPlans]);
+  }, [user?.id, session, checkSubscription, loadPlans]);
 
   // Utility functions
   const isSubscribed = subscription?.subscribed || false;

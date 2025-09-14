@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -19,7 +19,7 @@ export const usePhoneNumbers = () => {
   const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumber[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadPhoneNumbers = async () => {
+  const loadPhoneNumbers = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -38,7 +38,7 @@ export const usePhoneNumbers = () => {
         variant: 'destructive',
       });
     }
-  };
+  }, [user, toast]);
 
   const addPhoneNumber = async (phoneNumber: string, countryCode: string, areaCode?: string) => {
     if (!user) return;
@@ -160,10 +160,10 @@ export const usePhoneNumbers = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       loadPhoneNumbers();
     }
-  }, [user]);
+  }, [user?.id, loadPhoneNumbers]);
 
   return {
     phoneNumbers,

@@ -24,7 +24,7 @@ export function useServices(practiceId?: string) {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!user || !practiceId) {
+    if (!user?.id || !practiceId) {
       setLoading(false);
       return;
     }
@@ -52,7 +52,7 @@ export function useServices(practiceId?: string) {
     };
 
     fetchServices();
-  }, [user, practiceId]);
+  }, [user?.id, practiceId]);
 
   const createService = async (serviceData: Omit<Service, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user || !practiceId) return null;
