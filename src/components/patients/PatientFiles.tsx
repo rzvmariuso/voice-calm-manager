@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePractice } from "@/hooks/usePractice";
 import { cn } from "@/lib/utils";
 
 interface PatientFile {
@@ -44,6 +45,7 @@ const isImageFile = (fileType: string) => fileType.startsWith('image/');
 
 export function PatientFiles({ patientId, patientName, className }: PatientFilesProps) {
   const { toast } = useToast();
+  const { practice } = usePractice();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [files, setFiles] = useState<PatientFile[]>([]);
@@ -56,16 +58,29 @@ export function PatientFiles({ patientId, patientName, className }: PatientFiles
   }, [patientId]);
 
   const loadFiles = async () => {
-    try {
-      // Since patient_files table doesn't exist yet, we'll use a placeholder
-      // const { data, error } = await supabase
-      //   .from('patient_files')
-      //   .select('*')
-      //   .eq('patient_id', patientId)
-      //   .order('uploaded_at', { ascending: false });
+    if (!practice?.id) return;
 
-      // if (error) throw error;
-      setFiles([]);
+    try {
+      // List files from storage
+      const folderPath = `${practice.id}/patients/${patientId}`;
+      const { data: fileList, error } = await supabase.storage
+        .from('patient-files')
+        .list(folderPath);
+
+      if (error) throw error;
+
+      // Map files with metadata
+      const filesWithMetadata = (fileList || []).map(file => ({
+        id: file.name,
+        patient_id: patientId,
+        file_name: file.name,
+        file_type: file.metadata?.mimetype || 'application/octet-stream',
+        file_size: file.metadata?.size || 0,
+        file_path: `${folderPath}/${file.name}`,
+        uploaded_at: file.created_at || file.updated_at || new Date().toISOString()
+      }));
+
+      setFiles(filesWithMetadata);
     } catch (error) {
       console.error('Error loading files:', error);
       toast({
@@ -80,31 +95,38 @@ export function PatientFiles({ patientId, patientName, className }: PatientFiles
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !practice?.id) return;
 
-    // Check file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
+    // Check file size (max 20MB)
+    if (file.size > 20 * 1024 * 1024) {
       toast({
         title: "Datei zu groß",
-        description: "Dateien dürfen maximal 10MB groß sein",
+        description: "Dateien dürfen maximal 20MB groß sein",
         variant: "destructive",
       });
       return;
     }
 
-    // Check file type
+    // Check file type - allow more types including PDF, CSV, Excel
     const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      // Images
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+      // Documents
       'application/pdf',
-      'text/plain',
+      'text/plain', 'text/csv',
+      // Microsoft Office
       'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
     ];
 
     if (!allowedTypes.includes(file.type)) {
       toast({
         title: "Dateityp nicht unterstützt",
-        description: "Nur Bilder, PDFs und Textdateien sind erlaubt",
+        description: "Nur Bilder, PDFs, CSV, Excel und Word-Dokumente sind erlaubt",
         variant: "destructive",
       });
       return;
@@ -116,11 +138,24 @@ export function PatientFiles({ patientId, patientName, className }: PatientFiles
 
       // Create unique file path
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `patient-files/${patientId}/${fileName}`;
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(2);
+      const fileName = `${timestamp}-${randomId}.${fileExt}`;
+      const filePath = `${practice.id}/patients/${patientId}/${fileName}`;
 
-      // File uploads disabled since storage isn't configured yet
-      throw new Error("File upload functionality is not yet available");
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('patient-files')
+        .upload(filePath, file, {
+          contentType: file.type,
+          metadata: {
+            originalName: file.name,
+            patientId: patientId,
+            practiceId: practice.id
+          }
+        });
+
+      if (uploadError) throw uploadError;
 
       toast({
         title: "Datei hochgeladen",
@@ -146,8 +181,25 @@ export function PatientFiles({ patientId, patientName, className }: PatientFiles
 
   const downloadFile = async (file: PatientFile) => {
     try {
-      // File downloads disabled since storage isn't configured yet
-      throw new Error("File download functionality is not yet available");
+      const { data, error } = await supabase.storage
+        .from('patient-files')
+        .createSignedUrl(file.file_path, 60); // 1 minute expiry
+
+      if (error) throw error;
+      if (!data?.signedUrl) throw new Error('Could not generate download URL');
+
+      // Create download link and trigger download
+      const link = document.createElement('a');
+      link.href = data.signedUrl;
+      link.download = file.file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Download gestartet",
+        description: `${file.file_name} wird heruntergeladen`,
+      });
     } catch (error) {
       console.error('Error downloading file:', error);
       toast({
@@ -159,11 +211,18 @@ export function PatientFiles({ patientId, patientName, className }: PatientFiles
   };
 
   const previewFile = async (file: PatientFile) => {
-    if (!isImageFile(file.file_type)) return;
+    if (!isImageFile(file.file_type) && file.file_type !== 'application/pdf') return;
 
     try {
-      // File preview disabled since storage isn't configured yet
-      throw new Error("File preview functionality is not yet available");
+      const { data, error } = await supabase.storage
+        .from('patient-files')
+        .createSignedUrl(file.file_path, 60); // 1 minute expiry
+
+      if (error) throw error;
+      if (!data?.signedUrl) throw new Error('Could not generate preview URL');
+
+      // Open in new window/tab
+      window.open(data.signedUrl, '_blank');
     } catch (error) {
       console.error('Error previewing file:', error);
       toast({
@@ -176,8 +235,11 @@ export function PatientFiles({ patientId, patientName, className }: PatientFiles
 
   const deleteFile = async (file: PatientFile) => {
     try {
-      // File deletion disabled since storage isn't configured yet
-      throw new Error("File deletion functionality is not yet available");
+      const { error } = await supabase.storage
+        .from('patient-files')
+        .remove([file.file_path]);
+
+      if (error) throw error;
 
       toast({
         title: "Datei gelöscht",
@@ -251,7 +313,7 @@ export function PatientFiles({ patientId, patientName, className }: PatientFiles
           type="file"
           onChange={handleFileUpload}
           className="hidden"
-          accept="image/*,.pdf,.doc,.docx,.txt"
+          accept="image/*,.pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.ppt,.pptx"
         />
 
         {/* Upload Progress */}
@@ -299,7 +361,7 @@ export function PatientFiles({ patientId, patientName, className }: PatientFiles
                       </div>
 
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {isImageFile(file.file_type) && (
+                        {(isImageFile(file.file_type) || file.file_type === 'application/pdf') && (
                           <Button
                             variant="ghost"
                             size="sm"

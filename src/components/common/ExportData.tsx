@@ -331,6 +331,7 @@ export function ExportData({ className }: ExportDataProps) {
                     })}
                     disabled={(date) => date > new Date()}
                     initialFocus
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -360,6 +361,7 @@ export function ExportData({ className }: ExportDataProps) {
                     })}
                     disabled={(date) => date > new Date() || date < options.dateRange.from}
                     initialFocus
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>

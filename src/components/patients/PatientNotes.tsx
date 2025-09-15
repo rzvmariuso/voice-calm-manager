@@ -9,17 +9,17 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePractice } from "@/hooks/usePractice";
 import { cn } from "@/lib/utils";
 
 interface PatientNote {
   id: string;
   patient_id: string;
-  content: string;
+  practice_id: string;
+  note: string;
   note_type: 'general' | 'medical' | 'appointment' | 'reminder';
   created_at: string;
   updated_at: string;
-  created_by?: string;
-  appointment_id?: string;
 }
 
 interface PatientNotesProps {
@@ -44,6 +44,7 @@ const noteTypeColors = {
 
 export function PatientNotes({ patientId, patientName, className }: PatientNotesProps) {
   const { toast } = useToast();
+  const { practice } = usePractice();
   const [notes, setNotes] = useState<PatientNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -57,16 +58,18 @@ export function PatientNotes({ patientId, patientName, className }: PatientNotes
   }, [patientId]);
 
   const loadNotes = async () => {
-    try {
-      // Since patient_notes table doesn't exist yet, we'll use a placeholder
-      // const { data, error } = await supabase
-      //   .from('patient_notes')
-      //   .select('*')
-      //   .eq('patient_id', patientId)
-      //   .order('created_at', { ascending: false });
+    if (!practice?.id) return;
 
-      // if (error) throw error;
-      setNotes([]);
+    try {
+      const { data, error } = await supabase
+        .from('patient_notes')
+        .select('*')
+        .eq('patient_id', patientId)
+        .eq('practice_id', practice.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setNotes((data || []) as PatientNote[]);
     } catch (error) {
       console.error('Error loading notes:', error);
       toast({
@@ -80,22 +83,19 @@ export function PatientNotes({ patientId, patientName, className }: PatientNotes
   };
 
   const saveNote = async () => {
-    if (!newNote.content.trim()) return;
+    if (!newNote.content.trim() || !practice?.id) return;
 
     try {
-      // Since patient_notes table doesn't exist yet, we'll use a placeholder
-      // const { data: { user } } = await supabase.auth.getUser();
-      
-      // const { error } = await supabase
-      //   .from('patient_notes')
-      //   .insert([{
-      //     patient_id: patientId,
-      //     content: newNote.content.trim(),
-      //     note_type: newNote.note_type,
-      //     created_by: user?.id
-      //   }]);
+      const { error } = await supabase
+        .from('patient_notes')
+        .insert([{
+          patient_id: patientId,
+          practice_id: practice.id,
+          note: newNote.content.trim(),
+          note_type: newNote.note_type
+        }]);
 
-      // if (error) throw error;
+      if (error) throw error;
 
       toast({
         title: "Notiz gespeichert",
@@ -116,14 +116,16 @@ export function PatientNotes({ patientId, patientName, className }: PatientNotes
   };
 
   const deleteNote = async (noteId: string) => {
-    try {
-      // Since patient_notes table doesn't exist yet, we'll use a placeholder
-      // const { error } = await supabase
-      //   .from('patient_notes')
-      //   .delete()
-      //   .eq('id', noteId);
+    if (!practice?.id) return;
 
-      // if (error) throw error;
+    try {
+      const { error } = await supabase
+        .from('patient_notes')
+        .delete()
+        .eq('id', noteId)
+        .eq('practice_id', practice.id);
+
+      if (error) throw error;
 
       toast({
         title: "Notiz gelöscht",
@@ -262,7 +264,7 @@ export function PatientNotes({ patientId, patientName, className }: PatientNotes
                         </div>
                         
                         <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                          {note.content}
+                          {note.note}
                         </p>
                       </div>
 

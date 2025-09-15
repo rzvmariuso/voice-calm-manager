@@ -189,6 +189,7 @@ export function PatientForm({ onSuccess, onCancel, patient, isEditing = false }:
                     onSelect={(date) => setFormData(prev => ({ ...prev, date_of_birth: date }))}
                     disabled={(date) => date > new Date()}
                     initialFocus
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>

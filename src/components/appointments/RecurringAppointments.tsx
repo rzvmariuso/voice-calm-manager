@@ -555,6 +555,7 @@ setPatients(patientsData || []);
                           return dayOfWeek === 0 || dayOfWeek === 6;
                         }}
                         initialFocus
+                        className="pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
@@ -684,6 +685,7 @@ setPatients(patientsData || []);
                         return dayOfWeek === 0 || dayOfWeek === 6;
                       }}
                       initialFocus
+                      className="pointer-events-auto"
                     />
                     <div className="p-2 border-t">
                       <Button
@@ -808,6 +810,7 @@ setPatients(patientsData || []);
                       onSelect={(date) => setNewPatientData(prev => ({ ...prev, date_of_birth: date || null }))}
                       initialFocus
                       defaultMonth={new Date(1980, 0)}
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>

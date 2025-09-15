@@ -509,6 +509,7 @@ const loadPatients = async () => {
                             onSelect={(date) => setNewPatientData(prev => ({ ...prev, date_of_birth: date || null }))}
                             disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                             initialFocus
+                            className="pointer-events-auto"
                           />
                         </PopoverContent>
                       </Popover>
@@ -608,6 +609,7 @@ const loadPatients = async () => {
                       return dayOfWeek === 0 || dayOfWeek === 6;
                     }}
                     initialFocus
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
