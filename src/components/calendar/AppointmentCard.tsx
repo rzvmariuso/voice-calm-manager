@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Bot, Clock, Edit, Trash2, User, Calendar, MessageSquare, Phone, Mail } from "lucide-react";
 import { AppointmentWithPatient } from "@/hooks/useAppointments";
+import { PatientHoverCard } from "@/components/patients/PatientHoverCard";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -135,7 +136,12 @@ export const AppointmentCard = memo(({
             {/* Patient Name Only */}
             <div className="pl-4">
               <div className="text-sm font-medium text-card-foreground truncate">
-                {appointment.patient.first_name} {appointment.patient.last_name}
+                <PatientHoverCard 
+                  patientId={appointment.patient.id}
+                  patientName={`${appointment.patient.first_name} ${appointment.patient.last_name}`}
+                >
+                  {appointment.patient.first_name} {appointment.patient.last_name}
+                </PatientHoverCard>
               </div>
             </div>
 
@@ -190,7 +196,12 @@ export const AppointmentCard = memo(({
       {/* Patient info */}
       <div className="space-y-0.5">
         <div className="truncate text-xs font-medium text-card-foreground">
-          {appointment.patient.first_name} {appointment.patient.last_name}
+          <PatientHoverCard 
+            patientId={appointment.patient.id}
+            patientName={`${appointment.patient.first_name} ${appointment.patient.last_name}`}
+          >
+            {appointment.patient.first_name} {appointment.patient.last_name}
+          </PatientHoverCard>
         </div>
         <div className="truncate text-xs text-muted-foreground">
           {appointment.service}
@@ -223,7 +234,12 @@ const AppointmentDetails = memo(({
       <div className="flex items-start justify-between">
         <div>
           <h4 className="font-semibold text-lg text-popover-foreground">
-            {appointment.patient.first_name} {appointment.patient.last_name}
+            <PatientHoverCard 
+              patientId={appointment.patient.id}
+              patientName={`${appointment.patient.first_name} ${appointment.patient.last_name}`}
+            >
+              {appointment.patient.first_name} {appointment.patient.last_name}
+            </PatientHoverCard>
           </h4>
           <p className="text-sm text-muted-foreground">
             {format(new Date(`${appointment.appointment_date}T${appointment.appointment_time}`), 'PPpp', { locale: de })}

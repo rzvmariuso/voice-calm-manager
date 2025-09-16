@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Bot, Clock, Edit, Trash2, User, Phone, Mail, Calendar } from "lucide-react";
 import { AppointmentWithPatient } from "@/hooks/useAppointments";
+import { PatientHoverCard } from "@/components/patients/PatientHoverCard";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -83,7 +84,12 @@ export function ModernAppointmentCard({
 
             {/* Patient Name */}
             <div className="text-xs font-medium text-card-foreground truncate">
-              {appointment.patient.first_name} {appointment.patient.last_name}
+              <PatientHoverCard 
+                patientId={appointment.patient.id}
+                patientName={`${appointment.patient.first_name} ${appointment.patient.last_name}`}
+              >
+                {appointment.patient.first_name} {appointment.patient.last_name}
+              </PatientHoverCard>
             </div>
             
             {/* Service */}
@@ -118,7 +124,12 @@ export function ModernAppointmentCard({
             <div className="h-full flex flex-col justify-between text-xs">
               <div>
                 <div className="font-medium text-foreground truncate">
-                  {appointment.patient.first_name} {appointment.patient.last_name}
+                  <PatientHoverCard 
+                    patientId={appointment.patient.id}
+                    patientName={`${appointment.patient.first_name} ${appointment.patient.last_name}`}
+                  >
+                    {appointment.patient.first_name} {appointment.patient.last_name}
+                  </PatientHoverCard>
                 </div>
                 <div className="text-muted-foreground truncate">
                   {appointment.service}
@@ -188,16 +199,12 @@ function AppointmentDetails({
         <div className="space-y-1">
           <h4 className="font-semibold text-lg flex items-center gap-2">
             <User className="w-4 h-4 text-muted-foreground" />
-            {onPatientClick ? (
-              <button 
-                onClick={() => onPatientClick(appointment.patient.id)}
-                className="text-primary hover:text-primary/80 hover:underline transition-colors text-left"
-              >
-                {appointment.patient.first_name} {appointment.patient.last_name}
-              </button>
-            ) : (
-              <span>{appointment.patient.first_name} {appointment.patient.last_name}</span>
-            )}
+            <PatientHoverCard 
+              patientId={appointment.patient.id}
+              patientName={`${appointment.patient.first_name} ${appointment.patient.last_name}`}
+            >
+              {appointment.patient.first_name} {appointment.patient.last_name}
+            </PatientHoverCard>
           </h4>
           <p className="text-sm text-muted-foreground flex items-center gap-2">
             <Calendar className="w-4 h-4" />
