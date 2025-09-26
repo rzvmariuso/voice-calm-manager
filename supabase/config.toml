@@ -21,3 +21,12 @@ verify_jwt = true
 
 [functions.clean-ai-env]
 verify_jwt = true
+
+[functions.retell-webhook]
+verify_jwt = false
+
+[functions.create-retell-agent]
+verify_jwt = true
+
+[functions.retell-phone]
+verify_jwt = true

@@ -23,6 +23,7 @@ export type Database = {
           id: string
           outcome: string | null
           practice_id: string
+          provider: string | null
           transcript: string | null
         }
         Insert: {
@@ -33,6 +34,7 @@ export type Database = {
           id?: string
           outcome?: string | null
           practice_id: string
+          provider?: string | null
           transcript?: string | null
         }
         Update: {
@@ -43,6 +45,7 @@ export type Database = {
           id?: string
           outcome?: string | null
           practice_id?: string
+          provider?: string | null
           transcript?: string | null
         }
         Relationships: [
@@ -380,6 +383,7 @@ export type Database = {
           owner_id: string
           phone: string | null
           practice_type: string
+          retell_agent_id: string | null
           updated_at: string
         }
         Insert: {
@@ -396,6 +400,7 @@ export type Database = {
           owner_id: string
           phone?: string | null
           practice_type?: string
+          retell_agent_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -412,6 +417,7 @@ export type Database = {
           owner_id?: string
           phone?: string | null
           practice_type?: string
+          retell_agent_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -615,6 +621,7 @@ export type Database = {
           is_verified: boolean
           phone_number: string
           provider: string | null
+          retell_phone_id: string | null
           updated_at: string
           user_id: string
           vapi_assistant_id: string | null
@@ -629,6 +636,7 @@ export type Database = {
           is_verified?: boolean
           phone_number: string
           provider?: string | null
+          retell_phone_id?: string | null
           updated_at?: string
           user_id: string
           vapi_assistant_id?: string | null
@@ -643,6 +651,7 @@ export type Database = {
           is_verified?: boolean
           phone_number?: string
           provider?: string | null
+          retell_phone_id?: string | null
           updated_at?: string
           user_id?: string
           vapi_assistant_id?: string | null

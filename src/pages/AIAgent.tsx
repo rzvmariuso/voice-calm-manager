@@ -44,6 +44,7 @@ export default function AIAgent() {
   const [testPhoneNumber, setTestPhoneNumber] = useState("")
   const [recentCalls, setRecentCalls] = useState([])
   const [isCleaningEnv, setIsCleaningEnv] = useState(false)
+  const [selectedProvider, setSelectedProvider] = useState<'vapi' | 'retell'>('vapi')
   const [stats, setStats] = useState({
     totalCalls: 0,
     successfulBookings: 0,
