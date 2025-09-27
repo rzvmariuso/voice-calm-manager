@@ -11,6 +11,7 @@ interface Practice {
   email?: string;
   business_hours: any;
   ai_prompt: string;
+  retell_agent_id?: string;
   created_at: string;
   updated_at: string;
 }

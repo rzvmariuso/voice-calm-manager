@@ -32,6 +32,9 @@ import { useSubscription } from "@/hooks/useSubscription"
 import { useAuth } from "@/hooks/useAuth"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Link } from "react-router-dom"
+import { usePractice } from "@/hooks/usePractice"
+import RetellAgentManager from "@/components/telephony/RetellAgentManager"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // Empty initial state - no mock data
 
@@ -45,6 +48,7 @@ export default function AIAgent() {
   const [recentCalls, setRecentCalls] = useState([])
   const [isCleaningEnv, setIsCleaningEnv] = useState(false)
   const [selectedProvider, setSelectedProvider] = useState<'vapi' | 'retell'>('vapi')
+  const [retellAgentId, setRetellAgentId] = useState('')
   const [stats, setStats] = useState({
     totalCalls: 0,
     successfulBookings: 0,
@@ -54,6 +58,7 @@ export default function AIAgent() {
   const { toast } = useToast()
   const { user } = useAuth()
   const { isSubscribed } = useSubscription()
+  const { practice } = usePractice()
 
   // Check if user has access to AI features (subscription or whitelisted email)
   const hasAIAccess = isSubscribed || user?.email === 'razvanmariusoancea@gmail.com'
@@ -62,7 +67,10 @@ export default function AIAgent() {
   useEffect(() => {
     loadAIConfig()
     loadCallLogs()
-  }, [])
+    if (practice?.retell_agent_id) {
+      setRetellAgentId(practice.retell_agent_id)
+    }
+  }, [practice])
 
   const loadCallLogs = async () => {
     try {
@@ -166,6 +174,59 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
       })
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const createRetellAgent = async () => {
+    if (!aiPrompt.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Bitte speichern Sie zuerst den AI-Prompt",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!practice) {
+      toast({
+        title: "Fehler",
+        description: "Praxis nicht gefunden",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      setIsCreatingAssistant(true)
+      const { data, error } = await supabase.functions.invoke('create-retell-agent', {
+        body: { 
+          practice_id: practice.id,
+          voice_id: 'Amara'
+        }
+      })
+      
+      if (error) throw error
+      
+      if (data.success) {
+        toast({
+          title: "Erfolg",
+          description: data.message,
+        })
+        setRetellAgentId(data.agent_id)
+        // Reload call logs after creating agent
+        loadCallLogs()
+      } else {
+        throw new Error(data.error || 'Unbekannter Fehler')
+      }
+    } catch (error) {
+      console.error('Error creating Retell agent:', error)
+      toast({
+        title: "Fehler",
+        description: "Agent konnte nicht erstellt werden: " + error.message,
+        variant: "destructive"
+      })
+    } finally {
+      setIsCreatingAssistant(false)
     }
   }
 
@@ -457,9 +518,26 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                   <CardTitle className="flex items-center gap-2">
                     <Bot className="w-5 h-5 text-primary" />
                     KI-Prompt Konfiguration
-                    <Badge variant="outline" className="border-primary text-primary">
-                      Vapi
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="provider-select" className="text-sm">Provider:</Label>
+                      <Select value={selectedProvider} onValueChange={(value: 'vapi' | 'retell') => setSelectedProvider(value)}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue />  
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="vapi">
+                            <Badge variant="outline" className="border-primary text-primary">
+                              VAPI
+                            </Badge>
+                          </SelectItem>
+                          <SelectItem value="retell">
+                            <Badge variant="outline" className="border-secondary text-secondary">
+                              Retell.ai
+                            </Badge>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -498,15 +576,15 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                   
                   <div className="space-y-3">
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        className="flex-1" 
-                        disabled={!hasAIAccess || isCreatingAssistant}
-                        onClick={createVapiAssistant}
-                      >
-                        <Volume2 className="w-4 h-4 mr-2" />
-                        {isCreatingAssistant ? "Erstelle..." : "Assistant erstellen"}
-                      </Button>
+                       <Button 
+                         variant="outline" 
+                         className="flex-1" 
+                         disabled={selectedProvider === 'retell' && !!practice?.retell_agent_id}
+                         onClick={selectedProvider === 'vapi' ? createVapiAssistant : createRetellAgent}
+                       >
+                         <Volume2 className="w-4 h-4 mr-2" />
+                         {isCreatingAssistant ? "Erstelle..." : selectedProvider === 'vapi' ? "VAPI Assistant erstellen" : practice?.retell_agent_id ? "Agent erstellt" : "Retell Agent erstellen"}
+                       </Button>
                       <Button 
                         variant="outline" 
                         className="flex-1" 
@@ -543,13 +621,18 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
             </div>
 
             {/* Recent Calls */}
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-primary" />
-                  Letzte Anrufe
-                </CardTitle>
-              </CardHeader>
+            <div className="space-y-6">
+              {selectedProvider === 'retell' && (
+                <RetellAgentManager />
+              )}
+              
+              <Card className="shadow-soft">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-primary" />
+                    Letzte Anrufe
+                  </CardTitle>
+                </CardHeader>
               <CardContent>
                 {recentCalls.length > 0 ? (
                   <div className="space-y-4">
@@ -598,8 +681,9 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                     </p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </main>
       </div>

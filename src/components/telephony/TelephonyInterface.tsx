@@ -1,8 +1,10 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Phone, Bot, Shield, Zap } from 'lucide-react';
 import PhoneNumberManager from './PhoneNumberManager';
+import RetellAgentManager from './RetellAgentManager';
 
 interface TelephonyInterfaceProps {
   onCallStatusChange?: (status: string) => void;
@@ -11,32 +13,56 @@ interface TelephonyInterfaceProps {
 const TelephonyInterface: React.FC<TelephonyInterfaceProps> = ({ onCallStatusChange }) => {
   return (
     <div className="space-y-6">
-      {/* Status Card */}
+      {/* Provider Selection */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5" />
-            AI-Telefonie Status
+            AI-Telefonie Provider
           </CardTitle>
           <CardDescription>
-            Aktuelle Verbindung und System-Status
+            Wählen Sie Ihren bevorzugten AI-Telefonie Anbieter
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-success rounded-full animate-pulse"></div>
-              <span className="font-medium">AI-System bereit</span>
-            </div>
-            <Badge variant="outline" className="border-success text-success">
-              Online
-            </Badge>
-          </div>
+          <Tabs defaultValue="vapi" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="vapi">VAPI</TabsTrigger>
+              <TabsTrigger value="retell">Retell.ai</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="vapi" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-success rounded-full animate-pulse"></div>
+                  <span className="font-medium">VAPI System bereit</span>
+                </div>
+                <Badge variant="outline" className="border-success text-success">
+                  Online
+                </Badge>
+              </div>
+              
+              {/* VAPI Phone Number Manager */}
+              <PhoneNumberManager />
+            </TabsContent>
+            
+            <TabsContent value="retell" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-primary rounded-full animate-pulse"></div>
+                  <span className="font-medium">Retell.ai System bereit</span>
+                </div>
+                <Badge variant="outline" className="border-primary text-primary">
+                  Online
+                </Badge>
+              </div>
+              
+              {/* Retell Agent Manager */}
+              <RetellAgentManager />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
-
-      {/* Phone Number Manager */}
-      <PhoneNumberManager />
 
       {/* Features Card */}
       <Card>
