@@ -16,6 +16,41 @@ serve(async (req) => {
   try {
     console.log('Creating Retell agent');
     
+    // Get authorization header for user identification
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authorization required' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Create supabase client with service role key
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Create auth client to get user
+    const authClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    // Extract token from header
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('User authenticated:', user.id);
+    
     const { practice_id, voice_id = 'Amara', agent_name } = await req.json();
     
     if (!practice_id) {
@@ -27,24 +62,29 @@ serve(async (req) => {
 
     const RETELL_API_KEY = Deno.env.get('RETELL_API_KEY');
     if (!RETELL_API_KEY) {
-      throw new Error('RETELL_API_KEY is not configured');
+      return new Response(JSON.stringify({ error: 'RETELL_API_KEY is not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    // Get practice details
+    // Get practice details and verify ownership
     const { data: practice, error: practiceError } = await supabase
       .from('practices')
       .select('*')
       .eq('id', practice_id)
+      .eq('owner_id', user.id)
       .single();
 
     if (practiceError || !practice) {
-      throw new Error('Practice not found');
+      console.error('Practice error:', practiceError);
+      return new Response(JSON.stringify({ error: 'Practice not found or access denied' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+
+    console.log('Practice verified:', practice.name);
 
     // Create Retell agent
     const agentData = {
@@ -108,7 +148,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error creating Retell agent:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
