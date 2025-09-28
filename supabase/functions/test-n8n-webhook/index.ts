@@ -50,7 +50,7 @@ serve(async (req) => {
     // Get user's practice and n8n configuration
     const { data: practice, error: practiceError } = await supabaseClient
       .from("practices")
-      .select("n8n_webhook_url, n8n_enabled, name, email, phone")
+      .select("id, n8n_webhook_url, n8n_enabled, name, email, phone")
       .eq("owner_id", userData.user.id)
       .maybeSingle();
 
@@ -159,7 +159,7 @@ serve(async (req) => {
     console.error('Error in test-n8n-webhook function:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || "An unexpected error occurred",
+        error: error instanceof Error ? error.message : "An unexpected error occurred",
         success: false
       }),
       {

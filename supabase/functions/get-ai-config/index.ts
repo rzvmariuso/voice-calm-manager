@@ -92,7 +92,7 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`;
     console.error('Error in get-ai-config function:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         success: false
       }),
       {

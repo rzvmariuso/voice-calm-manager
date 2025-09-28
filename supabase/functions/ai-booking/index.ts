@@ -387,7 +387,7 @@ ZEIT KONVERTIEREN:
     console.error('Error in ai-booking function:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         response: 'Entschuldigung, es gab einen technischen Fehler. Bitte versuchen Sie es später erneut oder rufen Sie uns direkt an.'
       }),
       {

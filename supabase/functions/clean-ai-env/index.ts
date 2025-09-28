@@ -95,7 +95,7 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error('Exception purging call logs:', error);
-        results.errors.push(`Call logs: ${error.message}`);
+        results.errors.push(`Call logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
@@ -124,7 +124,7 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error('Exception deleting VAPI assistant:', error);
-        results.errors.push(`VAPI assistant: ${error.message}`);
+        results.errors.push(`VAPI assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
@@ -148,7 +148,7 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error('Exception resetting voice settings:', error);
-        results.errors.push(`Voice settings: ${error.message}`);
+        results.errors.push(`Voice settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
@@ -166,7 +166,7 @@ serve(async (req) => {
     console.error('Error in clean-ai-env function:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

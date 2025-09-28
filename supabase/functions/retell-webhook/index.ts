@@ -85,7 +85,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Webhook error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -189,7 +189,7 @@ async function handleFunctionCall(supabase: any, event: RetellWebhookEvent) {
     }
   } catch (error) {
     console.error('Error handling function call:', error);
-    return { error: error.message };
+    return { error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -274,7 +274,7 @@ async function bookAppointment(supabase: any, args: any, callId: string) {
     console.error('Error booking appointment:', error);
     return { 
       error: 'Terminbuchung fehlgeschlagen',
-      details: error.message 
+      details: error instanceof Error ? error.message : 'Unknown error' 
     };
   }
 }
