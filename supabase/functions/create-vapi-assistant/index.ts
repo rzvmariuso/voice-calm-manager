@@ -189,7 +189,7 @@ PRAXISDATEN:
   } catch (error) {
     console.error('Error creating VAPI assistant:', error);
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error.message,
       success: false
     }), {
       status: 500,

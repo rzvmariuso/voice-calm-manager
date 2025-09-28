@@ -89,7 +89,7 @@ serve(async (req) => {
     console.error('Error in update-n8n-config function:', error);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error.message,
         success: false
       }),
       {

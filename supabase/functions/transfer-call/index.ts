@@ -83,7 +83,7 @@ serve(async (req) => {
     console.error('Error in transfer-call function:', error);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error.message,
         success: false,
         message: 'Entschuldigung, die Weiterleitung ist momentan nicht möglich. Bitte rufen Sie direkt in der Praxis an.'
       }),
