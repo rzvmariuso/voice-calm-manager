@@ -8,7 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Bot, Loader2, Eye, EyeOff } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Bot, Loader2, Eye, EyeOff, Shield } from "lucide-react";
+import { validatePasswordStrength, getPasswordStrengthLabel, getPasswordStrengthColor } from "@/lib/passwordValidation";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -17,8 +19,19 @@ export default function Auth() {
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [resending, setResending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: [], isValid: false });
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Validate password on change
+  useEffect(() => {
+    if (password) {
+      const strength = validatePasswordStrength(password);
+      setPasswordStrength(strength);
+    } else {
+      setPasswordStrength({ score: 0, feedback: [], isValid: false });
+    }
+  }, [password]);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -40,10 +53,22 @@ export default function Auth() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate privacy consent
     if (!privacyConsent) {
       toast({
         title: "Datenschutz-Zustimmung erforderlich",
         description: "Bitte stimmen Sie der Datenschutzerklärung zu.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate password strength
+    if (!passwordStrength.isValid) {
+      toast({
+        title: "Passwort zu schwach",
+        description: passwordStrength.feedback.join('. '),
         variant: "destructive",
       });
       return;
@@ -235,7 +260,7 @@ export default function Auth() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      minLength={6}
+                      minLength={8}
                       className="pr-10"
                     />
                     <Button
@@ -252,22 +277,58 @@ export default function Auth() {
                       )}
                     </Button>
                   </div>
+                  
+                  {/* Password Strength Indicator */}
+                  {password && (
+                    <div className="space-y-2 pt-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          Passwortstärke:
+                        </span>
+                        <span className={`text-xs font-medium ${getPasswordStrengthColor(passwordStrength.score)}`}>
+                          {getPasswordStrengthLabel(passwordStrength.score)}
+                        </span>
+                      </div>
+                      <Progress value={(passwordStrength.score / 4) * 100} className="h-1.5" />
+                      {passwordStrength.feedback.length > 0 && (
+                        <div className="space-y-1">
+                          {passwordStrength.feedback.map((feedback, idx) => (
+                            <p key={idx} className={`text-xs ${passwordStrength.isValid ? 'text-green-600' : 'text-muted-foreground'}`}>
+                              {feedback}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="privacy"
-                    checked={privacyConsent}
-                    onCheckedChange={(checked) => setPrivacyConsent(!!checked)}
-                  />
-                  <Label htmlFor="privacy" className="text-sm">
-                    Ich stimme der{" "}
-                    <Link to="/privacy" className="text-primary hover:underline">
-                      Datenschutzerklärung
-                    </Link>{" "}
-                    zu (DSGVO-konform)
-                  </Label>
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="privacy"
+                      checked={privacyConsent}
+                      onCheckedChange={(checked) => setPrivacyConsent(!!checked)}
+                    />
+                    <Label htmlFor="privacy" className="text-sm leading-tight">
+                      Ich stimme der{" "}
+                      <Link to="/privacy" className="text-primary hover:underline">
+                        Datenschutzerklärung
+                      </Link>{" "}
+                      zu (DSGVO-konform)
+                    </Label>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border">
+                    <Shield className="w-4 h-4 text-primary flex-shrink-0" />
+                    <p className="text-xs text-muted-foreground">
+                      Alle Daten werden verschlüsselt in der EU gespeichert.{" "}
+                      <Link to="/compliance" className="text-primary hover:underline">
+                        Mehr zur Sicherheit
+                      </Link>
+                    </p>
+                  </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading || !privacyConsent}>
+                <Button type="submit" className="w-full" disabled={loading || !privacyConsent || !passwordStrength.isValid}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Registrieren
                 </Button>
