@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Phone, Settings, Users, BarChart3, Bot, CreditCard, Zap, HelpCircle, Search, Database } from "lucide-react"
+import { Calendar, Phone, Settings, Users, BarChart3, Bot, CreditCard, Zap, HelpCircle, Search, Database, Shield, MessageSquare, UsersIcon } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import {
   Sidebar,
@@ -72,6 +72,21 @@ const items = [
     title: "Patienten",
     url: "/patients",
     icon: Users,
+  },
+  {
+    title: "Team",
+    url: "/team",
+    icon: UsersIcon,
+  },
+  {
+    title: "Inbox",
+    url: "/inbox",
+    icon: MessageSquare,
+  },
+  {
+    title: "Sicherheit",
+    url: "/security",
+    icon: Shield,
   },
   {
     title: "FAQ",

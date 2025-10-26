@@ -32,6 +32,10 @@ import PatientDetails from "./pages/PatientDetails";
 import Export from "./pages/Export";
 import Compliance from "./pages/Compliance";
 import NotFound from "./pages/NotFound";
+import Install from "./pages/Install";
+import Team from "./pages/Team";
+import Security from "./pages/Security";
+import Inbox from "./pages/Inbox";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +66,10 @@ function AppContent() {
       <Route path="/imprint" element={<Imprint />} />
       <Route path="/export" element={<Export />} />
       <Route path="/compliance" element={<Compliance />} />
+      <Route path="/install" element={<Install />} />
+      <Route path="/team" element={<Team />} />
+      <Route path="/security" element={<Security />} />
+      <Route path="/inbox" element={<Inbox />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
