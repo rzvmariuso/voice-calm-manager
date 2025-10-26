@@ -12,16 +12,18 @@ import { PatientDialog } from "@/components/patients/PatientDialog"
 import { Calendar, Users, Bot, TrendingUp, Phone, Clock, LogOut, Crown, Zap } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { usePractice } from "@/hooks/usePractice";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Auth from "./Auth";
 
 export default function Index() {
-  const { user, signOut } = useAuth();
-  const { practice, loading } = usePractice();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { subscription, isSubscribed, currentPlan, canAccessAI } = useSubscription();
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const [practice, setPractice] = useState<any>(null);
+  const [practiceLoading, setPracticeLoading] = useState(true);
   const [stats, setStats] = useState({
     totalAppointments: 0,
     todayAppointments: 0,
@@ -30,6 +32,35 @@ export default function Index() {
   });
   const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
   const [showPatientDialog, setShowPatientDialog] = useState(false);
+
+  // Fetch practice without redirect
+  useEffect(() => {
+    if (!user) {
+      setPracticeLoading(false);
+      return;
+    }
+
+    const fetchPractice = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('practices')
+          .select('*')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching practice:', error);
+        }
+        setPractice(data);
+      } catch (err) {
+        console.error('Error:', err);
+      } finally {
+        setPracticeLoading(false);
+      }
+    };
+
+    fetchPractice();
+  }, [user]);
 
   useEffect(() => {
     if (!practice) return;
@@ -84,12 +115,24 @@ export default function Index() {
     });
   };
 
-  if (loading) {
+  // Show loading state
+  if (authLoading || practiceLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
+  }
+
+  // If not authenticated, show auth page directly (no redirect)
+  if (!user) {
+    return <Auth />;
+  }
+
+  // If authenticated but no practice, redirect to setup
+  if (!practice) {
+    navigate("/setup");
+    return null;
   }
 
   return (
