@@ -31,11 +31,11 @@ import Recurring from "./pages/Recurring";
 import PatientDetails from "./pages/PatientDetails";
 import Export from "./pages/Export";
 import Compliance from "./pages/Compliance";
-import NotFound from "./pages/NotFound";
 import Install from "./pages/Install";
 import Team from "./pages/Team";
 import Security from "./pages/Security";
 import Inbox from "./pages/Inbox";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -70,7 +70,6 @@ function AppContent() {
       <Route path="/team" element={<Team />} />
       <Route path="/security" element={<Security />} />
       <Route path="/inbox" element={<Inbox />} />
-      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
