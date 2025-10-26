@@ -60,6 +60,13 @@ export type Database = {
             foreignKeyName: "ai_call_logs_practice_id_fkey"
             columns: ["practice_id"]
             isOneToOne: false
+            referencedRelation: "mv_practice_stats"
+            referencedColumns: ["practice_id"]
+          },
+          {
+            foreignKeyName: "ai_call_logs_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
             referencedRelation: "practices"
             referencedColumns: ["id"]
           },
@@ -121,6 +128,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "patients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "mv_practice_stats"
+            referencedColumns: ["practice_id"]
           },
           {
             foreignKeyName: "appointments_practice_id_fkey"
@@ -223,6 +237,13 @@ export type Database = {
             foreignKeyName: "data_requests_practice_id_fkey"
             columns: ["practice_id"]
             isOneToOne: false
+            referencedRelation: "mv_practice_stats"
+            referencedColumns: ["practice_id"]
+          },
+          {
+            foreignKeyName: "data_requests_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
             referencedRelation: "practices"
             referencedColumns: ["id"]
           },
@@ -320,6 +341,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "patients_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "mv_practice_stats"
+            referencedColumns: ["practice_id"]
+          },
           {
             foreignKeyName: "patients_practice_id_fkey"
             columns: ["practice_id"]
@@ -484,6 +512,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "patients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_recurring_appointments_practice_id"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "mv_practice_stats"
+            referencedColumns: ["practice_id"]
           },
           {
             foreignKeyName: "fk_recurring_appointments_practice_id"
@@ -685,6 +720,24 @@ export type Database = {
       }
     }
     Views: {
+      mv_practice_stats: {
+        Row: {
+          ai_booked_count: number | null
+          appointments_next_7d: number | null
+          avg_duration_minutes: number | null
+          cancelled_appointments: number | null
+          completed_appointments: number | null
+          last_appointment_update: string | null
+          new_patients_30d: number | null
+          pending_appointments: number | null
+          practice_id: string | null
+          practice_name: string | null
+          total_appointments: number | null
+          total_patients: number | null
+          upcoming_appointments: number | null
+        }
+        Relationships: []
+      }
       public_pricing: {
         Row: {
           ai_features_enabled: boolean | null
@@ -755,6 +808,7 @@ export type Database = {
         }
         Returns: string
       }
+      refresh_practice_stats: { Args: never; Returns: undefined }
       user_owns_practice: { Args: { _practice_id: string }; Returns: boolean }
     }
     Enums: {
