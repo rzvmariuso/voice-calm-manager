@@ -23,6 +23,7 @@ export type Database = {
           id: string
           outcome: string | null
           practice_id: string
+          provider: string | null
           transcript: string | null
         }
         Insert: {
@@ -33,6 +34,7 @@ export type Database = {
           id?: string
           outcome?: string | null
           practice_id: string
+          provider?: string | null
           transcript?: string | null
         }
         Update: {
@@ -43,6 +45,7 @@ export type Database = {
           id?: string
           outcome?: string | null
           practice_id?: string
+          provider?: string | null
           transcript?: string | null
         }
         Relationships: [
@@ -140,7 +143,7 @@ export type Database = {
           action: string
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           new_values: Json | null
           old_values: Json | null
           resource_id: string | null
@@ -152,7 +155,7 @@ export type Database = {
           action: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           resource_id?: string | null
@@ -164,7 +167,7 @@ export type Database = {
           action?: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           resource_id?: string | null
@@ -380,6 +383,7 @@ export type Database = {
           owner_id: string
           phone: string | null
           practice_type: string
+          retell_agent_id: string | null
           updated_at: string
         }
         Insert: {
@@ -396,6 +400,7 @@ export type Database = {
           owner_id: string
           phone?: string | null
           practice_type?: string
+          retell_agent_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -412,6 +417,7 @@ export type Database = {
           owner_id?: string
           phone?: string | null
           practice_type?: string
+          retell_agent_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -615,6 +621,7 @@ export type Database = {
           is_verified: boolean
           phone_number: string
           provider: string | null
+          retell_phone_id: string | null
           updated_at: string
           user_id: string
           vapi_assistant_id: string | null
@@ -629,6 +636,7 @@ export type Database = {
           is_verified?: boolean
           phone_number: string
           provider?: string | null
+          retell_phone_id?: string | null
           updated_at?: string
           user_id: string
           vapi_assistant_id?: string | null
@@ -643,6 +651,7 @@ export type Database = {
           is_verified?: boolean
           phone_number?: string
           provider?: string | null
+          retell_phone_id?: string | null
           updated_at?: string
           user_id?: string
           vapi_assistant_id?: string | null
@@ -717,12 +726,12 @@ export type Database = {
       }
     }
     Functions: {
-      cleanup_expired_patient_data: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      anonymize_expired_patient_data: { Args: never; Returns: undefined }
+      cleanup_expired_patient_data: { Args: never; Returns: undefined }
+      cleanup_old_ai_call_logs: { Args: never; Returns: undefined }
+      cleanup_old_audit_logs: { Args: never; Returns: undefined }
       get_current_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
       has_role: {
@@ -746,10 +755,7 @@ export type Database = {
         }
         Returns: string
       }
-      user_owns_practice: {
-        Args: { _practice_id: string }
-        Returns: boolean
-      }
+      user_owns_practice: { Args: { _practice_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
