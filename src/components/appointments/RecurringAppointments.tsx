@@ -327,7 +327,7 @@ setPatients(patientsData || []);
         .from('patients')
         .insert([patientData])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 

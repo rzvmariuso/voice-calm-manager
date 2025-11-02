@@ -162,7 +162,7 @@ const [patientMode, setPatientMode] = useState<'existing' | 'new'>('existing');
         .from('patients')
         .insert([patientDataToInsert])
         .select('id, first_name, last_name')
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -307,7 +307,7 @@ const loadPatients = async () => {
               phone
             )
           `)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
 
@@ -334,7 +334,7 @@ const loadPatients = async () => {
               phone
             )
           `)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
 

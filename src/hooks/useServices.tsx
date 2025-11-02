@@ -62,7 +62,7 @@ export function useServices(practiceId?: string) {
         .from('practice_services')
         .insert([serviceData])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 

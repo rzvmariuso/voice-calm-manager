@@ -109,7 +109,7 @@ export function DataRequestInterface() {
         .from('practices')
         .select('id')
         .eq('owner_id', user.id)
-        .single()
+        .maybeSingle()
 
       if (practiceError) throw practiceError
 

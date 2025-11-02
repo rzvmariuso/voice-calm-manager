@@ -59,7 +59,7 @@ export const usePatientDetails = () => {
         `)
         .eq('id', patientId)
         .eq('practice_id', practice.id)
-        .single();
+        .maybeSingle();
 
       if (patientError) throw patientError;
 

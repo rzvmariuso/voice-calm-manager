@@ -158,7 +158,7 @@ export function AppointmentList({ onEdit, onAdd, refreshTrigger }: AppointmentLi
             phone
           )
         `)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
