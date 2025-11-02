@@ -15,6 +15,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useNavigate } from "react-router-dom";
+import { Logo } from "@/components/common/Logo";
 import Auth from "./Auth";
 
 export default function Index() {
@@ -142,14 +143,11 @@ export default function Index() {
         <main className="flex-1 overflow-x-hidden">
           {/* Mobile Header */}
           <div className="lg:hidden bg-background border-b border-border p-4 sticky top-0 z-10">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <MobileNavigation />
-                <div className="w-8 h-8 bg-gradient-primary rounded-lg overflow-hidden flex items-center justify-center">
-                  <img src="/lovable-uploads/f8bf1ba1-4dee-42dd-9c1d-543ca3de4a53.png" alt="Voxcal Logo" className="w-6 h-6 object-contain" />
-                </div>
-                <span className="font-bold text-lg">Voxcal</span>
-              </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <MobileNavigation />
+              <Logo size="sm" showText={true} />
+            </div>
               {!isSubscribed && (
                 <Link to="/billing">
                   <Button size="sm" className="button-gradient">

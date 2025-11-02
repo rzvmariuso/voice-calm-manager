@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Bot, 
   Calendar, 
   Users, 
   Shield, 
@@ -14,9 +13,11 @@ import {
   Phone,
   Clock,
   Crown,
-  Sparkles
+  Sparkles,
+  Bot
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Logo } from "@/components/common/Logo";
 
 export default function Landing() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
@@ -94,15 +95,7 @@ export default function Landing() {
       <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <Bot className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">PraxisFlow</h1>
-                <p className="text-xs text-muted-foreground">KI-Praxisverwaltung</p>
-              </div>
-            </div>
+            <Logo size="md" showText={true} />
             
             <div className="flex items-center gap-4">
               <Link to="/auth">
@@ -335,12 +328,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-lg font-bold">PraxisFlow</span>
-              </div>
+              <Logo size="sm" showText={true} className="mb-4" />
               <p className="text-muted-foreground text-sm">
                 Die intelligente Praxisverwaltung für moderne Arztpraxen.
               </p>
