@@ -168,16 +168,25 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-subtle px-4">
-      <Card className="w-full max-w-md shadow-elegant">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Logo size="lg" showText={false} />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 px-4 py-8">
+      <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+      
+      <Card className="w-full max-w-md shadow-elegant border-2 border-border/50 backdrop-blur-sm bg-card/95 animate-scale-in relative z-10">
+        <CardHeader className="text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full animate-pulse"></div>
+              <Logo size="lg" showText={false} className="relative z-10" />
+            </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Voxcal</CardTitle>
-          <CardDescription>
-            AI-gestützte Terminbuchung für Ihre Praxis
-          </CardDescription>
+          <div className="space-y-2">
+            <CardTitle className="text-3xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+              Voxcal
+            </CardTitle>
+            <CardDescription className="text-base">
+              AI-gestützte Terminbuchung für Ihre Praxis
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
@@ -224,7 +233,7 @@ export default function Auth() {
                     </Button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full button-gradient hover:scale-105 transition-all duration-300" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Anmelden
                 </Button>
@@ -320,7 +329,7 @@ export default function Auth() {
                     </p>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading || !privacyConsent || !passwordStrength.isValid}>
+                <Button type="submit" className="w-full button-gradient hover:scale-105 transition-all duration-300" disabled={loading || !privacyConsent || !passwordStrength.isValid}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Registrieren
                 </Button>
