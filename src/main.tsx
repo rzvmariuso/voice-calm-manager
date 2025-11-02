@@ -1,7 +1,6 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
 import App from './App.tsx';
-import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import "./index.css";
 
 // Enhanced Service Worker registration with update handling
@@ -52,10 +51,8 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </React.StrictMode>
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>
 );
