@@ -30,8 +30,8 @@ export function BottomNavigation() {
   const location = useLocation();
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border">
-      <div className="flex items-center justify-around px-2 py-2">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border/50 shadow-elegant">
+      <div className="flex items-center justify-around px-2 py-3 safe-area-inset-bottom">
         {navigationItems.map((item) => {
           const isActive = location.pathname === item.href;
           const Icon = item.icon;
@@ -41,26 +41,33 @@ export function BottomNavigation() {
               key={item.name}
               to={item.href}
               className={cn(
-                "flex flex-col items-center justify-center p-2 rounded-lg transition-colors min-w-0 flex-1",
+                "flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 min-w-0 flex-1 touch-manipulation",
                 isActive 
-                  ? "text-primary bg-primary/10" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  ? "text-primary bg-primary/10 scale-105" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:scale-105 active:scale-95"
               )}
             >
-              <Icon className="w-5 h-5 mb-1 flex-shrink-0" />
-              <span className="text-xs font-medium truncate">{item.name}</span>
+              <Icon className={cn(
+                "w-5 h-5 mb-1 flex-shrink-0 transition-transform",
+                isActive && "scale-110"
+              )} />
+              <span className={cn(
+                "text-xs truncate transition-all",
+                isActive ? "font-semibold" : "font-medium"
+              )}>{item.name}</span>
             </Link>
           );
         })}
         
         {/* Floating Action Button */}
-        <div className="relative">
+        <div className="relative -mt-2">
           <Link to="/appointments">
             <Button
               size="sm"
-              className="w-12 h-12 rounded-full shadow-elegant hover:shadow-glow transition-all duration-300 button-gradient"
+              className="w-14 h-14 rounded-full shadow-glow hover:shadow-elegant hover:scale-110 active:scale-95 transition-all duration-300 button-gradient"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-6 h-6" />
+              <span className="sr-only">Neuer Termin</span>
             </Button>
           </Link>
         </div>

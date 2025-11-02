@@ -19,45 +19,46 @@ export function MobileHeader({ title, subtitle, showUpgradeButton = false }: Mob
 
   return (
     <>
-    <div className="lg:hidden bg-background border-b border-border p-4 sticky top-0 z-10 backdrop-blur-sm bg-background/95">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <div className="lg:hidden bg-card/95 border-b border-border/50 p-4 sticky top-0 z-10 backdrop-blur-lg shadow-soft">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <MobileNavigation />
-          <div className="w-8 h-8 bg-gradient-primary rounded-lg overflow-hidden flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-primary rounded-xl overflow-hidden flex items-center justify-center shadow-soft flex-shrink-0">
             <img 
               src="/lovable-uploads/f8bf1ba1-4dee-42dd-9c1d-543ca3de4a53.png" 
               alt="Voxcal Logo" 
-              className="w-6 h-6 object-contain" 
+              className="w-7 h-7 object-contain" 
             />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="font-bold text-lg truncate block">
+            <span className="font-bold text-lg truncate block text-foreground">
               {title || "Voxcal"}
             </span>
             {subtitle && (
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-xs text-muted-foreground truncate leading-tight">
                 {subtitle}
               </p>
             )}
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 flex-shrink-0">
           <Button 
             variant="ghost" 
             size="sm"
             onClick={() => setSearchOpen(true)}
             data-search-trigger
+            className="h-9 w-9 p-0 hover:bg-accent/50 rounded-lg transition-all"
           >
             <Search className="w-4 h-4" />
-            <span className="sr-only">Search</span>
+            <span className="sr-only">Suchen</span>
           </Button>
           
           <DarkModeToggle />
           
           {showUpgradeButton && !isSubscribed && (
             <Link to="/billing">
-              <Button size="sm" className="button-gradient flex-shrink-0">
+              <Button size="sm" className="button-gradient flex-shrink-0 h-9 px-3 shadow-soft hover:shadow-glow transition-all">
                 <Crown className="w-4 h-4" />
                 <span className="sr-only">Upgrade</span>
               </Button>

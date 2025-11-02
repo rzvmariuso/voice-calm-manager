@@ -266,6 +266,15 @@ All colors MUST be HSL.
       font-size: 16px;
     }
     
+    /* Safe area inset for notched devices */
+    .safe-area-inset-bottom {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    .safe-area-inset-top {
+      padding-top: env(safe-area-inset-top);
+    }
+    
     /* Calendar specific mobile optimizations */
     .calendar-mobile-grid {
       font-size: 12px;

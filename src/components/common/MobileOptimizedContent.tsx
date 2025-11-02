@@ -42,11 +42,11 @@ export function MobileCard({ children, className }: MobileOptimizedContentProps)
   return (
     <div className={cn(
       // Mobile-optimized card styling
-      "bg-card text-card-foreground rounded-lg shadow-soft",
-      "p-3 sm:p-4 lg:p-6",
+      "bg-card text-card-foreground rounded-xl shadow-soft border border-border/50",
+      "p-4 sm:p-5 lg:p-6",
       // Touch-friendly interactions
-      "transition-all duration-200",
-      "hover:shadow-elegant hover:-translate-y-1 active:scale-[0.98]",
+      "transition-all duration-300",
+      "hover:shadow-elegant hover:-translate-y-0.5 active:scale-[0.99]",
       // Prevent content overflow on mobile
       "overflow-hidden",
       // Better mobile tap targets
@@ -61,15 +61,16 @@ export function MobileCard({ children, className }: MobileOptimizedContentProps)
 export function MobileStatCard({ title, value, className }: { title: string; value: string | number; className?: string }) {
   return (
     <div className={cn(
-      "bg-card rounded-lg p-3 text-center shadow-soft",
+      "bg-gradient-to-br from-card to-card/50 rounded-xl p-4 text-center shadow-soft",
       "border border-border/50",
-      "transition-all duration-200 hover:shadow-elegant",
+      "transition-all duration-300 hover:shadow-elegant hover:-translate-y-0.5",
+      "touch-manipulation",
       className
     )}>
-      <div className="text-lg sm:text-xl font-bold text-foreground">
+      <div className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
         {value}
       </div>
-      <div className="text-xs sm:text-sm text-muted-foreground">
+      <div className="text-xs sm:text-sm text-muted-foreground font-medium">
         {title}
       </div>
     </div>
@@ -88,21 +89,21 @@ export function MobileAppointmentPreview({
   return (
     <div 
       className={cn(
-        "flex items-center gap-3 p-3 bg-card rounded-lg shadow-soft",
+        "flex items-center gap-3 p-4 bg-card rounded-xl shadow-soft",
         "border border-border/50 cursor-pointer",
-        "transition-all duration-200 hover:shadow-elegant active:scale-[0.98]",
-        "min-h-[60px] touch-manipulation",
+        "transition-all duration-300 hover:shadow-elegant hover:-translate-y-0.5 active:scale-[0.99]",
+        "min-h-[68px] touch-manipulation",
         className
       )}
       onClick={onClick}
     >
-      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-        <span className="text-sm font-medium text-primary">
+      <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center flex-shrink-0 shadow-soft">
+        <span className="text-sm font-bold text-primary-foreground">
           {appointment.appointment_time?.slice(0, 2) || '??'}
         </span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">
+        <p className="text-sm font-semibold truncate text-foreground mb-0.5">
           {appointment.patient?.first_name} {appointment.patient?.last_name}
         </p>
         <p className="text-xs text-muted-foreground truncate">
