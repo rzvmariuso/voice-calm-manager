@@ -1,11 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, createSupabaseClient, authenticateUser, errorResponse, successResponse } from '../_shared/utils.ts';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -14,38 +9,17 @@ serve(async (req) => {
   }
 
   try {
-    // Get user from JWT token
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      throw new Error('Keine Autorisierung gefunden');
-    }
+    const user = await authenticateUser(req);
+    const supabase = createSupabaseClient(true);
 
-    // Initialize Supabase client for JWT verification (with anon key)
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
-    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Verify JWT and get user
-    const jwt = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(jwt);
-
-    if (authError || !user) {
-      console.error('Auth error:', authError);
-      throw new Error('Ungültiger Token');
-    }
-
-    // Get user's practice with AI configuration (using service key for DB access)
-    const { data: practice, error: practiceError } = await supabaseService
+    const { data: practice, error: practiceError } = await supabase
       .from('practices')
       .select('ai_prompt, ai_voice_settings')
       .eq('owner_id', user.id)
       .single();
 
     if (practiceError || !practice) {
-      throw new Error('Praxis nicht gefunden');
+      return errorResponse('Praxis nicht gefunden', 404);
     }
 
     // Default prompt if none exists
@@ -77,28 +51,13 @@ serve(async (req) => {
 
 WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`;
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        prompt: practice.ai_prompt || defaultPrompt,
-        voiceSettings: practice.ai_voice_settings || {}
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return successResponse({
+      prompt: practice.ai_prompt || defaultPrompt,
+      voiceSettings: practice.ai_voice_settings || {}
+    });
 
   } catch (error) {
     console.error('Error in get-ai-config function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        success: false
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return errorResponse(error.message, 500);
   }
 });

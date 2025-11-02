@@ -1,11 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, createSupabaseClient, authenticateUser, errorResponse, successResponse, validatePhoneNumber } from '../_shared/utils.ts';
+import { validateData, vapiCallSchema } from '../_shared/validation.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -15,42 +11,32 @@ serve(async (req) => {
   try {
     const vapiApiKey = Deno.env.get('VAPI_API_KEY');
     if (!vapiApiKey) {
-      throw new Error('VAPI_API_KEY not configured');
+      return errorResponse('VAPI_API_KEY not configured', 500);
     }
 
-    // Get user from JWT token
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) throw new Error('No authorization header');
+    const user = await authenticateUser(req);
+    const supabase = createSupabaseClient(true);
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const { phoneNumber } = await req.json();
     
-    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
+    const validation = validateData(vapiCallSchema, { phoneNumber });
+    if (!validation.success) {
+      return errorResponse(validation.error, 400);
+    }
 
-    const jwt = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseService.auth.getUser(jwt);
-    if (authError || !user) throw new Error('Invalid token');
-
-    // Get user's practice
-    const { data: practice, error: practiceError } = await supabaseService
+    const { data: practice, error: practiceError } = await supabase
       .from('practices')
       .select('*')
       .eq('owner_id', user.id)
       .single();
 
-    if (practiceError || !practice) throw new Error('Practice not found');
-
-    const { phoneNumber } = await req.json();
-    
-    if (!phoneNumber) {
-      throw new Error('Phone number is required');
+    if (practiceError || !practice) {
+      return errorResponse('Practice not found', 404);
     }
 
-    // Get assistant ID from practice settings
     const assistantId = practice.ai_voice_settings?.vapi_assistant_id;
     if (!assistantId) {
-      throw new Error('No VAPI assistant configured. Please create an assistant first.');
+      return errorResponse('No VAPI assistant configured. Please create an assistant first.', 400);
     }
 
     // Create a test call using VAPI
@@ -82,22 +68,13 @@ serve(async (req) => {
     const call = await vapiResponse.json();
     console.log('Test call initiated:', call);
 
-    return new Response(JSON.stringify({
-      success: true,
+    return successResponse({
       call,
       message: `Test-Anruf wurde an ${phoneNumber} gestartet`
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error creating test call:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      success: false
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return errorResponse(error.message, 500);
   }
 });

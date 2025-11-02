@@ -1,45 +1,30 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.1';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, createSupabaseClient, authenticateUser, errorResponse, successResponse } from '../_shared/utils.ts';
+import { validateData, appointmentWebhookSchema } from '../_shared/validation.ts';
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { 
-      appointmentId, 
-      action, 
-      appointmentData, 
-      patientData, 
-      oldData 
-    } = await req.json();
-
-    // Get user from JWT token
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      throw new Error('Keine Autorisierung gefunden');
+    const requestBody = await req.json();
+    console.log('[WEBHOOK] Received request:', requestBody);
+    
+    // Validate input
+    const validation = validateData(appointmentWebhookSchema, requestBody);
+    if (!validation.success) {
+      return errorResponse(validation.error, 400);
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { appointmentId, action, appointmentData, patientData, oldData } = validation.data;
 
-    // Verify JWT and get user
-    const jwt = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
+    // Authenticate user
+    const user = await authenticateUser(req);
+    const supabase = createSupabaseClient(true);
 
-    if (authError || !user) {
-      throw new Error('Ungültiger Token');
-    }
+    console.log('[WEBHOOK] User authenticated:', user.id);
 
     // Get user's practice with n8n configuration
     const { data: practice, error: practiceError } = await supabase
@@ -49,21 +34,15 @@ serve(async (req) => {
       .single();
 
     if (practiceError || !practice) {
-      throw new Error('Praxis nicht gefunden');
+      return errorResponse('Praxis nicht gefunden', 404);
     }
 
     // If n8n is not enabled or no webhook URL, skip
     if (!practice.n8n_enabled || !practice.n8n_webhook_url) {
-      console.log('n8n not enabled or no webhook URL configured');
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'n8n nicht konfiguriert - übersprungen'
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      console.log('[WEBHOOK] n8n not enabled or no webhook URL configured');
+      return successResponse({
+        message: 'n8n nicht konfiguriert - übersprungen'
+      });
     }
 
     // Get full appointment and patient data if not provided
@@ -78,8 +57,8 @@ serve(async (req) => {
         .single();
 
       if (appointmentError) {
-        console.error('Failed to fetch appointment:', appointmentError);
-        throw new Error('Termin nicht gefunden');
+        console.error('[WEBHOOK] Failed to fetch appointment:', appointmentError);
+        return errorResponse('Termin nicht gefunden', 404);
       }
 
       appointment = appointmentRecord;
@@ -87,7 +66,7 @@ serve(async (req) => {
     }
 
     if (!appointment) {
-      throw new Error('Keine Termindaten verfügbar');
+      return errorResponse('Keine Termindaten verfügbar', 400);
     }
 
     // Format date and time for display
@@ -107,7 +86,7 @@ serve(async (req) => {
 
     // Prepare webhook payload based on action
     const webhookPayload = {
-      trigger_type: action, // created, updated, cancelled, confirmed, rescheduled
+      trigger_type: action,
       timestamp: new Date().toISOString(),
       practice: {
         id: practice.id,
@@ -146,8 +125,7 @@ serve(async (req) => {
       source: 'appointment_management'
     };
 
-    console.log('Sending webhook to n8n:', practice.n8n_webhook_url);
-    console.log('Payload:', JSON.stringify(webhookPayload, null, 2));
+    console.log('[WEBHOOK] Sending to n8n:', practice.n8n_webhook_url);
 
     // Send to n8n webhook
     const response = await fetch(practice.n8n_webhook_url, {
@@ -160,12 +138,12 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('n8n webhook error:', response.status, errorText);
-      throw new Error(`n8n Webhook Fehler: ${response.status} - ${errorText}`);
+      console.error('[WEBHOOK] n8n error:', response.status, errorText);
+      return errorResponse(`n8n Webhook Fehler: ${response.status}`, response.status);
     }
 
-    const responseData = await response.text();
-    console.log('n8n webhook response:', responseData);
+    const n8nResponseData = await response.text();
+    console.log('[WEBHOOK] n8n response:', n8nResponseData);
 
     // Log the webhook trigger
     await supabase
@@ -177,28 +155,13 @@ serve(async (req) => {
         appointment_id: appointment.id
       });
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `n8n Webhook für ${action} erfolgreich ausgelöst`,
-        response: responseData
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return successResponse({
+      message: 'Webhook triggered successfully',
+      n8n_response: n8nResponseData
+    });
 
   } catch (error) {
-    console.error('Error in trigger-appointment-webhook function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        success: false
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    console.error('[WEBHOOK] Error:', error);
+    return errorResponse(error.message || 'Failed to trigger webhook', 500);
   }
 });
