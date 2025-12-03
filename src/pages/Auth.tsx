@@ -168,11 +168,17 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-subtle px-4 py-8">
-      <Card className="w-full max-w-md shadow-elegant border border-border/60 animate-fade-in relative z-10">
+    <div className="min-h-screen flex items-center justify-center bg-muted px-4 py-8">
+      <Card className="w-full max-w-md shadow-elegant border-0 bg-card animate-fade-in relative z-10">
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="flex justify-center">
-            <Logo size="lg" showText={false} />
+            <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center">
+              <img 
+                src="/lovable-uploads/f8bf1ba1-4dee-42dd-9c1d-543ca3de4a53.png" 
+                alt="Voxcal Logo" 
+                className="w-10 h-10 object-contain"
+              />
+            </div>
           </div>
           <div className="space-y-1">
             <CardTitle className="text-2xl font-semibold text-primary">
