@@ -140,29 +140,28 @@ export default function Settings() {
               <Button 
                 onClick={handleSave} 
                 disabled={isLoading}
-                className="bg-gradient-primary text-white shadow-glow w-full lg:w-auto"
+                className="w-full lg:w-auto"
               >
                 <Save className="w-4 h-4 mr-2" />
                 {isLoading ? "Speichern..." : "Alle speichern"}
               </Button>
             </div>
-            </div>
 
             <Tabs defaultValue="practice" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="practice" className="flex items-center gap-2">
-                <SettingsIcon className="w-4 h-4" />
-                Praxis
-              </TabsTrigger>
-              <TabsTrigger value="ai" className="flex items-center gap-2">
-                <Bot className="w-4 h-4" />
-                KI-Agent
-              </TabsTrigger>
-              <TabsTrigger value="gdpr" className="flex items-center gap-2">
-                <Shield className="w-4 h-4" />
-                DSGVO
-              </TabsTrigger>
-            </TabsList>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="practice" className="gap-2">
+                  <SettingsIcon className="w-4 h-4 hidden sm:block" />
+                  Praxis
+                </TabsTrigger>
+                <TabsTrigger value="ai" className="gap-2">
+                  <Bot className="w-4 h-4 hidden sm:block" />
+                  KI-Agent
+                </TabsTrigger>
+                <TabsTrigger value="gdpr" className="gap-2">
+                  <Shield className="w-4 h-4 hidden sm:block" />
+                  DSGVO
+                </TabsTrigger>
+              </TabsList>
 
             {/* Practice Settings */}
             <TabsContent value="practice">
@@ -354,7 +353,8 @@ export default function Settings() {
                 </CardContent>
               </Card>
             </TabsContent>
-          </Tabs>
+            </Tabs>
+          </div>
         </main>
 
         {/* Legal Links Footer */}
