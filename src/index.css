@@ -2,148 +2,139 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Modern, Minimalist Design System - Easy on the eyes */
 
 @layer base {
   :root {
-    /* Cal.com inspired color palette */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    /* Clean, soft color palette */
+    --background: 0 0% 99%;
+    --foreground: 220 13% 18%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 220 13% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover-foreground: 220 13% 18%;
 
-    /* Cal.com blue as primary */
-    --primary: 220 85% 57%;
+    /* Soft blue primary - calming */
+    --primary: 220 70% 50%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 220 85% 67%;
+    --primary-glow: 220 70% 60%;
 
-    /* Subtle grays */
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 6% 10%;
-    --secondary-glow: 240 5% 91%;
+    /* Neutral grays - easy on eyes */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 13% 26%;
+    --secondary-glow: 220 14% 92%;
 
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 240 5% 96%;
-    --accent-foreground: 240 6% 10%;
+    --accent: 220 14% 94%;
+    --accent-foreground: 220 13% 26%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Minimal borders */
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 220 85% 57%;
+    /* Soft borders */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 220 70% 50%;
 
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 98%;
+    --success: 152 69% 40%;
+    --success-foreground: 0 0% 100%;
     
     --warning: 38 92% 50%;
-    --warning-foreground: 240 10% 3.9%;
+    --warning-foreground: 220 13% 18%;
 
-    /* Enhanced status colors for better visibility */
-    --status-confirmed: 142 76% 36%;
-    --status-confirmed-bg: 142 76% 96%;
+    /* Status colors - subtle */
+    --status-confirmed: 152 69% 40%;
+    --status-confirmed-bg: 152 69% 97%;
     --status-pending: 38 92% 50%;
-    --status-pending-bg: 38 92% 96%;
-    --status-cancelled: 0 84% 60%;
-    --status-cancelled-bg: 0 84% 96%;
-    --status-completed: 220 85% 57%;
-    --status-completed-bg: 220 85% 96%;
+    --status-pending-bg: 38 92% 97%;
+    --status-cancelled: 0 72% 51%;
+    --status-cancelled-bg: 0 72% 97%;
+    --status-completed: 220 70% 50%;
+    --status-completed-bg: 220 70% 97%;
 
-    /* Cal.com inspired gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(220 85% 57%), hsl(220 85% 67%));
-    --gradient-secondary: linear-gradient(135deg, hsl(240 5% 96%), hsl(240 5% 91%));
-    --gradient-hero: linear-gradient(135deg, hsl(220 85% 57%) 0%, hsl(220 85% 67%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(240 5% 96%) 0%, rgba(255,255,255,0.8) 100%);
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(240 5% 96%) 100%);
+    /* Soft gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(220 70% 50%), hsl(220 70% 58%));
+    --gradient-secondary: linear-gradient(135deg, hsl(220 14% 96%), hsl(220 14% 94%));
+    --gradient-hero: linear-gradient(135deg, hsl(220 70% 50%) 0%, hsl(230 65% 55%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(220 14% 98%) 0%, hsl(220 14% 94%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 14% 98%) 100%);
     
-  /* Enhanced shadows */
-    --shadow-soft: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-    --shadow-glow: 0 8px 32px -8px rgba(59, 130, 246, 0.35), 0 0 0 1px rgba(59, 130, 246, 0.1);
-    --shadow-elegant: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 4px 8px -2px rgba(0, 0, 0, 0.08);
+    /* Subtle shadows */
+    --shadow-soft: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+    --shadow-glow: 0 4px 20px -4px rgba(59, 130, 246, 0.2);
+    --shadow-elegant: 0 4px 16px -4px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
     
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 220 14% 98%;
+    --sidebar-foreground: 220 13% 26%;
+    --sidebar-primary: 220 70% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 95%;
+    --sidebar-accent-foreground: 220 13% 26%;
+    --sidebar-border: 220 13% 93%;
+    --sidebar-ring: 220 70% 50%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 220 20% 8%;
+    --foreground: 220 14% 96%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 20% 10%;
+    --card-foreground: 220 14% 96%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 20% 10%;
+    --popover-foreground: 220 14% 96%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 220 70% 60%;
+    --primary-foreground: 220 20% 8%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 20% 14%;
+    --secondary-foreground: 220 14% 96%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 20% 14%;
+    --muted-foreground: 220 14% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 220 20% 16%;
+    --accent-foreground: 220 14% 96%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 220 20% 16%;
+    --input: 220 20% 16%;
+    --ring: 220 70% 60%;
 
-    --success: 142 76% 46%;
-    --success-foreground: 210 40% 98%;
+    --success: 152 69% 45%;
+    --success-foreground: 0 0% 100%;
     
-    --warning: 38 92% 60%;
-    --warning-foreground: 210 40% 98%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 100%;
 
-    /* Enhanced status colors for dark mode */
-    --status-confirmed: 142 76% 46%;
-    --status-confirmed-bg: 142 76% 8%;
-    --status-pending: 38 92% 60%;
-    --status-pending-bg: 38 92% 8%;
-    --status-cancelled: 0 84% 60%;
-    --status-cancelled-bg: 0 84% 8%;
-    --status-completed: 220 85% 67%;
-    --status-completed-bg: 220 85% 8%;
+    /* Dark mode status colors */
+    --status-confirmed: 152 69% 45%;
+    --status-confirmed-bg: 152 69% 12%;
+    --status-pending: 38 92% 55%;
+    --status-pending-bg: 38 92% 12%;
+    --status-cancelled: 0 72% 55%;
+    --status-cancelled-bg: 0 72% 12%;
+    --status-completed: 220 70% 60%;
+    --status-completed-bg: 220 70% 12%;
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 220 20% 10%;
+    --sidebar-foreground: 220 14% 96%;
+    --sidebar-primary: 220 70% 60%;
+    --sidebar-primary-foreground: 220 20% 8%;
+    --sidebar-accent: 220 20% 14%;
+    --sidebar-accent-foreground: 220 14% 96%;
+    --sidebar-border: 220 20% 16%;
+    --sidebar-ring: 220 70% 60%;
   }
 }
 
@@ -152,67 +143,81 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
+    font-weight: 600;
   }
 }
 
 @layer components {
-  /* Background Patterns */
+  /* Background Patterns - subtle */
   .bg-grid-pattern {
-    background-image: linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
-                      linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
-    background-size: 3rem 3rem;
+    background-image: linear-gradient(to right, hsl(var(--border) / 0.5) 1px, transparent 1px),
+                      linear-gradient(to bottom, hsl(var(--border) / 0.5) 1px, transparent 1px);
+    background-size: 4rem 4rem;
   }
 
-  /* Interactive Elements */
+  /* Smooth hover effects */
   .hover-scale {
-    @apply transition-transform duration-200 hover:scale-105;
+    @apply transition-transform duration-300 ease-out hover:scale-[1.02];
   }
   
   .hover-glow {
-    @apply transition-all duration-300 hover:shadow-glow;
+    @apply transition-all duration-300 ease-out hover:shadow-glow;
   }
   
   .card-interactive {
-    @apply transition-all duration-300 hover:shadow-elegant hover:-translate-y-1 cursor-pointer;
+    @apply transition-all duration-300 ease-out hover:shadow-elegant hover:-translate-y-0.5;
   }
   
   .button-gradient {
-    @apply bg-gradient-primary text-white shadow-soft hover:shadow-glow transition-all duration-300;
+    @apply bg-gradient-primary text-white shadow-sm hover:shadow-glow transition-all duration-300 ease-out;
   }
   
   .text-gradient {
     @apply bg-gradient-hero bg-clip-text text-transparent;
   }
 
-  /* Appointment status indicators */
+  /* Status indicators - clean */
   .status-confirmed {
-    @apply bg-success/10 border-success/20 text-success;
+    @apply bg-success/8 border-success/15 text-success;
   }
   
   .status-pending {
-    @apply bg-warning/10 border-warning/20 text-warning;
+    @apply bg-warning/8 border-warning/15 text-warning;
   }
   
   .status-cancelled {
-    @apply bg-destructive/10 border-destructive/20 text-destructive;
+    @apply bg-destructive/8 border-destructive/15 text-destructive;
   }
   
   .status-completed {
-    @apply bg-primary/10 border-primary/20 text-primary;
+    @apply bg-primary/8 border-primary/15 text-primary;
   }
 
-  /* Enhanced appointment cards */
+  /* Clean cards */
   .appointment-card {
-    @apply transition-all duration-200 hover:shadow-soft;
+    @apply transition-all duration-200 ease-out hover:shadow-soft;
   }
   
   .appointment-card-compact {
-    @apply hover:border-opacity-70 cursor-pointer;
+    @apply hover:border-primary/20 cursor-pointer transition-colors duration-200;
   }
   
-  /* Loading animations */
+  /* Subtle loading animation */
   .loading-dots::after {
     content: '';
     animation: loading-dots 1.5s infinite;
@@ -236,37 +241,32 @@ All colors MUST be HSL.
     left: -9999px !important;
   }
   
-  /* Mobile viewport and responsiveness optimizations */
+  /* Mobile optimizations */
   @media (max-width: 1024px) {
-    /* Tablet and mobile viewport handling */
     html, body {
       overscroll-behavior: none;
       -webkit-overflow-scrolling: touch;
       touch-action: manipulation;
       min-height: 100vh;
-      min-height: 100dvh; /* Dynamic viewport height for mobile */
+      min-height: 100dvh;
     }
     
-    /* Ensure proper container sizing */
     .container {
       max-width: 100%;
       padding-left: 1rem;
       padding-right: 1rem;
     }
 
-    /* Better touch targets */
     button, .button, [role="button"] {
       min-height: 44px;
       min-width: 44px;
       touch-action: manipulation;
     }
     
-    /* Prevent zoom on input focus */
     input, select, textarea {
       font-size: 16px;
     }
     
-    /* Safe area inset for notched devices */
     .safe-area-inset-bottom {
       padding-bottom: env(safe-area-inset-bottom);
     }
@@ -274,27 +274,9 @@ All colors MUST be HSL.
     .safe-area-inset-top {
       padding-top: env(safe-area-inset-top);
     }
-    
-    /* Calendar specific mobile optimizations */
-    .calendar-mobile-grid {
-      font-size: 12px;
-    }
-    
-    .calendar-mobile-grid .calendar-day {
-      min-height: 60px;
-      padding: 4px;
-    }
-    
-    .calendar-mobile-grid .calendar-day-header {
-      font-size: 10px;
-      padding: 2px;
-    }
   }
   
   @media (max-width: 768px) {
-    /* Mobile layout adjustments */
-    
-    /* Grid system improvements */
     .grid-cols-2.lg\\:grid-cols-4 {
       grid-template-columns: repeat(2, 1fr);
       gap: 0.75rem;
@@ -305,7 +287,6 @@ All colors MUST be HSL.
       gap: 1rem;
     }
     
-    /* Content spacing adjustments */
     .p-4.lg\\:p-6, .p-6 {
       padding: 1rem;
     }
@@ -314,20 +295,17 @@ All colors MUST be HSL.
       margin-bottom: 1.5rem;
     }
     
-    /* Typography scaling */
     .text-2xl.lg\\:text-3xl, .text-3xl {
       font-size: 1.5rem;
       line-height: 2rem;
     }
     
-    /* Button improvements */
     .button-gradient, .bg-gradient-primary {
       padding: 0.75rem 1rem;
       font-size: 0.875rem;
       width: 100%;
     }
     
-    /* Flex layout adjustments */
     .flex.flex-col.lg\\:flex-row {
       flex-direction: column;
       gap: 1rem;
@@ -337,24 +315,20 @@ All colors MUST be HSL.
       margin-top: 1rem;
     }
     
-    /* Card optimizations */
     .card, .bg-card {
       padding: 0.75rem;
     }
     
-    /* Hide desktop-only elements */
     .hidden.lg\\:inline-flex, .hidden.lg\\:flex, .hidden.lg\\:block {
       display: none !important;
     }
     
-    /* Sidebar adjustments */
     .w-80 {
       width: min(80vw, 320px);
     }
   }
   
   @media (max-width: 640px) {
-    /* Small mobile adjustments */
     .grid-cols-2.lg\\:grid-cols-4 {
       grid-template-columns: 1fr;
       gap: 0.75rem;
@@ -364,13 +338,11 @@ All colors MUST be HSL.
       padding: 0.75rem;
     }
     
-    /* Text sizing for small screens */
     .text-lg {
       font-size: 1rem;
       line-height: 1.5rem;
     }
     
-    /* Make buttons stack vertically on very small screens */
     .space-x-2.lg\\:space-x-4 {
       flex-direction: column;
       gap: 0.5rem;
@@ -383,41 +355,29 @@ All colors MUST be HSL.
   }
   
   @media (max-width: 480px) {
-    /* Extra small mobile devices */
     .text-2xl.lg\\:text-3xl, .text-3xl, .text-2xl {
       font-size: 1.25rem;
       line-height: 1.75rem;
     }
     
-    /* Ultra compact spacing */
     .gap-3.lg\\:gap-6 {
       gap: 0.5rem;
     }
     
-    /* Ensure navigation is accessible */
     .w-80 {
       width: 90vw;
     }
   }
   
-  /* Fix for mobile landscape orientation */
   @media (max-width: 896px) and (orientation: landscape) {
     .min-h-screen {
       min-height: 100vh;
     }
     
-    /* Adjust mobile header for landscape */
     .sticky.top-0 {
       position: fixed;
       width: 100%;
       z-index: 50;
     }
   }
-  
-  /* High DPI mobile displays */
-  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    .shadow-soft, .shadow-glow {
-      /* Remove blur effect for crisp text rendering */
-    }
-  }
-  }
+}
