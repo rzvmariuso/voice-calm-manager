@@ -277,7 +277,7 @@ export default function Billing() {
                   return (
                     <MobileCard 
                       key={plan.id} 
-                      className={`relative overflow-visible ${isProfessional ? 'border-2 border-primary shadow-glow mt-4' : ''} ${isCurrentPlan ? 'border-success bg-success/5' : ''} transition-all duration-200 hover:shadow-lg`}
+                      className={`relative overflow-visible flex flex-col ${isProfessional ? 'border-2 border-primary shadow-glow mt-4' : ''} ${isCurrentPlan ? 'border-success bg-success/5' : ''} transition-all duration-200 hover:shadow-lg`}
                     >
                       {isProfessional && (
                         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
@@ -305,7 +305,7 @@ export default function Billing() {
                         </div>
                       </div>
                       
-                      <div className="space-y-3 mb-6 min-h-[120px]">
+                      <div className="space-y-3 mb-6 flex-1">
                         {(plan.features as string[]).map((feature, featureIndex) => (
                           <div key={featureIndex} className="flex items-start gap-2">
                             <Check className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
@@ -314,7 +314,7 @@ export default function Billing() {
                         ))}
                       </div>
                       
-                      <div className="mt-auto">
+                      <div className="mt-auto pt-4">
                         {isCurrentPlan ? (
                           <Button variant="outline" className="w-full h-11" disabled>
                             <Crown className="w-4 h-4 mr-2" />
