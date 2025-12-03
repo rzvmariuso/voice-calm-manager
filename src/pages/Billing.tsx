@@ -277,13 +277,13 @@ export default function Billing() {
                   return (
                     <MobileCard 
                       key={plan.id} 
-                      className={`relative ${isProfessional ? 'border-2 border-primary shadow-glow' : ''} ${isCurrentPlan ? 'border-success bg-success/5' : ''} transition-all duration-200 hover:shadow-lg`}
+                      className={`relative overflow-visible ${isProfessional ? 'border-2 border-primary shadow-glow mt-4' : ''} ${isCurrentPlan ? 'border-success bg-success/5' : ''} transition-all duration-200 hover:shadow-lg`}
                     >
                       {isProfessional && (
                         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                          <Badge className="bg-primary text-primary-foreground whitespace-nowrap px-3 py-1 shadow-md text-xs">
-                            <Zap className="w-3 h-3 mr-1 flex-shrink-0" />
-                            <span className="truncate">Beliebtester Plan</span>
+                          <Badge className="bg-primary text-primary-foreground whitespace-nowrap px-3 py-1 shadow-sm text-xs">
+                            <Zap className="w-3 h-3 mr-1" />
+                            Beliebt
                           </Badge>
                         </div>
                       )}
