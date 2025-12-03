@@ -114,21 +114,21 @@ export function AppSidebar() {
   return (
     <>
     <Sidebar className="animate-slide-in-right hidden lg:flex">
-      <SidebarHeader className="border-b border-sidebar-border p-6">
+      <SidebarHeader className="border-b border-sidebar-border p-4">
         <Link to="/" className="flex items-center gap-3 group hover:no-underline">
-          <div className="w-10 h-10 bg-gradient-primary rounded-lg overflow-hidden hover:shadow-glow transition-all duration-300 group-hover:scale-110">
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-sm transition-all duration-200 group-hover:shadow-md">
             <img 
               src="/lovable-uploads/f8bf1ba1-4dee-42dd-9c1d-543ca3de4a53.png" 
               alt="Voxcal Logo"
-              className="w-full h-full object-contain p-1"
+              className="w-6 h-6 object-contain brightness-0 invert"
             />
           </div>
           {!state || state === "expanded" ? (
             <div>
-              <h2 className="font-bold text-lg text-sidebar-foreground group-hover:text-primary transition-colors duration-200">
+              <h2 className="font-semibold text-base text-sidebar-foreground">
                 Voxcal
               </h2>
-              <p className="text-sm text-sidebar-foreground/70">Stimme & Kalender</p>
+              <p className="text-xs text-sidebar-foreground/60">KI-Praxisverwaltung</p>
             </div>
           ) : null}
         </Link>
