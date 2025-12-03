@@ -172,16 +172,16 @@ export default function Auth() {
       <Card className="w-full max-w-md shadow-elegant border-0 bg-card animate-fade-in relative z-10">
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center">
+            <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center shadow-sm">
               <img 
                 src="/lovable-uploads/f8bf1ba1-4dee-42dd-9c1d-543ca3de4a53.png" 
                 alt="Voxcal Logo" 
-                className="w-10 h-10 object-contain"
+                className="w-8 h-8 object-contain brightness-0 invert"
               />
             </div>
           </div>
           <div className="space-y-1">
-            <CardTitle className="text-2xl font-semibold text-primary">
+            <CardTitle className="text-xl font-semibold text-foreground">
               Voxcal
             </CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
