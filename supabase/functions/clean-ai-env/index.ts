@@ -26,11 +26,6 @@ serve(async (req) => {
     // Initialize Supabase clients
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const vapiApiKey = Deno.env.get('VAPI_API_KEY');
-
-    if (!vapiApiKey) {
-      throw new Error('VAPI_API_KEY not configured');
-    }
 
     // Create client for auth
     const supabaseAuth = createClient(supabaseUrl, supabaseServiceKey);
@@ -65,16 +60,14 @@ serve(async (req) => {
     const body = await req.json();
     const { 
       purgeCallLogs = false, 
-      resetVoiceSettings = false, 
-      deleteVapiAssistant = false 
+      resetVoiceSettings = false 
     } = body;
 
-    console.log('Clean options:', { purgeCallLogs, resetVoiceSettings, deleteVapiAssistant });
+    console.log('Clean options:', { purgeCallLogs, resetVoiceSettings });
 
     const results = {
       callLogsPurged: false,
       voiceSettingsReset: false,
-      vapiAssistantDeleted: false,
       errors: [] as string[]
     };
 
@@ -99,36 +92,7 @@ serve(async (req) => {
       }
     }
 
-    // 2. Delete VAPI assistant if requested and exists
-    if (deleteVapiAssistant && practice.ai_voice_settings?.vapi_assistant_id) {
-      try {
-        const assistantId = practice.ai_voice_settings.vapi_assistant_id;
-        console.log('Deleting VAPI assistant:', assistantId);
-
-        const response = await fetch(`https://api.vapi.ai/assistant/${assistantId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${vapiApiKey}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok || response.status === 404) {
-          // Success or already deleted
-          results.vapiAssistantDeleted = true;
-          console.log('VAPI assistant deleted successfully');
-        } else {
-          const errorText = await response.text();
-          console.error('VAPI delete error:', response.status, errorText);
-          results.errors.push(`VAPI assistant: ${response.status} - ${errorText}`);
-        }
-      } catch (error) {
-        console.error('Exception deleting VAPI assistant:', error);
-        results.errors.push(`VAPI assistant: ${error.message}`);
-      }
-    }
-
-    // 3. Reset voice settings if requested
+    // 2. Reset voice settings if requested
     if (resetVoiceSettings) {
       try {
         const { error: updateError } = await supabaseService
@@ -156,7 +120,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'AI-Umgebung bereinigt',
+      message: 'KI-Umgebung bereinigt',
       results
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

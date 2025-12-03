@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 import { 
   Bot, 
@@ -16,14 +15,13 @@ import {
   Activity, 
   MessageSquare, 
   TrendingUp,
-  Volume2,
-  Mic,
   PhoneCall,
   Clock,
   CheckCircle,
   AlertTriangle,
-  Users,
-  Crown
+  Crown,
+  Copy,
+  ExternalLink
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
@@ -32,18 +30,16 @@ import { useSubscription } from "@/hooks/useSubscription"
 import { useAuth } from "@/hooks/useAuth"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Link } from "react-router-dom"
-
-// Empty initial state - no mock data
+import { Badge } from "@/components/ui/badge"
 
 export default function AIAgent() {
   const [isActive, setIsActive] = useState(true)
   const [aiPrompt, setAiPrompt] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [isCreatingAssistant, setIsCreatingAssistant] = useState(false)
-  const [testPhoneNumber, setTestPhoneNumber] = useState("")
   const [recentCalls, setRecentCalls] = useState([])
   const [isCleaningEnv, setIsCleaningEnv] = useState(false)
+  const [practiceId, setPracticeId] = useState<string | null>(null)
   const [stats, setStats] = useState({
     totalCalls: 0,
     successfulBookings: 0,
@@ -57,11 +53,32 @@ export default function AIAgent() {
   // Check if user has access to AI features (subscription or whitelisted email)
   const hasAIAccess = isSubscribed || user?.email === 'razvanmariusoancea@gmail.com'
 
+  // Generate webhook URL
+  const webhookUrl = practiceId 
+    ? `https://jdbprivzprvpfoxrfyjy.supabase.co/functions/v1/voice-webhook`
+    : null
+
   // Load AI configuration and call logs on component mount
   useEffect(() => {
     loadAIConfig()
     loadCallLogs()
+    loadPracticeId()
   }, [])
+
+  const loadPracticeId = async () => {
+    try {
+      const { data: practice } = await supabase
+        .from('practices')
+        .select('id')
+        .single()
+      
+      if (practice) {
+        setPracticeId(practice.id)
+      }
+    } catch (error) {
+      console.error('Error loading practice ID:', error)
+    }
+  }
 
   const loadCallLogs = async () => {
     try {
@@ -75,7 +92,6 @@ export default function AIAgent() {
       }
     } catch (error) {
       console.error('Error loading call logs:', error)
-      // Keep empty state if loading fails
       setRecentCalls([])
     }
   }
@@ -92,7 +108,6 @@ export default function AIAgent() {
       }
     } catch (error) {
       console.error('Error loading AI config:', error)
-      // Set default prompt if loading fails
       setAiPrompt(`Du bist Lisa, die herzliche Sprechstundenhilfe einer Physiotherapie-Praxis.
 
 🎯 PERSÖNLICHKEIT:
@@ -129,7 +144,7 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
     if (!aiPrompt.trim()) {
       toast({
         title: "Fehler",
-        description: "Bitte geben Sie einen AI-Prompt ein",
+        description: "Bitte geben Sie einen KI-Prompt ein",
         variant: "destructive"
       })
       return
@@ -138,10 +153,7 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
     try {
       setIsSaving(true)
       const { data, error } = await supabase.functions.invoke('update-ai-config', {
-        body: { 
-          prompt: aiPrompt
-          // Don't send empty voiceSettings to preserve existing voice settings
-        }
+        body: { prompt: aiPrompt }
       })
       
       if (error) throw error
@@ -151,7 +163,6 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
           title: "Gespeichert",
           description: "KI-Konfiguration wurde erfolgreich aktualisiert",
         })
-        // Reload call logs after successful save
         loadCallLogs()
       } else {
         throw new Error(data.error || 'Unbekannter Fehler')
@@ -168,86 +179,8 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
     }
   }
 
-  const createVapiAssistant = async () => {
-    if (!aiPrompt.trim()) {
-      toast({
-        title: "Fehler",
-        description: "Bitte speichern Sie zuerst den AI-Prompt",
-        variant: "destructive"
-      })
-      return
-    }
-
-    try {
-      setIsCreatingAssistant(true)
-      const { data, error } = await supabase.functions.invoke('create-vapi-assistant', {
-        body: { prompt: aiPrompt }
-      })
-      
-      if (error) throw error
-      
-      if (data.success) {
-        toast({
-          title: "Erfolg",
-          description: "VAPI Assistant wurde erfolgreich erstellt",
-        })
-        // Reload call logs after creating assistant
-        loadCallLogs()
-      } else {
-        throw new Error(data.error || 'Unbekannter Fehler')
-      }
-    } catch (error) {
-      console.error('Error creating VAPI assistant:', error)
-      toast({
-        title: "Fehler",
-        description: "Assistant konnte nicht erstellt werden: " + error.message,
-        variant: "destructive"
-      })
-    } finally {
-      setIsCreatingAssistant(false)
-    }
-  }
-
-  const makeTestCall = async () => {
-    if (!testPhoneNumber) {
-      toast({
-        title: "Fehler",
-        description: "Bitte geben Sie eine Telefonnummer ein",
-        variant: "destructive"
-      })
-      return
-    }
-
-    try {
-      const { data, error } = await supabase.functions.invoke('test-vapi-call', {
-        body: { phoneNumber: testPhoneNumber }
-      })
-      
-      if (error) throw error
-      
-      if (data.success) {
-        toast({
-          title: "Test-Anruf gestartet",
-          description: data.message,
-        })
-        setTestPhoneNumber("")
-        // Reload call logs after test call
-        loadCallLogs()
-      } else {
-        throw new Error(data.error || 'Unbekannter Fehler')
-      }
-    } catch (error) {
-      console.error('Error making test call:', error)
-      toast({
-        title: "Fehler",
-        description: "Test-Anruf konnte nicht gestartet werden: " + error.message,
-        variant: "destructive"
-      })
-    }
-  }
-
   const cleanAIEnvironment = async () => {
-    if (!window.confirm('Möchten Sie die gesamte KI-Umgebung zurücksetzen?\n\nDies löscht:\n- Alle Anruf-Logs\n- VAPI Assistant\n- Voice-Einstellungen\n\nDieser Vorgang kann nicht rückgängig gemacht werden.')) {
+    if (!window.confirm('Möchten Sie die KI-Umgebung zurücksetzen?\n\nDies löscht:\n- Alle Anruf-Logs\n- Voice-Einstellungen\n\nDieser Vorgang kann nicht rückgängig gemacht werden.')) {
       return
     }
 
@@ -257,8 +190,7 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
       const { data, error } = await supabase.functions.invoke('clean-ai-env', {
         body: { 
           purgeCallLogs: true,
-          resetVoiceSettings: true,
-          deleteVapiAssistant: true
+          resetVoiceSettings: true
         }
       })
       
@@ -270,7 +202,6 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
         
         if (results.callLogsPurged) message += '✓ Anruf-Logs gelöscht\n'
         if (results.voiceSettingsReset) message += '✓ Voice-Einstellungen zurückgesetzt\n'
-        if (results.vapiAssistantDeleted) message += '✓ VAPI Assistant gelöscht\n'
         
         if (results.errors.length > 0) {
           message += '\nFehler:\n' + results.errors.join('\n')
@@ -281,7 +212,6 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
           description: message,
         })
         
-        // Reload all data
         loadAIConfig()
         loadCallLogs()
       } else {
@@ -308,6 +238,26 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
     })
   }
 
+  const copyWebhookUrl = () => {
+    if (webhookUrl) {
+      navigator.clipboard.writeText(webhookUrl)
+      toast({
+        title: "Kopiert",
+        description: "Webhook-URL wurde in die Zwischenablage kopiert",
+      })
+    }
+  }
+
+  const copyPracticeId = () => {
+    if (practiceId) {
+      navigator.clipboard.writeText(practiceId)
+      toast({
+        title: "Kopiert",
+        description: "Practice-ID wurde in die Zwischenablage kopiert",
+      })
+    }
+  }
+
   const getOutcomeBadge = (outcome: string) => {
     switch (outcome) {
       case "appointment_booked":
@@ -332,7 +282,7 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
           </Badge>
         )
       default:
-        return <Badge variant="outline">Unbekannt</Badge>
+        return <Badge variant="outline">Abgeschlossen</Badge>
     }
   }
 
@@ -447,18 +397,79 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
             </Card>
           </div>
 
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* AI Configuration */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Webhook Configuration */}
+              <Card className="shadow-soft">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ExternalLink className="w-5 h-5 text-primary" />
+                    Voice-AI Verbindung
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Webhook-URL</Label>
+                    <div className="flex gap-2 mt-1">
+                      <Input 
+                        value={webhookUrl || 'Wird geladen...'} 
+                        readOnly 
+                        className="font-mono text-sm"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        onClick={copyWebhookUrl}
+                        disabled={!webhookUrl}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Kopiere diese URL in dein Voice-AI Dashboard
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label>Practice-ID</Label>
+                    <div className="flex gap-2 mt-1">
+                      <Input 
+                        value={practiceId || 'Wird geladen...'} 
+                        readOnly 
+                        className="font-mono text-sm"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        onClick={copyPracticeId}
+                        disabled={!practiceId}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Diese ID muss als "practiceId" im Webhook-Payload gesendet werden
+                    </p>
+                  </div>
+
+                  <Alert>
+                    <AlertDescription className="text-sm">
+                      <strong>Anleitung:</strong> Kopiere die Webhook-URL in dein Voice-AI Dashboard. 
+                      Bei jeder Terminbuchung muss dein Voice-AI Provider einen POST-Request mit den Termindetails senden.
+                      <br /><br />
+                      <strong>Erwartete Felder:</strong> practiceId, patientName, phoneNumber, service, appointmentDate, appointmentTime
+                    </AlertDescription>
+                  </Alert>
+                </CardContent>
+              </Card>
+
+              {/* Prompt Configuration */}
               <Card className="shadow-soft">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Bot className="w-5 h-5 text-primary" />
                     KI-Prompt Konfiguration
-                    <Badge variant="outline" className="border-primary text-primary">
-                      Vapi
-                    </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -474,68 +485,28 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                       placeholder={isLoading ? "Konfiguration wird geladen..." : !hasAIAccess ? "Pro-Plan erforderlich" : ""}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Definiert das Verhalten und die Antworten des KI-Agenten
+                      Kopiere diesen Prompt in dein Voice-AI Dashboard
                     </p>
                   </div>
                   
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor="test-phone">Test-Telefonnummer</Label>
-                      <Input
-                        id="test-phone"
-                        type="tel"
-                        value={testPhoneNumber}
-                        onChange={(e) => setTestPhoneNumber(e.target.value)}
-                        placeholder="+49 123 456789"
-                        disabled={!hasAIAccess}
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Nummer für Test-Anrufe
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        className="flex-1" 
-                        disabled={!hasAIAccess || isCreatingAssistant}
-                        onClick={createVapiAssistant}
-                      >
-                        <Volume2 className="w-4 h-4 mr-2" />
-                        {isCreatingAssistant ? "Erstelle..." : "Assistant erstellen"}
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="flex-1" 
-                        disabled={!hasAIAccess}
-                        onClick={makeTestCall}
-                      >
-                        <Mic className="w-4 h-4 mr-2" />
-                        Test-Anruf
-                      </Button>
-                    </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={saveAIConfig}
+                      disabled={isSaving || isLoading || !hasAIAccess}
+                      className="bg-gradient-primary text-white shadow-glow flex-1"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      {isSaving ? "Speichern..." : "Speichern"}
+                    </Button>
                     
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={saveAIConfig}
-                        disabled={isSaving || isLoading || !hasAIAccess}
-                        className="bg-gradient-primary text-white shadow-glow flex-1"
-                      >
-                        <Settings className="w-4 h-4 mr-2" />
-                        {isSaving ? "Speichern..." : "Speichern"}
-                      </Button>
-                      
-                      <Button 
-                        variant="destructive"
-                        onClick={cleanAIEnvironment}
-                        disabled={isCleaningEnv || !hasAIAccess}
-                        className="flex-1"
-                      >
-                        {isCleaningEnv ? "Bereinige..." : "Neu starten (Clean)"}
-                      </Button>
-                    </div>
+                    <Button 
+                      variant="destructive"
+                      onClick={cleanAIEnvironment}
+                      disabled={isCleaningEnv || !hasAIAccess}
+                      className="flex-1"
+                    >
+                      {isCleaningEnv ? "Bereinige..." : "Neu starten"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -593,7 +564,7 @@ WICHTIG: Sprich natürlich und menschlich - als wärst du wirklich am Telefon!`)
                     <PhoneCall className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
                     <p className="text-muted-foreground">Noch keine Anrufe vorhanden</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Anrufe werden hier angezeigt, sobald der KI-Agent aktiv ist
+                      Anrufe werden hier angezeigt, sobald dein Voice-AI Provider Daten sendet
                     </p>
                   </div>
                 )}
