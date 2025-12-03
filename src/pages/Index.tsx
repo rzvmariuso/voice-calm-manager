@@ -209,60 +209,48 @@ export default function Index() {
           </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 mb-6 lg:mb-8 animate-fade-in">
-            <div className="animate-scale-in" style={{ animationDelay: '0.1s' }}>
-              <Link to="/calendar">
-                <div className="cursor-pointer hover:scale-105 transition-transform duration-200">
-                  <StatsCard
-                    title="Termine heute"
-                    value={stats.todayAppointments}
-                    change={stats.todayAppointments > 0 ? "Heute geplant" : "Keine Termine heute"}
-                    changeType={stats.todayAppointments > 0 ? "positive" : "neutral"}
-                    icon={Calendar}
-                    description={stats.todayAppointments > 0 ? "Anstehende Termine" : ""}
-                  />
-                </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-8">
+              <Link to="/calendar" className="block h-full">
+                <StatsCard
+                  title="Termine heute"
+                  value={stats.todayAppointments}
+                  change={stats.todayAppointments > 0 ? "Heute geplant" : "Keine Termine"}
+                  changeType={stats.todayAppointments > 0 ? "positive" : "neutral"}
+                  icon={Calendar}
+                  description="Anstehende Termine"
+                />
               </Link>
-            </div>
-            <div className="animate-scale-in" style={{ animationDelay: '0.2s' }}>
-              <Link to="/calendar">
-                <div className="cursor-pointer hover:scale-105 transition-transform duration-200">
-                  <StatsCard
-                    title="Gesamte Termine"
-                    value={stats.totalAppointments}
-                    change="Alle Termine"
-                    changeType="neutral"
-                    icon={TrendingUp}
-                    description="Buchungen insgesamt"
-                  />
-                </div>
+              <Link to="/calendar" className="block h-full">
+                <StatsCard
+                  title="Gesamte Termine"
+                  value={stats.totalAppointments}
+                  change="Alle Termine"
+                  changeType="neutral"
+                  icon={TrendingUp}
+                  description="Buchungen insgesamt"
+                />
               </Link>
-            </div>
-            <div className="animate-scale-in" style={{ animationDelay: '0.3s' }}>
-              <Link to="/calendar">
-                <div className="cursor-pointer hover:scale-105 transition-transform duration-200">
-                  <StatsCard
-                    title="AI-gebuchte Termine"
-                    value={stats.aiBookings}
-                    change={`${stats.totalAppointments > 0 ? Math.round((stats.aiBookings / stats.totalAppointments) * 100) : 0}% aller Termine`}
-                    changeType="positive"
-                    icon={Bot}
-                    description="Automatische Buchungen"
-                  />
-                </div>
+              <Link to="/calendar" className="block h-full">
+                <StatsCard
+                  title="AI-Buchungen"
+                  value={stats.aiBookings}
+                  change={`${stats.totalAppointments > 0 ? Math.round((stats.aiBookings / stats.totalAppointments) * 100) : 0}% automatisch`}
+                  changeType="positive"
+                  icon={Bot}
+                  description="KI-gesteuert"
+                />
               </Link>
+              <div className="h-full">
+                <StatsCard
+                  title="Patienten"
+                  value={stats.totalPatients}
+                  change="Registriert"
+                  changeType="positive"
+                  icon={Users}
+                  description="In der Datenbank"
+                />
+              </div>
             </div>
-            <div className="animate-scale-in" style={{ animationDelay: '0.4s' }}>
-              <StatsCard
-                title="Aktive Patienten"
-                value={stats.totalPatients}
-                change="Registrierte Patienten"
-                changeType="positive"
-                icon={Users}
-                description="In der Datenbank"
-              />
-            </div>
-          </div>
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 animate-fade-in" style={{ animationDelay: '0.5s' }}>

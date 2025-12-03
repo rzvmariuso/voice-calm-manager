@@ -25,25 +25,27 @@ export function StatsCard({
   }[changeType]
 
   return (
-    <Card className="shadow-soft card-interactive hover:shadow-elegant group">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+    <Card className="shadow-soft card-interactive hover:shadow-elegant group h-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           {title}
         </CardTitle>
-        <Icon className="h-5 w-5 text-primary group-hover:scale-110 transition-transform duration-200" />
+        <Icon className="h-4 w-4 text-primary/70 group-hover:text-primary transition-colors duration-200" />
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors duration-200">{value}</div>
-        {change && (
-          <p className={`text-xs ${changeColor} mt-1 opacity-80 group-hover:opacity-100 transition-opacity duration-200`}>
-            {change}
-          </p>
-        )}
-        {description && (
-          <p className="text-xs text-muted-foreground mt-1 opacity-70 group-hover:opacity-90 transition-opacity duration-200">
-            {description}
-          </p>
-        )}
+      <CardContent className="px-4 pb-4">
+        <div className="text-2xl font-semibold text-foreground mb-1">{value}</div>
+        <div className="min-h-[2rem]">
+          {change && (
+            <p className={`text-xs ${changeColor} leading-relaxed`}>
+              {change}
+            </p>
+          )}
+          {description && (
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {description}
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   )
